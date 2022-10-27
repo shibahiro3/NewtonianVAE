@@ -1,0 +1,7 @@
+numpy
+matplotlib
+opencv-python
+dm_control
+json5
+
+git+https://github.com/SatohKazuto/mypython.git

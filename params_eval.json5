@@ -1,0 +1,13 @@
+{
+  eval: {
+    device: "cpu",
+    dtype: "float32",
+
+    // Use data as validational episode data
+    data_start: 300,
+    data_stop: 320,
+
+    // model.eval() == mode.train(False)
+    training: false,
+  },
+}

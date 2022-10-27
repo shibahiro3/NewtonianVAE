@@ -1,0 +1,14 @@
+venv/
+reacher2d/data/
+reacher2d/saves/
+reacher2d/results/
+
+*.pyc
+.coverage
+.cache
+__pycache__/
+build/
+*.egg-info/
+
+.vscode/
+.DS_Store
