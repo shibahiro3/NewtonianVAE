@@ -1,5 +1,8 @@
-import argparse
 import sys
+
+sys.path.append("../")
+
+import argparse
 from pathlib import Path
 from typing import Dict, Generic, List, Optional, Tuple, TypeVar, Union
 
@@ -17,18 +20,16 @@ from matplotlib.ticker import FormatStrFormatter, MaxNLocator
 from mypython.terminal import Color, Prompt
 from torch import Tensor, nn, optim
 
+import tool.util
 from argset import *
 from dataloader import GetBatchData
-from params import Params, ParamsEval
-
-sys.path.append("../")
-import tool.util
 from newtonian_vae.core import (
     CollectTimeSeriesData,
     NewtonianVAECell,
     NewtonianVAECellDerivation,
 )
 from newtonian_vae.pcontrol import PurePControl
+from params import Params, ParamsEval
 from tool.env import obs2img
 
 parser = argparse.ArgumentParser(allow_abbrev=False)

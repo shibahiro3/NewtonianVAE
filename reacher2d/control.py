@@ -1,5 +1,8 @@
-import argparse
 import sys
+
+sys.path.append("../")
+
+import argparse
 import warnings
 from pathlib import Path
 from typing import Dict, Generic, List, Optional, Tuple, TypeVar, Union
@@ -18,12 +21,9 @@ from matplotlib.ticker import FormatStrFormatter, MaxNLocator
 from mypython.terminal import Color, Prompt
 from torch import Tensor, nn, optim
 
+import tool.util
 from argset import *
 from dataloader import GetBatchData
-from params import Params, ParamsEval, ParamsReacher2D
-
-sys.path.append("../")
-import tool.util
 from newtonian_vae.core import (
     CollectTimeSeriesData,
     NewtonianVAECell,
@@ -31,6 +31,7 @@ from newtonian_vae.core import (
     Stepper,
 )
 from newtonian_vae.pcontrol import PurePControl
+from params import Params, ParamsEval, ParamsReacher2D
 from tool.env import Reacher2D, img2obs, obs2img
 
 warnings.filterwarnings("ignore", message="torch.distributed.reduce_op is deprecated")

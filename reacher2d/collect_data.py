@@ -1,7 +1,11 @@
+import sys
+
+sys.path.append("../")
+
 import argparse
 import shutil
-import sys
 import time
+import warnings
 from pathlib import Path
 from typing import Dict, Generic, List, Optional, Tuple, TypeVar, Union
 
@@ -15,12 +19,8 @@ from matplotlib.axes import Axes
 from matplotlib.gridspec import GridSpec
 from mypython.terminal import Color
 
-from params import Params, ParamsReacher2D
 from argset import *
-
-sys.path.append("../")
-import warnings
-
+from params import Params, ParamsReacher2D
 from tool.env import Reacher2D, obs2img
 
 warnings.filterwarnings("ignore", message="torch.distributed.reduce_op is deprecated")

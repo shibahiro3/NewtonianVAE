@@ -1,0 +1,14 @@
+[tool.isort]
+profile = "black"
+src_paths = [
+    "newtonian_vae",
+    "reacher2d",
+    "tool",
+]
+skip_glob = [
+    "make_reacher2d",
+]
+
+[tool.black]
+line-length = 100
+extend_exclude = "make_reacher2d"

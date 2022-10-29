@@ -1,5 +1,8 @@
-import argparse
 import sys
+
+sys.path.append("../")
+
+import argparse
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -8,10 +11,8 @@ import mypython.plotutil as mpu
 import numpy as np
 from matplotlib.gridspec import GridSpec
 
-from argset import *
-
-sys.path.append("../")
 import tool.util
+from argset import *
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 parse_path_model(parser)

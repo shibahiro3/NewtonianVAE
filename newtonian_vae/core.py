@@ -177,7 +177,6 @@ class Stepper:
         return self.x_, self.v_
 
 
-
 class CollectTimeSeriesData:
     def __init__(self, dim_x, dim_xhat, T, dtype: np.dtype) -> None:
         xp = np

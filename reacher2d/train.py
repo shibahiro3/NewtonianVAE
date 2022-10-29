@@ -1,7 +1,10 @@
+import sys
+
+sys.path.append("../")
+
 import argparse
 import shutil
 import stat
-import sys
 import time
 import warnings
 from datetime import datetime
@@ -16,17 +19,15 @@ from mypython.pyutil import s2dhms_str
 from mypython.terminal import Color
 from torch import Tensor, nn, optim
 
+import tool.util
 from argset import *
 from dataloader import GetBatchData
-from params import Params
-
-sys.path.append("../")
-import tool.util
 from newtonian_vae.core import (
     CollectTimeSeriesData,
     NewtonianVAECell,
     NewtonianVAECellDerivation,
 )
+from params import Params
 
 warnings.filterwarnings("ignore", message="torch.distributed.reduce_op is deprecated")
 
@@ -124,11 +125,6 @@ def train():
                 L = -E_sum
                 optimiser.zero_grad()
                 L.backward()
-
-                # aが考慮できていない問題 もしかして勾配消失が起きているのでは？
-                # print(rnn.f.fc1.weight.grad)  # ... 大丈夫そうやった.
-                # 比較 - 画像生成の頭
-                # print(rnn.p_observation.decoder.conv4.weight.grad)
 
                 if params.train.grad_clip_norm is not None:
                     nn.utils.clip_grad_norm_(
