@@ -68,6 +68,7 @@ class NewtonianVAECell(NewtonianVAECellBase):
             self.q_encoder.cond(I_t)
             self.p_transition.cond(x_tn1, v_t, dt)
 
+            # FIXME: From which distribution should we sample?
             x_t = self.q_encoder.rsample()
             # x_t = self.p_transition.rsample()
 
@@ -82,6 +83,7 @@ class NewtonianVAECell(NewtonianVAECellBase):
                 # これも += KL なら loss は大きくなってしまう
                 E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
 
+            # FIXME: From which distribution should we sample?
             # x_t = self.p_transition.rsample()
             # x_t = self.q_encoder.rsample()
 
