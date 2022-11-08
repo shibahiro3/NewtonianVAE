@@ -1,14 +1,73 @@
 venv/
-reacher2d/data/
-reacher2d/saves/
-reacher2d/results/
+data*/
+saves/
+results/
 
-*.pyc
-.coverage
+_*
+*_
+
+
+# https://github.com/numpy/numpy/blob/main/.gitignore
+
+# Editor temporary/working/backup files #
+#########################################
+.#*
+[#]*#
+*~
+*$
+*.bak
+*.diff
+.idea/
+*.iml
+*.ipr
+*.iws
+*.org
+.project
+pmip
+*.rej
+.settings/
+.*.sw[nop]
+.sw[nop]
+*.tmp
+*.vim
+.vscode
+tags
+cscope.out
+# gnu global
+GPATH
+GRTAGS
+GSYMS
+GTAGS
 .cache
-__pycache__/
-build/
-*.egg-info/
+.mypy_cache/
 
-.vscode/
-.DS_Store
+# Python files #
+################
+# setup.py working directory
+build
+# sphinx build directory
+_build
+# setup.py dist directory
+dist
+doc/build
+doc/docenv
+doc/cdoc/build
+# Egg metadata
+*.egg-info
+# The shelf plugin uses this dir
+./.shelf
+MANIFEST
+.cache
+pip-wheel-metadata
+.python-version
+
+# OS generated files #
+######################
+.DS_Store*
+.VolumeIcon.icns
+.fseventsd
+Icon?
+.gdb_history
+ehthumbs.db
+Thumbs.db
+.directory

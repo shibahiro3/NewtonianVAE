@@ -1,14 +1,16 @@
 [tool.isort]
 profile = "black"
 src_paths = [
-    "newtonian_vae",
-    "reacher2d",
+    "models",
+    "nvae",
+
+    "simulation",
     "tool",
 ]
 skip_glob = [
-    "make_reacher2d",
+    "*override",
 ]
 
 [tool.black]
 line-length = 100
-extend_exclude = "make_reacher2d"
+extend_exclude = "override/"

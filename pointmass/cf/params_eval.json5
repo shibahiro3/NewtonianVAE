@@ -1,0 +1,9 @@
+{
+  eval: {
+    device: "cpu",
+    dtype: "float32",
+    data_start: 1000,
+    data_stop: 1050,
+    training: false,
+  },
+}

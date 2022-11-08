@@ -1,0 +1,10 @@
+{
+  reacher2d: {
+    env: "point_mass-easy",
+    seed: 2,
+    max_episode_length: 1000,
+    action_repeat: 1,
+    bit_depth: 8,
+    action_type: "circle", // "random", "circle"
+  },
+}

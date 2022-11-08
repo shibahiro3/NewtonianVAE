@@ -1,0 +1,15 @@
+{
+  reacher2d: {
+    // ソースコード全体で画像処理をすることが前提であるためfalseで固定
+    // symbolic: false,
+
+    // reacher を書き換えているから、もはやreacherではない。
+    env: "reacher-hard",
+    seed: 1,
+    max_episode_length: 100,
+    action_repeat: 1,
+    bit_depth: 8,
+
+    action_type: "handmade", // "random", "paper", "equal_paper", "handmade"
+  },
+}
