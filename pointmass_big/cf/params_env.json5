@@ -1,5 +1,5 @@
 {
-  reacher2d: {
+  simenv: {
     env: "point_mass-easy",
     seed: 2,
     max_episode_length: 1000,

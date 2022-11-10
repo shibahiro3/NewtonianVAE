@@ -1,9 +1,6 @@
-import sys
-
-sys.path.append("../")
-
 import argparse
 import shutil
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -12,7 +9,6 @@ import numpy as np
 import torch
 import torch.utils
 import torch.utils.data
-from mypython.pyutil import s2dhms_str
 from torch import nn, optim
 
 import tool.argset as argset
@@ -22,6 +18,7 @@ from models.core import (
     NewtonianVAECell,
     NewtonianVAECellDerivation,
 )
+from mypython.pyutil import s2dhms_str
 from tool.dataloader import GetBatchData
 from tool.params import Params
 

@@ -1,29 +1,27 @@
-import sys
-
-sys.path.append("../")
-
 import argparse
+import sys
 from pathlib import Path
 from typing import Dict
 
 import matplotlib.pyplot as plt
-import mypython.plot_config  # noqa: F401
-import mypython.plotutil as mpu
-import mypython.vision as mv
 import numpy as np
 import torch
 import torch.utils
 import torch.utils.data
 from matplotlib.axes import Axes
 from matplotlib.gridspec import GridSpec
-from mypython.terminal import Prompt
 
+import mypython.plot_config  # noqa: F401
+import mypython.plotutil as mpu
+import mypython.vision as mv
 import tool.argset as argset
 import tool.util
 from models.core import NewtonianVAECell, NewtonianVAECellDerivation
 from models.pcontrol import PurePControl
+from mypython.terminal import Prompt
 from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img
 from tool.params import Params, ParamsEval, ParamsSimEnv
+from tool.util import cmap_plt
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.episodes(parser)
@@ -130,6 +128,7 @@ def main():
 
             # ======================================================
             self.t += 1
+            color_action = tool.util.cmap_plt(params.newtonian_vae.dim_x, "prism")
 
             if frame_cnt == -1:
                 self.episode_cnt = np.random.randint(0, args.episodes)
@@ -161,7 +160,7 @@ def main():
             ax.bar(
                 range(params.newtonian_vae.dim_x),
                 action.detach().squeeze(0).cpu(),
-                color=["pink", "skyblue"],
+                color=color_action,
                 width=0.5,
             )
             ax.tick_params(bottom=False, labelbottom=False)

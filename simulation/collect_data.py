@@ -1,20 +1,17 @@
-import sys
-
-sys.path.append("../")
-
 import argparse
 import shutil
+import sys
 from pathlib import Path
 from typing import Dict
 
 import matplotlib.pyplot as plt
-import mypython.plot_config  # noqa: F401
-import mypython.plotutil as mpu
-import mypython.vision as mv
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.gridspec import GridSpec
 
+import mypython.plot_config  # noqa: F401
+import mypython.plotutil as mpu
+import mypython.vision as mv
 import tool.argset as argset
 import tool.util
 from env import ControlSuiteEnvWrap, obs2img

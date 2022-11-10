@@ -1,9 +1,10 @@
-import mypython.ai.torchprob as tp
 import torch
 import torch.nn as nn
 import torch.utils
 import torch.utils.data
 from torch import Tensor
+
+import mypython.ai.torchprob as tp
 
 
 class ABCf(nn.Module):

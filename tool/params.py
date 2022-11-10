@@ -191,7 +191,7 @@ class _SimEnv:
 class ParamsSimEnv(_SimEnv):
     def __init__(self, path) -> None:
         self._raw = json5.load(open(path))
-        super().__init__(**self._raw["reacher2d"])
+        super().__init__(**self._raw["simenv"])
 
     @property
     def kwargs(self):

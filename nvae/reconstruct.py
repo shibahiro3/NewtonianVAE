@@ -1,16 +1,10 @@
-import sys
-
-sys.path.append("../")
-
 import argparse
+import sys
 from pathlib import Path
 from typing import Dict
 
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
-import mypython.plot_config  # noqa: F401
-import mypython.plotutil as mpu
-import mypython.vision as mv
 import numpy as np
 import torch
 import torch.utils
@@ -18,8 +12,10 @@ import torch.utils.data
 from matplotlib.axes import Axes
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
-from mypython.terminal import Prompt
 
+import mypython.plot_config  # noqa: F401
+import mypython.plotutil as mpu
+import mypython.vision as mv
 import tool.argset as argset
 import tool.util
 from models.core import (
@@ -27,6 +23,7 @@ from models.core import (
     NewtonianVAECell,
     NewtonianVAECellDerivation,
 )
+from mypython.terminal import Prompt
 from simulation.env import obs2img
 from tool.dataloader import GetBatchData
 from tool.params import Params, ParamsEval

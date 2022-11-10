@@ -5,6 +5,7 @@ from typing import Optional
 
 import matplotlib.cm as cm
 import numpy as np
+
 from mypython.terminal import Color
 
 _weight = "weight*/*"

@@ -3,8 +3,9 @@ from typing import Union
 
 import numpy as np
 import torch
-from mypython.ai.util import BatchIdx
 from torch import Tensor
+
+from mypython.ai.util import BatchIdx
 
 
 class GetBatchData(BatchIdx):

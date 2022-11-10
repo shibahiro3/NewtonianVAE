@@ -6,6 +6,8 @@ src_paths = [
 
     "simulation",
     "tool",
+
+    "mypython",
 ]
 skip_glob = [
     "*override",

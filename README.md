@@ -4,16 +4,14 @@ paper: https://arxiv.org/abs/2006.01959
 
 ## Prerequisites
 Install the necessary packages.
-The package includes [mypython](https://github.com/SatohKazuto/mypython), part of my old "toolbox" that I have been creating.
-I did not include it in this repository because many of them are not directly related to NewtonianVAE and I wanted to keep the environment separate.
-
-It is recommended that a virtual environment be used.
 ```bash
 pip install -r requirements.txt
 ```
 
 And install PyTorch manually by referring to the [official site](https://pytorch.org/).
 
+### Tips
+To keep your environment clean, I recommend using a virtual environment like [venv](https://docs.python.org/3/library/venv.html).
 
 ## Run
 These should be run under the [exec](exec) directory.

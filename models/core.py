@@ -12,13 +12,14 @@ TODO:
 
 from typing import Tuple, Union
 
-import mypython.ai.torchprob as tp
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.utils
 import torch.utils.data
 from torch import Tensor
+
+import mypython.ai.torchprob as tp
 
 from .component import Decoder, DecoderDerivation, Encoder, Pxhat, Transition, Velocity
 

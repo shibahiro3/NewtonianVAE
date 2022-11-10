@@ -1,16 +1,13 @@
-import sys
-
-sys.path.append("../")
-
 import argparse
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import mypython.plot_config  # noqa: F401
-import mypython.plotutil as mpu
 import numpy as np
 from matplotlib.gridspec import GridSpec
 
+import mypython.plot_config  # noqa: F401
+import mypython.plotutil as mpu
 import tool.argset as argset
 import tool.util
 

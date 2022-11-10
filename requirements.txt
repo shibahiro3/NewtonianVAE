@@ -1,7 +1,14 @@
 numpy
 matplotlib
-opencv-python
 dm_control
 json5
 
-git+https://github.com/SatohKazuto/mypython.git
+
+# qt.qpa.plugin: Could not load the Qt platform plugin
+opencv-python-headless
+
+# UserWarning: Animation was deleted without rendering anything.
+pyqt5
+
+# opencv-python
+# pyqt6
