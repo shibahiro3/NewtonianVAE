@@ -5,6 +5,7 @@ results/
 
 _*
 *_
+!__init__.py
 
 
 # https://github.com/numpy/numpy/blob/main/.gitignore
