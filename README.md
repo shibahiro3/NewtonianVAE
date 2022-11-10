@@ -11,7 +11,7 @@ pip install -r requirements.txt
 And install PyTorch manually by referring to the [official site](https://pytorch.org/).
 
 ### Tips
-To keep your environment clean, I recommend using a virtual environment like [venv](https://docs.python.org/3/library/venv.html).
+If you build the environment directly into your environment, it may not work properly. So I recommend using a virtual environment like [venv](https://docs.python.org/3/library/venv.html).
 
 ## Run
 These should be run under the [exec](exec) directory.
