@@ -12,9 +12,9 @@ from matplotlib.gridspec import GridSpec
 import mypython.plot_config  # noqa: F401
 import mypython.plotutil as mpu
 import mypython.vision as mv
-import tool.argset as argset
 import tool.util
 from env import ControlSuiteEnvWrap, obs2img
+from tool import argset
 from tool.params import Params, ParamsSimEnv
 
 parser = argparse.ArgumentParser(allow_abbrev=False)

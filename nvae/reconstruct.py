@@ -16,7 +16,6 @@ from matplotlib.ticker import FormatStrFormatter
 import mypython.plot_config  # noqa: F401
 import mypython.plotutil as mpu
 import mypython.vision as mv
-import tool.argset as argset
 import tool.util
 from models.core import (
     CollectTimeSeriesData,
@@ -25,6 +24,7 @@ from models.core import (
 )
 from mypython.terminal import Prompt
 from simulation.env import obs2img
+from tool import argset
 from tool.dataloader import GetBatchData
 from tool.params import Params, ParamsEval
 

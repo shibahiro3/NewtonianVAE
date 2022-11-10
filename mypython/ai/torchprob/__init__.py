@@ -5,5 +5,6 @@ Ref:
 """
 
 from .distributions.bernoulli import Bernoulli
-from .distributions.normal import Distribution, Normal, Normal01
+from .distributions.gmm import GMM
+from .distributions.normal import Normal, Normal01
 from .functions import KLdiv, log

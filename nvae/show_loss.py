@@ -8,8 +8,8 @@ from matplotlib.gridspec import GridSpec
 
 import mypython.plot_config  # noqa: F401
 import mypython.plotutil as mpu
-import tool.argset as argset
 import tool.util
+from tool import argset
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.path_model(parser)

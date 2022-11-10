@@ -14,8 +14,8 @@ import mypython.error as merror
 import mypython.plot_config  # noqa: F401
 import mypython.plotutil as mpu
 import mypython.vision as mv
-import tool.argset as argset
 from simulation.env import obs2img
+from tool import argset
 from tool.dataloader import GetBatchData
 from tool.params import Params, ParamsSimEnv
 from tool.util import cmap_plt

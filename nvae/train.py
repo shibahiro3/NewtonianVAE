@@ -11,7 +11,6 @@ import torch.utils
 import torch.utils.data
 from torch import nn, optim
 
-import tool.argset as argset
 import tool.util
 from models.core import (
     CollectTimeSeriesData,
@@ -19,6 +18,7 @@ from models.core import (
     NewtonianVAECellDerivation,
 )
 from mypython.pyutil import s2dhms_str
+from tool import argset
 from tool.dataloader import GetBatchData
 from tool.params import Params
 

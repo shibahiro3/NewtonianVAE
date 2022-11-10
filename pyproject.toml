@@ -6,11 +6,12 @@ src_paths = [
 
     "simulation",
     "tool",
-
-    "mypython",
 ]
 skip_glob = [
     "*override",
+]
+known_first_party = [
+    "mypython"
 ]
 
 [tool.black]
