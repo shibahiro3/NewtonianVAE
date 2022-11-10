@@ -1,14 +1,18 @@
-numpy
-matplotlib
-dm_control
-json5
+numpy==1.23.4
+matplotlib==3.6.2
+dm-control==1.0.8
+json5==0.9.10
 
+
+opencv-python==4.6.0.66
+PyQt6==6.4.0
 
 # qt.qpa.plugin: Could not load the Qt platform plugin
-opencv-python-headless
-
 # UserWarning: Animation was deleted without rendering anything.
-pyqt5
+# opencv-python==4.3.0.36
+# PyQt5==5.15.2
+# PyQt5-sip==12.8.1
 
-# opencv-python
-# pyqt6
+
+# torch==1.13.0
+# torchvision==0.14.0
