@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.gridspec import GridSpec
 
-import mypython.plot_config  # noqa: F401
+import mypython.plot_config
 import mypython.plotutil as mpu
 import tool.util
 from tool import argset
@@ -21,6 +21,8 @@ class Args:
 
 
 args = Args()
+
+mypython.plot_config.apply()
 
 
 def main():

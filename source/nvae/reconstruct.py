@@ -13,7 +13,7 @@ from matplotlib.axes import Axes
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
 
-import mypython.plot_config  # noqa: F401
+import mypython.plot_config
 import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
@@ -48,6 +48,8 @@ class Args:
 
 
 args = Args()
+
+mypython.plot_config.apply()
 
 
 def reconstruction():

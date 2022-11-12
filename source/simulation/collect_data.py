@@ -9,7 +9,7 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.gridspec import GridSpec
 
-import mypython.plot_config  # noqa: F401
+import mypython.plot_config
 import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
@@ -39,6 +39,8 @@ class Args:
 
 
 args = Args()
+
+mypython.plot_config.apply()
 
 
 def env_test():

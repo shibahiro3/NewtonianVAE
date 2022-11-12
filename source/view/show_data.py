@@ -11,7 +11,7 @@ from matplotlib.axes import Axes
 from matplotlib.gridspec import GridSpec
 
 import mypython.error as merror
-import mypython.plot_config  # noqa: F401
+import mypython.plot_config
 import mypython.plotutil as mpu
 import mypython.vision as mv
 from simulation.env import obs2img
@@ -36,6 +36,8 @@ args = parser.parse_args()
 
 if args.save_anim:
     assert args.output is not None
+
+mypython.plot_config.apply()
 
 
 def main():
