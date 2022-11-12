@@ -1,0 +1,31 @@
+{
+  model: "NewtonianVAEDerivationCell",
+
+  NewtonianVAECell: {
+    dim_x: 2,
+    transition_std: 0.25,
+    regularization: false,
+  },
+
+  NewtonianVAEDerivationCell: {
+    dim_x: 2,
+    transition_std: 0.25,
+    regularization: false,
+    dim_xhat: 32,
+    dim_pxhat_middle: 32,
+  },
+
+  train: {
+    device: "cuda",
+    dtype: "float32",
+    data_start: 0,
+    data_stop: 1000,
+    batch_size: 50,
+    grad_clip_norm: null,
+    learning_rate: 3e-4,
+    epochs: 300,
+    save_per_epoch: 50,
+    max_time_length: 100,
+    resume: false,
+  },
+}

@@ -1,17 +1,19 @@
 [tool.isort]
 profile = "black"
 src_paths = [
-    "models",
-    "nvae",
+    "source/models",
+    "source/nvae",
 
-    "simulation",
-    "tool",
+    "source/simulation",
+    "source/tool",
+
+    "source/mypython",
 ]
 skip_glob = [
     "*override",
 ]
 known_first_party = [
-    "mypython"
+    "source/mypython"
 ]
 
 [tool.black]

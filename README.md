@@ -19,13 +19,13 @@ These should be run under the [exec](exec) directory.
 ### Collect Data
 To see what kind of data you can get before saving an episode
 ```bash
-./collect_*.sh --watch plt (or render)
+./collect.sh [environment (directory name)] --watch plt (or render)
 ```
 By default, parameters can be adjusted by ```**/params_env.json5```.
 
 If you want to save the data, please remove the --watch option.
 ```bash
-./collect_*.sh
+./collect.sh [environment (directory name)]
 ```
 
 ### Train
@@ -37,7 +37,7 @@ The reconstruction.py, described below, for example, requires a trained model to
 ### Reconstruction
 Sequentially feed the trained model with $\mathbf{u}_{t-1}$ and $\mathbf{I}_t$ of the validation data to see how Reconstructed $\mathbf{I}_t$, etc., transitions.
 ```bash
-./reconstruction_*.sh
+./reconstruction.sh [environment (directory name)]
 ```
 
 ### Control
