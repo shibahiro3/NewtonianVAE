@@ -16,10 +16,12 @@ import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.plot_config
 import tool.util
+from load_nvae import load_nvae
 from models.core import (
     CollectTimeSeriesData,
     NewtonianVAECell,
     NewtonianVAEDerivationCell,
+    get_NewtonianVAECell,
 )
 from mypython.terminal import Prompt
 from simulation.env import obs2img
@@ -54,39 +56,7 @@ tool.plot_config.apply()
 def reconstruction():
     torch.set_grad_enabled(False)
 
-    d = tool.util.select_date(args.path_model)
-    if d is None:
-        return
-    weight_p = tool.util.select_weight(d)
-    if weight_p is None:
-        return
-
-    params = Params(Path(d, "params_bk.json5"))
-    params_eval = ParamsEval(args.cf_eval)
-    print(params)
-    print(params_eval)
-
-    torch_dtype: torch.dtype = getattr(torch, params_eval.dtype)
-    np_dtype: np.dtype = getattr(np, params_eval.dtype)
-
-    if params_eval.device == "cuda" and not torch.cuda.is_available():
-        print(
-            "You have chosen cuda. But your environment does not support cuda, "
-            "so this program runs on cpu."
-        )
-    device = torch.device(params_eval.device if torch.cuda.is_available() else "cpu")
-
-    if params.model == "NewtonianVAECell":
-        cell = NewtonianVAECell(**params.raw_[params.model])
-    elif params.model == "NewtonianVAEDerivationCell":
-        cell = NewtonianVAEDerivationCell(**params.raw_[params.model])
-    else:
-        assert False
-
-    cell.load_state_dict(torch.load(weight_p))
-    cell.train(params_eval.training)
-    cell.type(torch_dtype)
-    cell.to(device)
+    cell, d, weight_p, params, params_eval, dtype = load_nvae(args.path_model, args.cf_eval)
 
     Path(args.path_result).mkdir(parents=True, exist_ok=True)
 
@@ -96,7 +66,7 @@ def reconstruction():
         startN=params_eval.data_start,
         stopN=params_eval.data_stop,
         BS=args.episodes,
-        dtype=torch_dtype,
+        dtype=dtype,
     )
     action, observation = next(BatchData)
 
@@ -147,7 +117,7 @@ def reconstruction():
             self.collector = CollectTimeSeriesData(
                 cell=cell,
                 T=params.train.max_time_length,
-                dtype=np_dtype,
+                dtype=dtype,
             )
 
             self.action, self.observation = (

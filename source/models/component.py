@@ -109,6 +109,8 @@ class Encoder(tp.Normal):
 class Decoder(tp.Normal):
     """
     p(I_t | x_t)
+      or
+    p(I_t | xhat_t)
     """
 
     def __init__(self, dim_x: int, std=1.0) -> None:
@@ -119,21 +121,6 @@ class Decoder(tp.Normal):
 
     def forward(self, x_t: Tensor):
         return self.dec(x_t), self.std
-
-
-class DecoderDerivation(tp.Normal):
-    """
-    p(I_t | xhat_t)
-    """
-
-    def __init__(self, dim_xhat: int, std=1.0) -> None:
-        super().__init__()
-
-        self.dec = VisualDecoder64(dim_xhat, 1024)
-        self.std = torch.tensor(std)
-
-    def forward(self, xhat_t: Tensor):
-        return self.dec(xhat_t), self.std
 
 
 class Pxhat(tp.Normal):

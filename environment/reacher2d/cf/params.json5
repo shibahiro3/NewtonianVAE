@@ -18,6 +18,10 @@
     dim_pxhat_middle: 32,
   },
 
+  NewtonianVAEJIACell: {
+
+  },
+
   train: {
     device: "cuda", // "cpu", "cuda"
     dtype: "float32", // "float16", "float32"

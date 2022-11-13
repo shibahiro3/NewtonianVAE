@@ -21,7 +21,7 @@ from torch import Tensor
 
 import mypython.ai.torchprob as tp
 
-from .component import Decoder, DecoderDerivation, Encoder, Pxhat, Transition, Velocity
+from .component import Decoder, Encoder, Pxhat, Transition, Velocity
 
 
 class NewtonianVAECellBase(nn.Module):
@@ -132,7 +132,7 @@ class NewtonianVAEDerivationCell(NewtonianVAECellBase):
         self._dim_xhat = dim_xhat
 
         # p(I_t | xhat_t)
-        self.p_decoder = DecoderDerivation(dim_xhat)
+        self.p_decoder = Decoder(dim_xhat)
 
         # p(xhat_t | x_{t-1}, u_{t-1})
         self.p_xhat = Pxhat(dim_x, dim_xhat, dim_pxhat_middle)
@@ -186,8 +186,27 @@ class NewtonianVAEDerivationCell(NewtonianVAECellBase):
 class NewtonianVAEJIACell:
     pass
 
+    def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
+
+        if self.training:
+            v_t = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)
+
+        x_m1_t = 1
+        x_m2_t = 1
+
 
 NewtonianVAECellFamily = Union[NewtonianVAECell, NewtonianVAEDerivationCell]
+
+
+def get_NewtonianVAECell(name, *args, **kwargs):
+    if name == "NewtonianVAECell":
+        cell = NewtonianVAECell(*args, **kwargs)
+    elif name == "NewtonianVAEDerivationCell":
+        cell = NewtonianVAEDerivationCell(*args, **kwargs)
+    else:
+        assert False
+
+    return cell
 
 
 class Stepper:
@@ -216,9 +235,10 @@ class Stepper:
 
 
 class CollectTimeSeriesData:
-    def __init__(self, cell: NewtonianVAECellFamily, T: int, dtype: np.dtype) -> None:
+    def __init__(self, cell: NewtonianVAECellFamily, T: int, dtype: torch.dtype) -> None:
         xp = np
         self.cell = cell
+        dtype = torch.empty((), dtype=dtype).numpy().dtype
 
         self.LOG_x = xp.full((T, cell.dim_x), xp.nan, dtype=dtype)
         self.LOG_x_mean = xp.full((T, cell.dim_x), xp.nan, dtype=dtype)

@@ -14,9 +14,14 @@ import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.plot_config
 import tool.util
-from models.core import NewtonianVAECell, NewtonianVAEDerivationCell
+from models.core import (
+    NewtonianVAECell,
+    NewtonianVAEDerivationCell,
+    get_NewtonianVAECell,
+)
 from models.pcontrol import PurePControl
 from mypython.terminal import Prompt
+from nvae.load_nvae import load_nvae
 from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img
 from tool import argset
 from tool.params import Params, ParamsEval, ParamsSimEnv
@@ -55,38 +60,7 @@ tool.plot_config.apply()
 def main():
     torch.set_grad_enabled(False)
 
-    d = tool.util.select_date(args.path_model)
-    if d is None:
-        return
-    weight_p = tool.util.select_weight(d)
-    if weight_p is None:
-        return
-
-    params = Params(Path(d, "params_bk.json5"))
-    params_eval = ParamsEval(args.cf_eval)
-    # params.train.max_time_length = 300
-
-    torch_dtype: torch.dtype = getattr(torch, params_eval.dtype)
-    np_dtype: np.dtype = getattr(np, params_eval.dtype)
-
-    if params_eval.device == "cuda" and not torch.cuda.is_available():
-        print(
-            "You have chosen cuda. But your environment does not support cuda, "
-            "so this program runs on cpu."
-        )
-    device = torch.device(params_eval.device if torch.cuda.is_available() else "cpu")
-
-    if params.model == "NewtonianVAECell":
-        cell = NewtonianVAECell(**params.raw_[params.model])
-    elif params.model == "NewtonianVAEDerivationCell":
-        cell = NewtonianVAEDerivationCell(**params.raw_[params.model])
-    else:
-        assert False
-
-    cell.load_state_dict(torch.load(weight_p))
-    cell.train(params_eval.training)
-    cell.type(torch_dtype)
-    cell.to(device)
+    cell, d, weight_p, params, params_eval, dtype = load_nvae(args.path_model, args.cf_eval)
 
     Path(args.path_result).mkdir(parents=True, exist_ok=True)
 
@@ -137,7 +111,11 @@ def main():
             # print(self.ctrl.x_goal)
             self.observation = env.reset()
             xp = np
-            self.LOG_x = xp.full((params.train.max_time_length, cell.dim_x), xp.nan, dtype=np_dtype)
+            self.LOG_x = xp.full(
+                (params.train.max_time_length, cell.dim_x),
+                xp.nan,
+                dtype=torch.empty((), dtype=dtype).numpy().dtype,
+            )
 
         def anim_func(self, frame_cnt):
             axes.clear()

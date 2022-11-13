@@ -16,6 +16,7 @@ from models.core import (
     CollectTimeSeriesData,
     NewtonianVAECell,
     NewtonianVAEDerivationCell,
+    get_NewtonianVAECell,
 )
 from mypython.pyutil import s2dhms_str
 from tool import argset
@@ -60,8 +61,7 @@ def train(vh=VisualHandlerBase()):
         tool.util.delete_useless_saves(args.path_save)
         print("end of train")
 
-    torch_dtype: torch.dtype = getattr(torch, params.train.dtype)
-    np_dtype: np.dtype = getattr(np, params.train.dtype)
+    dtype: torch.dtype = getattr(torch, params.train.dtype)
 
     if params.train.device == "cuda" and not torch.cuda.is_available():
         print(
@@ -70,12 +70,7 @@ def train(vh=VisualHandlerBase()):
         )
     device = torch.device(params.train.device if torch.cuda.is_available() else "cpu")
 
-    if params.model == "NewtonianVAECell":
-        cell = NewtonianVAECell(**params.raw_[params.model])
-    elif params.model == "NewtonianVAEDerivationCell":
-        cell = NewtonianVAEDerivationCell(**params.raw_[params.model])
-    else:
-        assert False
+    cell = get_NewtonianVAECell(params.model, **params.raw_[params.model])
 
     if params.train.resume:
         print('You chose "resume". Select a model to load.')
@@ -87,7 +82,7 @@ def train(vh=VisualHandlerBase()):
             return
         cell.load_state_dict(torch.load(weight_p))
 
-    cell.type(torch_dtype)
+    cell.type(dtype)
     cell.to(device)
 
     weight_dir.mkdir(parents=True, exist_ok=True)
@@ -100,7 +95,7 @@ def train(vh=VisualHandlerBase()):
     collector = CollectTimeSeriesData(
         cell=cell,
         T=params.train.max_time_length,
-        dtype=np_dtype,
+        dtype=dtype,
     )
 
     time_start = time.perf_counter()
@@ -114,7 +109,7 @@ def train(vh=VisualHandlerBase()):
                 startN=params.train.data_start,
                 stopN=params.train.data_stop,
                 BS=params.train.batch_size,
-                dtype=torch_dtype,
+                dtype=dtype,
             )
 
             for action, observation in BatchData:
