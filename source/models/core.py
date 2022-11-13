@@ -187,11 +187,11 @@ class NewtonianVAEJIACell:
     pass
 
 
-NewtonianVAECellSeries = Union[NewtonianVAECell, NewtonianVAEDerivationCell]
+NewtonianVAECellFamily = Union[NewtonianVAECell, NewtonianVAEDerivationCell]
 
 
 class Stepper:
-    def __init__(self, cell: NewtonianVAECellSeries) -> None:
+    def __init__(self, cell: NewtonianVAECellFamily) -> None:
         self.cell = cell
         self._is_reset = False
 
@@ -216,7 +216,7 @@ class Stepper:
 
 
 class CollectTimeSeriesData:
-    def __init__(self, cell: NewtonianVAECellSeries, T: int, dtype: np.dtype) -> None:
+    def __init__(self, cell: NewtonianVAECellFamily, T: int, dtype: np.dtype) -> None:
         xp = np
         self.cell = cell
 

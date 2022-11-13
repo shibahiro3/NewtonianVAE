@@ -3,7 +3,7 @@ from typing import Union
 import torch.nn as nn
 from torch import Tensor
 
-from .core import NewtonianVAECell, NewtonianVAECellSeries, NewtonianVAEDerivationCell
+from .core import NewtonianVAECell, NewtonianVAECellFamily, NewtonianVAEDerivationCell
 
 
 class PurePControl:
@@ -17,7 +17,7 @@ class PurePControl:
         self,
         Igoal: Tensor,
         alpha: float,
-        cell: NewtonianVAECellSeries,
+        cell: NewtonianVAECellFamily,
     ) -> None:
         self.alpha = alpha
         self.cell = cell

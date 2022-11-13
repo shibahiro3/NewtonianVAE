@@ -21,6 +21,7 @@ from mypython.pyutil import s2dhms_str
 from tool import argset
 from tool.dataloader import GetBatchData
 from tool.params import Params
+from tool.visualhandlerbase import VisualHandlerBase
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.cf(parser)
@@ -38,7 +39,7 @@ class Args:
 args = Args()
 
 
-def train():
+def train(vh=VisualHandlerBase()):
     torch.set_grad_enabled(True)
 
     params = Params(args.cf)
@@ -143,17 +144,23 @@ def train():
 
                 print(
                     (
-                        f"epoch: {epoch} | "
-                        f"loss: {L:>11.4f} | "
+                        f"Epoch: {epoch} | "
+                        f"Loss: {L:>11.4f} | "
                         f"NLL: {LOG_E_ll_sum:>11.4f} | "
                         f"KL: {LOG_E_kl_sum:>11.4f} | "
-                        f"elapsed: {s2dhms_str(time.perf_counter() - time_start)}"
+                        f"Elapsed: {s2dhms_str(time.perf_counter() - time_start)}"
                     )
                 )
 
                 LOG_Loss.append(L)
                 LOG_NLL.append(LOG_E_ll_sum)
                 LOG_KL.append(LOG_E_kl_sum)
+
+                vh.plot(L, LOG_E_ll_sum, LOG_E_kl_sum, epoch)
+                if not vh.is_running:
+                    vh.call_end()
+                    end_process()
+                    return
 
             if epoch % params.train.save_per_epoch == 0:
                 torch.save(cell.state_dict(), Path(weight_dir, f"{epoch}.pth"))
