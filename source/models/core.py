@@ -20,6 +20,7 @@ import torch.utils.data
 from torch import Tensor
 
 import mypython.ai.torchprob as tp
+import mypython.ai.torchprob.debug as tp_debug
 
 from .component import Decoder, Encoder, Pxhat, Transition, Velocity
 
@@ -183,16 +184,27 @@ class NewtonianVAEDerivationCell(NewtonianVAECellBase):
 
 
 # TODO:
-class NewtonianVAEJIACell:
-    pass
+class NewtonianVAEJIACell(NewtonianVAECellBase):
+    """
+    Suggester: https://github.com/ada526
+    Implementor: https://github.com/SatohKazuto
+    """
+
+    def __init__(
+        self,
+        dim_x: int,
+        transition_std: float,
+        regularization: bool,
+    ) -> None:
+        super().__init__(dim_x, transition_std, regularization)
 
     def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
 
         if self.training:
             v_t = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)
-
-        x_m1_t = 1
-        x_m2_t = 1
+            x_m1_t = self.q_encoder.cond(I_t).rsample()
+            x_m2_t = self.p_transition.cond(x_tn1, v_t, dt).rsample()
+            # x_t =
 
 
 NewtonianVAECellFamily = Union[NewtonianVAECell, NewtonianVAEDerivationCell]
@@ -287,8 +299,8 @@ class CollectTimeSeriesData:
             x_tn1, v_tn1 = x_t, v_t
 
             # DEBUG:
-            # print(f"time: {t}")
-            # tp_debug.check_dist_model(cell)
+            print(f"time: {t}")
+            tp_debug.check_dist_model(self.cell)
 
             if is_save:
                 self.LOG_x[t] = self.as_save(x_t)
