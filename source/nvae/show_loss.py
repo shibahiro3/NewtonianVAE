@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.gridspec import GridSpec
 
-import mypython.plot_config
 import mypython.plotutil as mpu
+import tool.plot_config
 import tool.util
 from tool import argset
 
@@ -22,7 +22,7 @@ class Args:
 
 args = Args()
 
-mypython.plot_config.apply()
+tool.plot_config.apply()
 
 
 def main():
@@ -36,27 +36,34 @@ def main():
 
     fig = plt.figure()
     gs = GridSpec(nrows=1, ncols=3)
-    axes = [
-        fig.add_subplot(gs[0, 0]),
-        fig.add_subplot(gs[0, 1]),
-        fig.add_subplot(gs[0, 2]),
-    ]
+
+    class Ax:
+        def __init__(self) -> None:
+            self.loss = fig.add_subplot(gs[0, 0])
+            self.nll = fig.add_subplot(gs[0, 1])
+            self.kl = fig.add_subplot(gs[0, 2])
+
+        def clear(self):
+            for ax in self.__dict__.values():
+                ax.clear()
+
+    axes = Ax()
 
     fig.suptitle("Minimize -ELBO = Loss = NLL (Negative log-likelihood) + KL")
 
-    ax = axes[0]
+    ax = axes.loss
     ax.plot(loss)
     # ax.set_title("Negative ELBO")
     ax.set_title("Loss")
 
-    ax = axes[1]
+    ax = axes.nll
     ax.plot(nll)
     # ax.set_title("Negative expected value \nof log-likelihood\n(decoder loss)")
     # ax.set_title("NLL (Negative log-likelihood)")
     ax.set_title("NLL")
     ax.set_xlabel("iterations")
 
-    ax = axes[2]
+    ax = axes.kl
     ax.plot(kl)
     # ax.set_title("KL divergence")
     ax.set_title("KL")

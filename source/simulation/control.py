@@ -8,12 +8,11 @@ import numpy as np
 import torch
 import torch.utils
 import torch.utils.data
-from matplotlib.axes import Axes
 from matplotlib.gridspec import GridSpec
 
-import mypython.plot_config
 import mypython.plotutil as mpu
 import mypython.vision as mv
+import tool.plot_config
 import tool.util
 from models.core import NewtonianVAECell, NewtonianVAEDerivationCell
 from models.pcontrol import PurePControl
@@ -29,6 +28,7 @@ argset.anim_mode(parser)
 argset.cf_simenv(parser)
 argset.cf_eval(parser)
 argset.path_model(parser)
+argset.path_result(parser)
 argset.goal_img(parser)
 argset.fix_xmap_size(parser)
 argset.alpha(parser)
@@ -41,6 +41,7 @@ class Args:
     cf_simenv = _args.cf_simenv
     cf_eval = _args.cf_eval
     path_model = _args.path_model
+    path_result = _args.path_result
     goal_img = _args.goal_img
     fix_xmap_size = _args.fix_xmap_size
     alpha = _args.alpha
@@ -48,7 +49,7 @@ class Args:
 
 args = Args()
 
-mypython.plot_config.apply()
+tool.plot_config.apply()
 
 
 def main():
@@ -63,7 +64,7 @@ def main():
 
     params = Params(Path(d, "params_bk.json5"))
     params_eval = ParamsEval(args.cf_eval)
-    params.train.max_time_length = 300
+    # params.train.max_time_length = 300
 
     torch_dtype: torch.dtype = getattr(torch, params_eval.dtype)
     np_dtype: np.dtype = getattr(np, params_eval.dtype)
@@ -75,12 +76,12 @@ def main():
         )
     device = torch.device(params_eval.device if torch.cuda.is_available() else "cpu")
 
-    if params.general.derivation:
-        cell = NewtonianVAEDerivationCell(
-            **params.newtonian_vae.kwargs, **params.newtonian_vae_derivation.kwargs
-        )
+    if params.model == "NewtonianVAECell":
+        cell = NewtonianVAECell(**params.raw_[params.model])
+    elif params.model == "NewtonianVAEDerivationCell":
+        cell = NewtonianVAEDerivationCell(**params.raw_[params.model])
     else:
-        cell = NewtonianVAECell(**params.newtonian_vae.kwargs)
+        assert False
 
     cell.load_state_dict(torch.load(weight_p))
     cell.train(params_eval.training)
@@ -100,11 +101,19 @@ def main():
     fig = plt.figure()
     gs = GridSpec(nrows=5, ncols=6)
     up = 2
-    axes: Dict[str, Axes] = {}
-    axes["action"] = fig.add_subplot(gs[:up, 0:2])
-    axes["observation"] = fig.add_subplot(gs[:up, 2:4])
-    axes["Igoal"] = fig.add_subplot(gs[:up, 4:6])
-    axes["x_map"] = fig.add_subplot(gs[up:5, :])
+
+    class Ax:
+        def __init__(self) -> None:
+            self.action = fig.add_subplot(gs[:up, 0:2])
+            self.observation = fig.add_subplot(gs[:up, 2:4])
+            self.Igoal = fig.add_subplot(gs[:up, 4:6])
+            self.x_map = fig.add_subplot(gs[up:5, :])
+
+        def clear(self):
+            for ax in self.__dict__.values():
+                ax.clear()
+
+    axes = Ax()
 
     class AnimPack:
         def __init__(self) -> None:
@@ -128,11 +137,11 @@ def main():
             # print(self.ctrl.x_goal)
             self.observation = env.reset()
             xp = np
-            self.LOG_x = xp.full(
-                (params.train.max_time_length, params.newtonian_vae.dim_x), xp.nan, dtype=np_dtype
-            )
+            self.LOG_x = xp.full((params.train.max_time_length, cell.dim_x), xp.nan, dtype=np_dtype)
 
         def anim_func(self, frame_cnt):
+            axes.clear()
+
             Prompt.print_one_line(
                 f"{frame_cnt+1:5d} / {all_steps} ({(frame_cnt+1)*100/all_steps:.1f} %)"
             )
@@ -144,7 +153,7 @@ def main():
 
             # ======================================================
             self.t += 1
-            color_action = tool.util.cmap_plt(params.newtonian_vae.dim_x, "prism")
+            color_action = tool.util.cmap_plt(cell.dim_x, "prism")
 
             if frame_cnt == -1:
                 self.episode_cnt = np.random.randint(0, args.episodes)
@@ -153,9 +162,6 @@ def main():
 
             if self.t == 0:
                 self.init()
-
-            for ax in axes.values():
-                ax.clear()
 
             fig.suptitle(
                 f"Init environment: {self.episode_cnt+1}, step: {self.t:3d}",
@@ -169,12 +175,12 @@ def main():
             self.LOG_x[self.t] = x_t
 
             # ===============================================================
-            ax = axes["action"]
+            ax = axes.action
             ax.set_title(r"$\mathbf{u}_{t-1}$ (Generated)")
             ax.set_aspect(aspect=0.7)
             ax.set_ylim(-1.2, 1.2)
             ax.bar(
-                range(params.newtonian_vae.dim_x),
+                range(cell.dim_x),
                 action.detach().squeeze(0).cpu(),
                 color=color_action,
                 width=0.5,
@@ -182,19 +188,19 @@ def main():
             ax.tick_params(bottom=False, labelbottom=False)
 
             # ===============================================================
-            ax = axes["observation"]
+            ax = axes.observation
             ax.set_title(r"$\mathbf{I}_t$")
             ax.imshow(mv.cnn2plt(obs2img(self.observation.detach().squeeze(0).cpu())))
             ax.set_axis_off()
 
             # ===============================================================
-            ax = axes["Igoal"]
+            ax = axes.Igoal
             ax.set_title(r"$\mathbf{I}_{goal}$")
             ax.imshow(mv.cnn2plt(Igoal.detach().squeeze(0).cpu()))
             ax.set_axis_off()
 
             # ===============================================================
-            ax = axes["x_map"]
+            ax = axes.x_map
             ax.set_title(r"mean of $\mathbf{x}_{1:t}, \; \alpha = $" f"${args.alpha}$")
             ax.set_xlim(-args.fix_xmap_size, args.fix_xmap_size)
             ax.set_ylim(-args.fix_xmap_size, args.fix_xmap_size)

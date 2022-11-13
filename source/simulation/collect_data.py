@@ -2,16 +2,14 @@ import argparse
 import shutil
 import sys
 from pathlib import Path
-from typing import Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.axes import Axes
 from matplotlib.gridspec import GridSpec
 
-import mypython.plot_config
 import mypython.plotutil as mpu
 import mypython.vision as mv
+import tool.plot_config
 import tool.util
 from env import ControlSuiteEnvWrap, obs2img
 from tool import argset
@@ -40,7 +38,7 @@ class Args:
 
 args = Args()
 
-mypython.plot_config.apply()
+tool.plot_config.apply()
 
 
 def env_test():
@@ -79,9 +77,16 @@ def env_test():
         fig.canvas.mpl_connect("close_event", on_close)
         gs = GridSpec(nrows=1, ncols=2)
 
-        axes: Dict[str, Axes] = {}
-        axes["action"] = fig.add_subplot(gs[0, 0])
-        axes["observation"] = fig.add_subplot(gs[0, 1])
+        class Ax:
+            def __init__(self) -> None:
+                self.action = fig.add_subplot(gs[0, 0])
+                self.observation = fig.add_subplot(gs[0, 1])
+
+            def clear(self):
+                for ax in self.__dict__.values():
+                    ax.clear()
+
+        axes = Ax()
 
     class AnimPack:
         def __init__(self) -> None:
@@ -116,16 +121,14 @@ def env_test():
                 env.render()
 
             elif args.watch == "plt":
-                for ax in axes.values():
-                    ax.clear()
+                axes.clear()
 
                 fig.suptitle(
                     f"episode: {self.episode_cnt+1}, step: {self.step:3d}",
                     fontname="monospace",
                 )
 
-                ax = axes["action"]
-                ax.clear()
+                ax = axes.action
                 ax.set_title("$\mathbf{u}_{t-1}$")
                 ax.set_ylim(-1.2, 1.2)
                 ax.bar(range(len(action)), action, color=color_action, width=0.5)
@@ -139,13 +142,10 @@ def env_test():
                 elif domain == "reacher":
                     ax.set_xticklabels(["$\mathbf{u}[0]$ : shoulder", "$\mathbf{u}[1]$ : wrist"])
 
-                ax = axes["observation"]
-                ax.clear()
+                ax = axes.observation
                 ax.set_title("$\mathbf{I}_t$")
                 ax.imshow(mv.cnn2plt(obs2img(observation.squeeze(0).cpu())))
 
-                # fig.canvas.draw()
-                # fig.canvas.flush_events()
                 fig.tight_layout()
 
             if done:
@@ -179,6 +179,4 @@ def env_test():
 
 
 if __name__ == "__main__":
-    # print(args.watch)
-    # print(args.save_anim)
     env_test()

@@ -9,13 +9,12 @@ import numpy as np
 import torch
 import torch.utils
 import torch.utils.data
-from matplotlib.axes import Axes
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
 
-import mypython.plot_config
 import mypython.plotutil as mpu
 import mypython.vision as mv
+import tool.plot_config
 import tool.util
 from models.core import (
     CollectTimeSeriesData,
@@ -49,7 +48,7 @@ class Args:
 
 args = Args()
 
-mypython.plot_config.apply()
+tool.plot_config.apply()
 
 
 def reconstruction():
@@ -104,19 +103,27 @@ def reconstruction():
     # =======
     fig = plt.figure()
     gs = GridSpec(nrows=5, ncols=6)
-    axes: Dict[str, Axes] = {}
-    axes["action"] = fig.add_subplot(gs[0, 0:2])
-    axes["observation"] = fig.add_subplot(gs[0, 2:4])
-    axes["reconstructed"] = fig.add_subplot(gs[0, 4:6])
-    axes["x_mean"] = fig.add_subplot(gs[1, :4])
-    axes["x_dims"] = fig.add_subplot(gs[1, 4])
-    axes["x_map"] = fig.add_subplot(gs[1, 5])
-    axes["v"] = fig.add_subplot(gs[2, :4])
-    axes["v_dims"] = fig.add_subplot(gs[2, 4])
-    axes["xhat_mean"] = fig.add_subplot(gs[3, :4])
-    axes["xhat_mean_dims"] = fig.add_subplot(gs[3, 4])
-    axes["xhat_std"] = fig.add_subplot(gs[4, :4])
-    axes["xhat_std_dims"] = fig.add_subplot(gs[4, 4])
+
+    class Ax:
+        def __init__(self) -> None:
+            self.action = fig.add_subplot(gs[0, 0:2])
+            self.observation = fig.add_subplot(gs[0, 2:4])
+            self.reconstructed = fig.add_subplot(gs[0, 4:6])
+            self.x_mean = fig.add_subplot(gs[1, :4])
+            self.x_dims = fig.add_subplot(gs[1, 4])
+            self.x_map = fig.add_subplot(gs[1, 5])
+            self.v = fig.add_subplot(gs[2, :4])
+            self.v_dims = fig.add_subplot(gs[2, 4])
+            self.xhat_mean = fig.add_subplot(gs[3, :4])
+            self.xhat_mean_dims = fig.add_subplot(gs[3, 4])
+            self.xhat_std = fig.add_subplot(gs[4, :4])
+            self.xhat_std_dims = fig.add_subplot(gs[4, 4])
+
+        def clear(self):
+            for ax in self.__dict__.values():
+                ax.clear()
+
+    axes = Ax()
 
     class AnimPack:
         def __init__(self) -> None:
@@ -168,6 +175,8 @@ def reconstruction():
                 self.min_xhat_std, self.max_xhat_std = _min_max(self.collector.LOG_xhat_std)
 
         def anim_func(self, frame_cnt):
+            axes.clear()
+
             Prompt.print_one_line(
                 f"{frame_cnt+1:5d} / {all_steps} ({(frame_cnt+1)*100/all_steps:.1f} %)"
             )
@@ -189,9 +198,6 @@ def reconstruction():
             if self.t == 0:
                 self.init()
 
-            for ax in axes.values():
-                ax.clear()
-
             fig.suptitle(
                 f"validational episode: {self.episode_cnt+1}, t = {self.t:3d}",
                 fontname="monospace",
@@ -200,7 +206,7 @@ def reconstruction():
             color_map = cm.get_cmap("rainbow")
 
             # ===============================================================
-            ax = axes["action"]
+            ax = axes.action
             ax.set_title(r"$\mathbf{u}_{t-1}$ (Original)")
             # ax.set_xlabel("$u_x$")
             # ax.set_ylabel("$u_y$")
@@ -217,19 +223,19 @@ def reconstruction():
             ax.tick_params(bottom=False, labelbottom=False)
 
             # ===============================================================
-            ax = axes["observation"]
+            ax = axes.observation
             ax.set_title(r"$\mathbf{I}_t$ (Original)")
             ax.imshow(mv.cnn2plt(obs2img(CollectTimeSeriesData.as_save(self.observation[self.t]))))
             ax.set_axis_off()
 
             # ===============================================================
-            ax = axes["reconstructed"]
+            ax = axes.reconstructed
             ax.set_title(r"$\mathbf{I}_t$ (Reconstructed)")
             ax.imshow(mv.cnn2plt(obs2img(self.collector.LOG_I_dec[self.t])))
             ax.set_axis_off()
 
             # ===============================================================
-            ax = axes["x_mean"]
+            ax = axes.x_mean
             N = cell.dim_x
             ax.set_title(r"mean of $\mathbf{x}_{1:t}$")
             ax.set_xlim(0, params.train.max_time_length)
@@ -244,7 +250,7 @@ def reconstruction():
                 )
 
             # ===============================================================
-            ax = axes["x_dims"]
+            ax = axes.x_dims
             N = cell.dim_x
             ax.set_title(r"mean of $\hat{\mathbf{x}}_{t}$  " f"(dim: {N})")
             ax.set_ylim(self.min_x_mean, self.max_x_mean)
@@ -258,7 +264,7 @@ def reconstruction():
             ax.tick_params(bottom=False, labelbottom=False)
 
             # ===============================================================
-            ax = axes["x_map"]
+            ax = axes.x_map
             ax.set_title(r"mean of $\mathbf{x}_{1:t}$")
             ax.set_xlim(self.min_x_mean_dims[0], self.max_x_mean_dims[0])
             ax.set_ylim(self.min_x_mean_dims[1], self.max_x_mean_dims[1])
@@ -282,7 +288,7 @@ def reconstruction():
             )
 
             # ===============================================================
-            ax = axes["v"]
+            ax = axes.v
             N = cell.dim_x
             ax.set_title(r"$\mathbf{v}_{1:t}$")
             ax.set_xlim(0, params.train.max_time_length)
@@ -297,7 +303,7 @@ def reconstruction():
                 )
 
             # ===============================================================
-            ax = axes["v_dims"]
+            ax = axes.v_dims
             N = cell.dim_x
             ax.set_title(r"$\mathbf{v}_t$  " f"(dim: {N})")
             ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
@@ -312,7 +318,7 @@ def reconstruction():
 
             if type(cell) == NewtonianVAEDerivationCell:
                 # ===============================================================
-                ax = axes["xhat_mean"]
+                ax = axes.xhat_mean
                 N = cell.dim_xhat
                 ax.set_title(r"mean of $\hat{\mathbf{x}}_{1:t}$")
                 ax.set_xlim(0, params.train.max_time_length)
@@ -327,7 +333,7 @@ def reconstruction():
                     )
 
                 # ===============================================================
-                ax = axes["xhat_mean_dims"]
+                ax = axes.xhat_mean_dims
                 N = cell.dim_xhat
                 ax.set_title(r"mean of $\hat{\mathbf{x}}_t$  " f"(dim: {N})")
                 ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
@@ -340,7 +346,7 @@ def reconstruction():
                 ax.tick_params(bottom=False, labelbottom=False)
 
                 # ===============================================================
-                ax = axes["xhat_std"]
+                ax = axes.xhat_std
                 N = cell.dim_xhat
                 ax.set_title(r"std of $\hat{\mathbf{x}}_{1:t}$")
                 ax.set_xlim(0, params.train.max_time_length)
@@ -355,7 +361,7 @@ def reconstruction():
                     )
 
                 # ===============================================================
-                ax = axes["xhat_std_dims"]
+                ax = axes.xhat_std_dims
                 N = cell.dim_xhat
                 ax.set_title(r"std of $\hat{\mathbf{x}}_t$  " f"(dim: {N})")
                 ax.set_ylim(self.min_xhat_std, self.max_xhat_std)

@@ -2,22 +2,19 @@ import argparse
 import shutil
 import sys
 from pathlib import Path
-from typing import Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from matplotlib.axes import Axes
 from matplotlib.gridspec import GridSpec
 
 import mypython.error as merror
-import mypython.plot_config
 import mypython.plotutil as mpu
 import mypython.vision as mv
+import tool.plot_config
 from simulation.env import obs2img
 from tool import argset
 from tool.dataloader import GetBatchData
-from tool.params import Params, ParamsSimEnv
 from tool.util import cmap_plt
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -37,7 +34,7 @@ args = parser.parse_args()
 if args.save_anim:
     assert args.output is not None
 
-mypython.plot_config.apply()
+tool.plot_config.apply()
 
 
 def main():
@@ -58,9 +55,16 @@ def main():
     fig = plt.figure()
     gs = GridSpec(nrows=1, ncols=2)
 
-    axes: Dict[str, Axes] = {}
-    axes["action"] = fig.add_subplot(gs[0, 0])
-    axes["observation"] = fig.add_subplot(gs[0, 1])
+    class Ax:
+        def __init__(self) -> None:
+            self.action = fig.add_subplot(gs[0, 0])
+            self.observation = fig.add_subplot(gs[0, 1])
+
+        def clear(self):
+            for ax in self.__dict__.values():
+                ax.clear()
+
+    axes = Ax()
 
     class AnimPack:
         def __init__(self) -> None:
@@ -68,6 +72,8 @@ def main():
             self.episode_cnt = 0
 
         def anim_func(self, frame_cnt):
+            axes.clear()
+
             mod = frame_cnt % T
             if mod == 0:
                 self.t = 0
@@ -75,16 +81,12 @@ def main():
             else:
                 self.t += 1
 
-            for ax in axes.values():
-                ax.clear()
-
             fig.suptitle(
                 f"episode (random): {self.episode_cnt+1}, t = {self.t:3d}, T = {T}",
                 fontname="monospace",
             )
 
-            ax = axes["action"]
-            ax.clear()
+            ax = axes.action
             ax.set_title("$\mathbf{u}_{t-1}$")
             l = 1.5
             ax.set_ylim(-l, l)
@@ -97,8 +99,7 @@ def main():
             # )
             # ax.set_xticklabels(["$\mathbf{u}[0]$ : shoulder", "$\mathbf{u}[1]$ : wrist"])
 
-            ax = axes["observation"]
-            ax.clear()
+            ax = axes.observation
             ax.set_title("$\mathbf{I}_t$")
             img = mv.cnn2plt(obs2img(observation[self.t, self.episode_cnt]))
             ax.imshow(img)
