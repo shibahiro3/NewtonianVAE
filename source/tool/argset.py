@@ -84,7 +84,7 @@ def path_model(
     required=True,
     type=str,
     metavar="DIR_PATH",
-    help="Directory paths for models managed by date and time",
+    help="Directory path for models managed by date and time",
     **kwargs,
 ):
     parser.add_argument("--path-model", **_kwargs(locals()), **kwargs)
@@ -117,7 +117,7 @@ def path_result(
     required=True,
     type=str,
     metavar="DIR_PATH",
-    help="Directory paths for result",
+    help="Directory path for result",
     **kwargs,
 ):
     parser.add_argument("--path-result", **_kwargs(locals()), **kwargs)

@@ -21,7 +21,7 @@ To see what kind of data you can get before saving an episode
 ```bash
 ./collect.sh [environment (directory name)] --watch plt (or render)
 ```
-By default, parameters can be adjusted by ```**/params_env.json5```.
+By default, parameters can be adjusted by ``**/params_env.json5``.
 
 If you want to save the data, please remove the --watch option.
 ```bash
@@ -32,7 +32,8 @@ If you want to save the data, please remove the --watch option.
 ```bash
 python train.py
 ```
-The reconstruction.py, described below, for example, requires a trained model to be loaded. If you want to run it immediately without learning it on your computer, please add the ```--path-model saves_trained/``` option.
+Model weights are saved per ``save_per_epoch``.
+The reconstruction.py, described below, for example, requires a trained model to be loaded via ``--path-model [Directory path for models managed by date and time]``. 
 
 ### Reconstruction
 Sequentially feed the trained model with $\mathbf{u}_{t-1}$ and $\mathbf{I}_t$ of the validation data to see how Reconstructed $\mathbf{I}_t$, etc., transitions.

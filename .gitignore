@@ -1,7 +1,7 @@
 venv/
 data*/
-saves/
-results/
+save*/
+result*/
 
 _*
 *_
