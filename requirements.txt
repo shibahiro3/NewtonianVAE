@@ -4,6 +4,7 @@ matplotlib==3.6.2
 dm-control==1.0.8
 json5==0.9.10
 tensorboard==2.11.0
+visdom==0.2.3
 
 opencv-python==4.6.0.66
 PyQt6==6.4.0
