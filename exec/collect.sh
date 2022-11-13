@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # This file is just a sample.
 # You can change the arguments according to your content.
 

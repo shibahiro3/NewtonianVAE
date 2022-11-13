@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 cd ../
 workspaceFolder=$(pwd)
 export PYTHONPATH="$workspaceFolder/source"
