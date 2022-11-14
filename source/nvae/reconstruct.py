@@ -14,7 +14,6 @@ from matplotlib.ticker import FormatStrFormatter
 
 import mypython.plotutil as mpu
 import mypython.vision as mv
-import tool.plot_config
 import tool.util
 from load_nvae import load_nvae
 from models.core import (
@@ -28,6 +27,14 @@ from simulation.env import obs2img
 from tool import argset, checker
 from tool.dataloader import GetBatchData
 from tool.params import Params, ParamsEval
+
+try:
+    import tool._plot_config
+
+    figsize = tool._plot_config.figsize_reconstruct
+except:
+    figsize = None
+
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.episodes(parser)
@@ -49,8 +56,6 @@ class Args:
 
 
 args = Args()
-
-tool.plot_config.apply()
 
 
 def reconstruction():
@@ -74,7 +79,8 @@ def reconstruction():
     action, observation = next(BatchData)
 
     # =======
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
+    mpu.get_figsize(fig)
     gs = GridSpec(nrows=5, ncols=6)
 
     class Ax:

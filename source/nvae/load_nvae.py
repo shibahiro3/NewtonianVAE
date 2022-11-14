@@ -6,7 +6,6 @@ import torch
 import torch.utils
 import torch.utils.data
 
-import tool.plot_config
 import tool.util
 from models.core import get_NewtonianVAECell
 from mypython.terminal import Prompt

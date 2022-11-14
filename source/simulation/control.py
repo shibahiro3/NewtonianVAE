@@ -12,7 +12,6 @@ from matplotlib.gridspec import GridSpec
 
 import mypython.plotutil as mpu
 import mypython.vision as mv
-import tool.plot_config
 import tool.util
 from models.core import (
     NewtonianVAECell,
@@ -26,6 +25,14 @@ from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img
 from tool import argset, checker
 from tool.params import Params, ParamsEval, ParamsSimEnv
 from tool.util import cmap_plt
+
+try:
+    import tool._plot_config
+
+    figsize = tool._plot_config.figsize_control
+except:
+    figsize = None
+
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.episodes(parser)
@@ -56,8 +63,6 @@ class Args:
 
 args = Args()
 
-tool.plot_config.apply()
-
 
 def main():
     if args.anim_mode == "save":
@@ -84,7 +89,8 @@ def main():
     Igoal = mv.cv2cnn(np.load(args.goal_img)).unsqueeze_(0).to(device)
 
     # ======
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
+    mpu.get_figsize(fig)
     gs = GridSpec(nrows=5, ncols=8)
     up = 2
 

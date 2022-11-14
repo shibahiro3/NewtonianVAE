@@ -7,9 +7,14 @@ import numpy as np
 from matplotlib.gridspec import GridSpec
 
 import mypython.plotutil as mpu
-import tool.plot_config
 import tool.util
 from tool import argset
+
+try:
+    import tool._plot_config
+except:
+    pass
+
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.path_model(parser)
@@ -22,8 +27,6 @@ class Args:
 
 args = Args()
 
-tool.plot_config.apply()
-
 
 def main():
     d = tool.util.select_date(args.path_model)
@@ -35,6 +38,7 @@ def main():
     kl = np.load(Path(d, "LOG_KL.npy"))
 
     fig = plt.figure()
+    mpu.get_figsize(fig)
     gs = GridSpec(nrows=1, ncols=3)
 
     class Ax:

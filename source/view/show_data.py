@@ -11,11 +11,18 @@ from matplotlib.gridspec import GridSpec
 import mypython.error as merror
 import mypython.plotutil as mpu
 import mypython.vision as mv
-import tool.plot_config
 from simulation.env import obs2img
 from tool import argset
 from tool.dataloader import GetBatchData
 from tool.util import cmap_plt
+
+try:
+    import tool._plot_config
+
+    figsize = tool._plot_config.figsize_show_loss
+except:
+    figsize = None
+
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.episodes(parser, required=False, default=10)
@@ -34,8 +41,6 @@ args = parser.parse_args()
 if args.save_anim:
     assert args.output is not None
 
-tool.plot_config.apply()
-
 
 def main():
     merror.check_dir(args.path_data)
@@ -53,6 +58,7 @@ def main():
     dim_a = action.shape[-1]
 
     fig = plt.figure()
+    mpu.get_figsize(fig)
     gs = GridSpec(nrows=1, ncols=2)
 
     class Ax:

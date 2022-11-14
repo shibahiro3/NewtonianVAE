@@ -9,11 +9,16 @@ from matplotlib.gridspec import GridSpec
 
 import mypython.plotutil as mpu
 import mypython.vision as mv
-import tool.plot_config
 import tool.util
 from env import ControlSuiteEnvWrap, obs2img
 from tool import argset, checker
 from tool.params import Params, ParamsSimEnv
+
+try:
+    import tool._plot_config
+except:
+    pass
+
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.watch(parser)
@@ -37,8 +42,6 @@ class Args:
 
 
 args = Args()
-
-tool.plot_config.apply()
 
 
 def env_test():
@@ -76,6 +79,7 @@ def env_test():
             sys.exit()
 
         fig = plt.figure()
+        mpu.get_figsize(fig)
         fig.canvas.mpl_connect("close_event", on_close)
         gs = GridSpec(nrows=1, ncols=2)
 

@@ -7,6 +7,14 @@ import torch
 from matplotlib.animation import FuncAnimation
 
 
+def get_figsize(fig):
+    def _callback(event):
+        w, h = plt.gcf().get_size_inches()
+        print(f"figsize=({w}, {h})")
+
+    fig.canvas.mpl_connect("resize_event", _callback)
+
+
 def anim_mode(mode: str, fig, anim_func, frames: int, freeze_cnt=0, interval=33, save_path=None):
     """
     Args:
