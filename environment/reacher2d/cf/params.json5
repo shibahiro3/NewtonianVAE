@@ -19,12 +19,16 @@
   },
 
   NewtonianVAEJIACell: {
-
+    dim_x: 2,
+    dim_px_cat_middle: 32,
+    transition_std: 0.25,
+    regularization: false,
   },
 
   train: {
     device: "cuda", // "cpu", "cuda"
     dtype: "float32", // "float16", "float32"
+    seed: null, // null or int
 
     /*
       Paper:
@@ -51,7 +55,7 @@
     */
     batch_size: 50,
 
-    grad_clip_norm: null, // Number type or null (None)
+    grad_clip_norm: null, // Number type or null
     learning_rate: 3e-4,
 
     epochs: 300,
@@ -59,8 +63,5 @@
 
     // 今のとこは reacher2d.max_episode_length 同じ値にする。
     max_time_length: 100,
-
-    // 保存しているモデルを読み込んで学習を再開できる
-    resume: false, // こいつはargparseのほうがええなぁ
   },
 }

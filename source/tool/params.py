@@ -9,6 +9,7 @@ class _Train:
         self,
         device: str,
         dtype: str,
+        seed: Union[None, int],
         data_start: int,
         data_stop: int,
         batch_size: int,
@@ -17,13 +18,13 @@ class _Train:
         learning_rate: Union[int, float],
         save_per_epoch: int,
         max_time_length: int,
-        resume,
     ) -> None:
         assert device in ("cpu", "cuda")
         assert dtype in ("float16", "float32")
 
         self.data_start = data_start
         self.data_stop = data_stop
+        self.seed = seed
         self.batch_size = batch_size
         self.epochs = epochs
         self.grad_clip_norm = grad_clip_norm
@@ -31,7 +32,6 @@ class _Train:
         self.save_per_epoch = save_per_epoch
         self.device = device
         self.dtype = dtype
-        self.resume = resume
         self.max_time_length = max_time_length
 
     @property

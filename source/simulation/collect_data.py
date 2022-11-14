@@ -12,7 +12,7 @@ import mypython.vision as mv
 import tool.plot_config
 import tool.util
 from env import ControlSuiteEnvWrap, obs2img
-from tool import argset
+from tool import argset, checker
 from tool.params import Params, ParamsSimEnv
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -42,6 +42,11 @@ tool.plot_config.apply()
 
 
 def env_test():
+    if args.save_anim and args.watch != "plt":
+        print("ignore --save-anim")
+
+    if args.save_anim and args.watch == "plt":
+        checker.large_episodes(args.episodes)
 
     params = Params(args.cf)
     params_env = ParamsSimEnv(args.cf_simenv)
@@ -51,9 +56,6 @@ def env_test():
     print("observation size:", env.observation_size)
     print("action size:", env.action_size)
     print("action range:", env.action_range)
-
-    if args.save_anim and args.watch != "plt":
-        print("ignore --save-anim")
 
     if args.watch is None:
         path_data = Path(args.path_data)

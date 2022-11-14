@@ -20,10 +20,10 @@ from models.core import (
     get_NewtonianVAECell,
 )
 from models.pcontrol import PurePControl
-from mypython.terminal import Prompt
+from mypython.terminal import Color, Prompt
 from nvae.load_nvae import load_nvae
 from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img
-from tool import argset
+from tool import argset, checker
 from tool.params import Params, ParamsEval, ParamsSimEnv
 from tool.util import cmap_plt
 
@@ -37,6 +37,7 @@ argset.path_result(parser)
 argset.goal_img(parser)
 argset.fix_xmap_size(parser)
 argset.alpha(parser)
+argset.steps(parser)
 _args = parser.parse_args()
 
 
@@ -50,6 +51,7 @@ class Args:
     goal_img = _args.goal_img
     fix_xmap_size = _args.fix_xmap_size
     alpha = _args.alpha
+    steps = _args.steps
 
 
 args = Args()
@@ -58,29 +60,40 @@ tool.plot_config.apply()
 
 
 def main():
+    if args.anim_mode == "save":
+        checker.large_episodes(args.episodes)
+
     torch.set_grad_enabled(False)
 
-    cell, d, weight_p, params, params_eval, dtype = load_nvae(args.path_model, args.cf_eval)
+    cell, d, weight_p, params, params_eval, dtype, device = load_nvae(args.path_model, args.cf_eval)
+    if weight_p is None:
+        return
 
     Path(args.path_result).mkdir(parents=True, exist_ok=True)
 
-    all_steps = params.train.max_time_length * args.episodes
+    if args.steps is not None:
+        max_time_length = args.steps
+    else:
+        max_time_length = params.train.max_time_length
+
+    all_steps = max_time_length * args.episodes
 
     params_env = ParamsSimEnv(args.cf_simenv)
     env = ControlSuiteEnvWrap(**params_env.kwargs)
 
-    Igoal = mv.cv2cnn(np.load(args.goal_img)).unsqueeze_(0)
+    Igoal = mv.cv2cnn(np.load(args.goal_img)).unsqueeze_(0).to(device)
 
     # ======
     fig = plt.figure()
-    gs = GridSpec(nrows=5, ncols=6)
+    gs = GridSpec(nrows=5, ncols=8)
     up = 2
 
     class Ax:
         def __init__(self) -> None:
             self.action = fig.add_subplot(gs[:up, 0:2])
-            self.observation = fig.add_subplot(gs[:up, 2:4])
-            self.Igoal = fig.add_subplot(gs[:up, 4:6])
+            self.Igoal = fig.add_subplot(gs[:up, 2:4])
+            self.observation = fig.add_subplot(gs[:up, 4:6])
+            self.obs_dec = fig.add_subplot(gs[:up, 6:8])
             self.x_map = fig.add_subplot(gs[up:5, :])
 
         def clear(self):
@@ -99,7 +112,7 @@ def main():
                 [
                     x[: self.t, i],
                     xp.full(
-                        (params.train.max_time_length - self.t,),
+                        (max_time_length - self.t,),
                         xp.nan,
                         dtype=x.dtype,
                     ),
@@ -109,10 +122,10 @@ def main():
         def init(self):
             self.ctrl = PurePControl(img2obs(Igoal), args.alpha, cell)
             # print(self.ctrl.x_goal)
-            self.observation = env.reset()
+            self.observation = env.reset().to(device)
             xp = np
             self.LOG_x = xp.full(
-                (params.train.max_time_length, cell.dim_x),
+                (max_time_length, cell.dim_x),
                 xp.nan,
                 dtype=torch.empty((), dtype=dtype).numpy().dtype,
             )
@@ -124,10 +137,10 @@ def main():
                 f"{frame_cnt+1:5d} / {all_steps} ({(frame_cnt+1)*100/all_steps:.1f} %)"
             )
 
-            mod = frame_cnt % params.train.max_time_length
+            mod = frame_cnt % max_time_length
             if mod == 0:
                 self.t = -1
-                self.episode_cnt = frame_cnt // params.train.max_time_length + mod
+                self.episode_cnt = frame_cnt // max_time_length + mod
 
             # ======================================================
             self.t += 1
@@ -135,7 +148,7 @@ def main():
 
             if frame_cnt == -1:
                 self.episode_cnt = np.random.randint(0, args.episodes)
-                self.t = params.train.max_time_length - 1
+                self.t = max_time_length - 1
                 self.init()
 
             if self.t == 0:
@@ -146,11 +159,21 @@ def main():
                 fontname="monospace",
             )
 
-            x_t = cell.q_encoder.cond(self.observation).rsample()
-            action = self.ctrl.get_action_from_x(x_t)
+            if self.t == 0:
+                I_t_dec = torch.full_like(self.observation, torch.nan)
+                x_t = cell.q_encoder.cond(self.observation).rsample()
+                action = self.ctrl.get_action_from_x(x_t)
+            else:
+                I_t_dec, x_t = cell.decode(self.observation, self.x_tn1, self.action_pre)
+                action = self.ctrl.get_action_from_x(x_t)
+
+            self.x_tn1 = x_t
+            self.action_pre = action
+
             # action = env.sample_random_action()
             self.observation, _, done, position = env.step(action)
-            self.LOG_x[self.t] = x_t
+            self.observation = self.observation.to(device)
+            self.LOG_x[self.t] = x_t.cpu()
 
             # ===============================================================
             ax = axes.action
@@ -167,8 +190,14 @@ def main():
 
             # ===============================================================
             ax = axes.observation
-            ax.set_title(r"$\mathbf{I}_t$")
+            ax.set_title(r"$\mathbf{I}_t$ (Env.)")
             ax.imshow(mv.cnn2plt(obs2img(self.observation.detach().squeeze(0).cpu())))
+            ax.set_axis_off()
+
+            # ===============================================================
+            ax = axes.obs_dec
+            ax.set_title(r"$\mathbf{I}_t$ (Recon.)")
+            ax.imshow(mv.cnn2plt(obs2img(I_t_dec.detach().squeeze(0).cpu())))
             ax.set_axis_off()
 
             # ===============================================================
@@ -202,8 +231,8 @@ def main():
                 label=r"$\mathbf{x}_{t}$",
             )
             ax.scatter(
-                self.ctrl.x_goal.squeeze(0)[0],
-                self.ctrl.x_goal.squeeze(0)[1],
+                self.ctrl.x_goal.squeeze(0)[0].cpu(),
+                self.ctrl.x_goal.squeeze(0)[1].cpu(),
                 marker="o",
                 s=20,
                 color="purple",

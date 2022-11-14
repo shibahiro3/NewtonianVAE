@@ -6,10 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from mypython.pyutil import Color
 
-
-def reproduce(seed=1234):
+def reproduce(seed: int = 1234):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)

@@ -22,7 +22,7 @@ from torch import Tensor
 import mypython.ai.torchprob as tp
 import mypython.ai.torchprob.debug as tp_debug
 
-from .component import Decoder, Encoder, Pxhat, Transition, Velocity
+from .component import Decoder, Encoder, Pxhat, PXmiddleCat, Transition, Velocity
 
 
 class NewtonianVAECellBase(nn.Module):
@@ -49,6 +49,15 @@ class NewtonianVAECellBase(nn.Module):
     @property
     def dim_x(self):
         return self._dim_x
+
+    def decode(
+        self, I_t: Tensor, x_tn1: Union[None, Tensor] = None, u_tn1: Union[None, Tensor] = None
+    ) -> Tuple[Tensor, Tensor]:
+        """
+        Returns:
+            I_t_dec, x_t
+        """
+        NotImplementedError()
 
 
 class NewtonianVAECell(NewtonianVAECellBase):
@@ -107,13 +116,14 @@ class NewtonianVAECell(NewtonianVAECellBase):
             # Paper:
             # During inference, vt is computed as
             # vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
-            x_t = self.q_encoder.cond(I_t).rsample()
+            I_t_dec, x_t = self.decode(I_t)
             v_t = (x_t - x_tn1) / dt
-
-            # for decode
-            self.p_decoder.cond(x_t)
-
             return 0, 0, 0, x_t, v_t
+
+    def decode(self, I_t: Tensor) -> Tuple[Tensor, Tensor]:
+        x_t = self.q_encoder.cond(I_t).rsample()
+        I_t_dec = self.p_decoder.cond(x_t).decode()
+        return I_t_dec, x_t
 
 
 class NewtonianVAEDerivationCell(NewtonianVAECellBase):
@@ -169,21 +179,22 @@ class NewtonianVAEDerivationCell(NewtonianVAECellBase):
             # Paper:
             # During inference, vt is computed as
             # vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
-            x_t = self.q_encoder.cond(I_t).rsample()
+            I_t_dec, x_t = self.decode(I_t, x_tn1, u_tn1)
             v_t = (x_t - x_tn1) / dt
-
-            # for decode
-            xhat_t = self.p_xhat.cond(x_tn1, u_tn1).rsample()
-            self.p_decoder.cond(xhat_t)
-
             return 0, 0, 0, x_t, v_t
 
     @property
     def dim_xhat(self):
         return self._dim_xhat
 
+    def decode(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor) -> Tuple[Tensor, Tensor]:
+        x_t = self.q_encoder.cond(I_t).rsample()
 
-# TODO:
+        xhat_t = self.p_xhat.cond(x_tn1, u_tn1).rsample()
+        I_t_dec = self.p_decoder.cond(xhat_t).decode()
+        return I_t_dec, x_t
+
+
 class NewtonianVAEJIACell(NewtonianVAECellBase):
     """
     Suggester: https://github.com/ada526
@@ -193,10 +204,17 @@ class NewtonianVAEJIACell(NewtonianVAECellBase):
     def __init__(
         self,
         dim_x: int,
+        dim_px_cat_middle: int,
         transition_std: float,
         regularization: bool,
     ) -> None:
         super().__init__(dim_x, transition_std, regularization)
+
+        # p(x_t | x_m1_t, x_m2_t)
+        self.p_cat = PXmiddleCat(dim_x, dim_px_cat_middle)
+
+        # p(I_t | x_t)
+        self.p_decoder = Decoder(dim_x)
 
     def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
 
@@ -204,10 +222,29 @@ class NewtonianVAEJIACell(NewtonianVAECellBase):
             v_t = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)
             x_m1_t = self.q_encoder.cond(I_t).rsample()
             x_m2_t = self.p_transition.cond(x_tn1, v_t, dt).rsample()
-            # x_t =
+            x_t = self.p_cat.cond(x_m1_t, x_m2_t).rsample()
+
+            E_ll = tp.log(self.p_decoder, I_t, x_t).sum(dim=(1, 2, 3)).mean(dim=0)
+            E_kl = tp.KLdiv(self.q_encoder, self.p_cat).sum(dim=1).mean(dim=0)
+            E = E_ll - E_kl
+
+            if self.regularization:
+                E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
+
+            return E, E_ll.detach(), E_kl.detach(), x_t, v_t
+
+        else:
+            I_t_dec, x_t = self.decode(I_t)
+            v_t = (x_t - x_tn1) / dt
+            return 0, 0, 0, x_t, v_t
+
+    def decode(self, I_t: Tensor) -> Tuple[Tensor, Tensor]:
+        x_t = self.q_encoder.cond(I_t).rsample()
+        I_t_dec = self.p_decoder.cond(x_t).decode()
+        return I_t_dec, x_t
 
 
-NewtonianVAECellFamily = Union[NewtonianVAECell, NewtonianVAEDerivationCell]
+NewtonianVAECellFamily = Union[NewtonianVAECell, NewtonianVAEDerivationCell, NewtonianVAEJIACell]
 
 
 def get_NewtonianVAECell(name, *args, **kwargs):
@@ -215,6 +252,8 @@ def get_NewtonianVAECell(name, *args, **kwargs):
         cell = NewtonianVAECell(*args, **kwargs)
     elif name == "NewtonianVAEDerivationCell":
         cell = NewtonianVAEDerivationCell(*args, **kwargs)
+    elif name == "NewtonianVAEJIACell":
+        cell = NewtonianVAEJIACell(*args, **kwargs)
     else:
         assert False
 
@@ -298,9 +337,9 @@ class CollectTimeSeriesData:
 
             x_tn1, v_tn1 = x_t, v_t
 
-            # DEBUG:
-            print(f"time: {t}")
-            tp_debug.check_dist_model(self.cell)
+            #### DEBUG:
+            # print(f"time: {t}")
+            # tp_debug.check_dist_model(self.cell)
 
             if is_save:
                 self.LOG_x[t] = self.as_save(x_t)

@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -10,7 +11,7 @@ import tool.util
 from models.core import get_NewtonianVAECell
 from mypython.terminal import Prompt
 from simulation.env import obs2img
-from tool import argset
+from tool import argset, checker
 from tool.dataloader import GetBatchData
 from tool.params import Params, ParamsEval
 
@@ -18,10 +19,10 @@ from tool.params import Params, ParamsEval
 def load_nvae(path_model, cf_eval):
     d = tool.util.select_date(path_model)
     if d is None:
-        return
+        sys.exit()
     weight_p = tool.util.select_weight(d)
     if weight_p is None:
-        return
+        sys.exit()
 
     params = Params(Path(d, "params_bk.json5"))
     params_eval = ParamsEval(cf_eval)
@@ -33,11 +34,7 @@ def load_nvae(path_model, cf_eval):
 
     dtype: torch.dtype = getattr(torch, params_eval.dtype)
 
-    if params_eval.device == "cuda" and not torch.cuda.is_available():
-        print(
-            "You have chosen cuda. But your environment does not support cuda, "
-            "so this program runs on cpu."
-        )
+    checker.cuda(params.train.device)
     device = torch.device(params_eval.device if torch.cuda.is_available() else "cpu")
 
     cell = get_NewtonianVAECell(params.model, **params.raw_[params.model])
@@ -47,4 +44,4 @@ def load_nvae(path_model, cf_eval):
     cell.type(dtype)
     cell.to(device)
 
-    return cell, d, weight_p, params, params_eval, dtype
+    return cell, d, weight_p, params, params_eval, dtype, device

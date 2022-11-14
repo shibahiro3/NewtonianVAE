@@ -28,9 +28,12 @@ class Bernoulli(Distribution):
 
     def cond(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Self:
         self._mu = self(*cond_vars, **cond_vars_k)
+
+        _check_mu = self._mu.nan_to_num()
         assert (
-            (0 <= self._mu).all() and (self._mu <= 1).all()
+            (0 <= _check_mu).all() and (_check_mu <= 1).all()
         ).item(), "μ should be 0 <= μ <= 1 (Bernoulli distribution)"
+
         self._cnt += 1 if self._cnt < 1024 else 0
         return self
 

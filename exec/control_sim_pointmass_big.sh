@@ -4,13 +4,15 @@ cd ../
 workspaceFolder=$(pwd)
 export PYTHONPATH="$workspaceFolder/source"
 
+env="pointmass_big"
+
 python source/simulation/control.py \
-	--cf-eval environment/pointmass_big/cf/params_eval.json5 \
-	--cf-simenv environment/pointmass_big/cf/params_env.json5 \
-	--path-model environment/pointmass_big/saves \
-	--path-result environment/$1/result \
-	--goal-img environment/pointmass_big/observation_imgs/obs_315.npy \
-	--episodes 5 \
+	--cf-eval environment/$env/cf/params_eval.json5 \
+	--cf-simenv environment/$env/cf/params_env.json5 \
+	--path-model environment/$env/saves \
+	--path-result environment/$env/results \
+	--goal-img environment/$env/observation_imgs/obs_315.npy \
+	--episodes 10 \
 	--alpha 0.5 \
 	--fix-xmap-size 300 \
 	$@

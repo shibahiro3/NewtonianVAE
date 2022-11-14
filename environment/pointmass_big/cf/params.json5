@@ -26,6 +26,5 @@
     epochs: 300,
     save_per_epoch: 50,
     max_time_length: 100,
-    resume: false,
   },
 }

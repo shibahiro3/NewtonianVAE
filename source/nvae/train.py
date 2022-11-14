@@ -18,8 +18,9 @@ from models.core import (
     NewtonianVAEDerivationCell,
     get_NewtonianVAECell,
 )
+from mypython.ai.torch_util import reproduce
 from mypython.pyutil import s2dhms_str
-from tool import argset
+from tool import argset, checker
 from tool.dataloader import GetBatchData
 from tool.params import Params
 from tool.visualhandlerbase import VisualHandlerBase
@@ -28,6 +29,7 @@ parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.cf(parser)
 argset.path_data(parser)
 argset.path_save(parser)
+argset.resume(parser)
 _args = parser.parse_args()
 
 
@@ -35,6 +37,7 @@ class Args:
     cf = _args.cf
     path_data = _args.path_data
     path_save = _args.path_save
+    resume = _args.resume
 
 
 args = Args()
@@ -44,8 +47,26 @@ def train(vh=VisualHandlerBase()):
     torch.set_grad_enabled(True)
 
     params = Params(args.cf)
+    print("params:")
     print(params)
     weight_dir = Path(args.path_save, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), "weight")
+    weight_dir.mkdir(parents=True, exist_ok=True)
+    bk = Path(weight_dir.parent, Path(args.cf).name)
+    shutil.copy(args.cf, bk)
+    bk_ = Path(weight_dir.parent, "params_bk.json5")
+    bk.rename(bk_)  # 3.7 以前はNoneが返る
+    bk_.chmod(0o444)  # read only
+
+    if params.train.seed is None:
+        seed = np.random.randint(0, 65535)
+        reproduce(seed)
+
+        seed_f = Path(weight_dir.parent, "seed.txt")
+        with seed_f.open("w") as f:
+            f.write(str(seed))
+        seed_f.chmod(0o444)
+    else:
+        reproduce(params.train.seed)
 
     # LOG_* は学習経過を見るための専用のバッファ　学習のための計算には一切使用しない
     LOG_Loss = []
@@ -63,16 +84,12 @@ def train(vh=VisualHandlerBase()):
 
     dtype: torch.dtype = getattr(torch, params.train.dtype)
 
-    if params.train.device == "cuda" and not torch.cuda.is_available():
-        print(
-            "You have chosen cuda. But your environment does not support cuda, "
-            "so this program runs on cpu."
-        )
+    checker.cuda(params.train.device)
     device = torch.device(params.train.device if torch.cuda.is_available() else "cpu")
 
     cell = get_NewtonianVAECell(params.model, **params.raw_[params.model])
 
-    if params.train.resume:
+    if args.resume:
         print('You chose "resume". Select a model to load.')
         d = tool.util.select_date(args.path_save)
         if d is None:
@@ -82,15 +99,13 @@ def train(vh=VisualHandlerBase()):
             return
         cell.load_state_dict(torch.load(weight_p))
 
+        resume_f = Path(weight_dir.parent, "resume_from.txt")
+        with resume_f.open("w") as f:
+            f.write(str(weight_p))
+        resume_f.chmod(0o444)
+
     cell.type(dtype)
     cell.to(device)
-
-    weight_dir.mkdir(parents=True, exist_ok=True)
-    bk = Path(weight_dir.parent, Path(args.cf).name)
-    shutil.copy(args.cf, bk)
-    bk_ = Path(weight_dir.parent, "params_bk.json5")
-    bk.rename(bk_)  # 3.7 以前はNoneが返る
-    bk_.chmod(0o444)  # read only
 
     collector = CollectTimeSeriesData(
         cell=cell,

@@ -32,7 +32,10 @@ class Normal(Distribution):
 
     def cond(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Self:
         self._mu, self._sigma = self(*cond_vars, **cond_vars_k)
-        assert (0 <= self._sigma).all().item(), "σ should be 0 <= σ (Normal distribution)"
+
+        _check_sigma = self._sigma.nan_to_num()
+        assert (0 <= _check_sigma).all().item(), "σ should be 0 <= σ (Normal distribution)"
+
         self._cnt += 1 if self._cnt < 1024 else 0
         return self
 

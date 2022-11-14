@@ -25,7 +25,7 @@ from models.core import (
 )
 from mypython.terminal import Prompt
 from simulation.env import obs2img
-from tool import argset
+from tool import argset, checker
 from tool.dataloader import GetBatchData
 from tool.params import Params, ParamsEval
 
@@ -54,9 +54,12 @@ tool.plot_config.apply()
 
 
 def reconstruction():
+    if args.anim_mode == "save":
+        checker.large_episodes(args.episodes)
+
     torch.set_grad_enabled(False)
 
-    cell, d, weight_p, params, params_eval, dtype = load_nvae(args.path_model, args.cf_eval)
+    cell, d, weight_p, params, params_eval, dtype, device = load_nvae(args.path_model, args.cf_eval)
 
     Path(args.path_result).mkdir(parents=True, exist_ok=True)
 

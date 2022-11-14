@@ -29,8 +29,8 @@ class ABCf(nn.Module):
         Returns:
             diag(A), diag(B), diag(C)
         """
-        abc = self.f(torch.cat([x_tn1, v_tn1, u_tn1], dim=1))
-        diagA, log_diagnB, log_diagC = torch.chunk(abc, 3, dim=1)
+        abc = self.f(torch.cat([x_tn1, v_tn1, u_tn1], dim=-1))
+        diagA, log_diagnB, log_diagC = torch.chunk(abc, 3, dim=-1)
         return diagA, -log_diagnB.exp(), log_diagC.exp()
 
 
@@ -139,7 +139,7 @@ class Pxhat(tp.Normal):
         self.std = nn.Linear(dim_middle, dim_xhat)
 
     def forward(self, x_tn1: Tensor, u_tn1: Tensor):
-        middle = torch.cat([x_tn1, u_tn1], dim=1)
+        middle = torch.cat([x_tn1, u_tn1], dim=-1)
         # Color.print(middle.shape)
         middle = self.fc(middle)
         mu = self.mean(middle)
@@ -200,3 +200,22 @@ class VisualDecoder64(nn.Module):
         x = self.activation(self.conv3(x))
         x = self.conv4(x)
         return x
+
+
+class PXmiddleCat(tp.Normal):
+    def __init__(self, dim_x: int, dim_middle: int) -> None:
+        super().__init__()
+
+        # Color.print(dim_x)
+        self.fc = nn.Linear(2 * dim_x, dim_middle)
+        self.mean = nn.Linear(dim_middle, dim_x)
+        self.std = nn.Linear(dim_middle, dim_x)
+
+    def forward(self, x_m1_t: Tensor, x_m2_t: Tensor):
+        middle = torch.cat([x_m1_t, x_m2_t], dim=-1)
+        # Color.print(middle.shape)
+        middle = self.fc(middle)
+        mu = self.mean(middle)
+        sigma = self.std(middle).exp()
+        # print(sigma)
+        return mu, sigma

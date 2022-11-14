@@ -12,6 +12,15 @@ def save_anim(
     parser.add_argument("-s", "--save-anim", **_kwargs(locals()), **kwargs)
 
 
+def resume(
+    parser: argparse.ArgumentParser,
+    action="store_true",
+    help="Load the model and resume learning",
+    **kwargs,
+):
+    parser.add_argument("--resume", **_kwargs(locals()), **kwargs)
+
+
 def anim_mode(
     parser: argparse.ArgumentParser,
     type=str,
@@ -64,6 +73,17 @@ def episodes(
     **kwargs,
 ):
     parser.add_argument("--episodes", **_kwargs(locals()), **kwargs)
+
+
+def steps(
+    parser: argparse.ArgumentParser,
+    required=False,
+    type=int,
+    metavar="E",
+    help="Time steps",
+    **kwargs,
+):
+    parser.add_argument("--steps", **_kwargs(locals()), **kwargs)
 
 
 def watch(

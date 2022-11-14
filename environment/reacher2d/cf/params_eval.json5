@@ -1,6 +1,6 @@
 {
   eval: {
-    device: "cpu",
+    device: "cuda",
     dtype: "float32",
 
     // Use data as validational episode data

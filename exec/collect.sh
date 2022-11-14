@@ -31,6 +31,6 @@ python source/simulation/collect_data.py \
 	--cf environment/$1/cf/params.json5 \
 	--cf-simenv environment/$1/cf/params_env.json5 \
 	--path-data environment/$1/data \
-	--path-result environment/$1/result \
+	--path-result environment/$1/results \
 	--episodes 1050 \
 	${@:2}
