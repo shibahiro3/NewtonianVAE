@@ -2,6 +2,7 @@ from pprint import pformat
 from typing import Union
 
 import json5
+from torch import NumberType
 
 
 class _Train:
@@ -9,15 +10,15 @@ class _Train:
         self,
         device: str,
         dtype: str,
-        seed: Union[None, int],
         data_start: int,
         data_stop: int,
         batch_size: int,
         epochs: int,
-        grad_clip_norm: Union[int, float, None],
-        learning_rate: Union[int, float],
+        grad_clip_norm: Union[None, NumberType],
+        learning_rate: NumberType,
         save_per_epoch: int,
         max_time_length: int,
+        seed: Union[None, int] = None,
     ) -> None:
         assert device in ("cpu", "cuda")
         assert dtype in ("float16", "float32")

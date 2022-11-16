@@ -36,7 +36,7 @@ def select_date(model_date_path) -> Optional[Path]:
 
     for i, e in enumerate(w_dirs, 1):
         l = len(list(e.glob(_weight)))
-        print(i, ":", e.name, f"({l})")
+        print(i, ":", e.name, f"({l})", Path(e, "params_bk.json5"))
 
     idx = _get_idx("Select date and time (or exit): ", len(w_dirs))
     if idx is None:
@@ -47,7 +47,7 @@ def select_date(model_date_path) -> Optional[Path]:
 
 def select_weight(path: Path) -> Optional[Path]:
     weight_p = list(path.glob(_weight))
-    weight_p.sort(key=lambda e: int(e.stem))  # weight_
+    weight_p.sort(key=lambda e: int(e.stem))
     if len(weight_p) == 0:
         Color.print("Weight doesn't exist.", c=Color.orange)
         return None

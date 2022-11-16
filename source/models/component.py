@@ -1,10 +1,13 @@
+from typing import Callable, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.utils
 import torch.utils.data
-from torch import Tensor
+from torch import NumberType, Tensor
 
 import mypython.ai.torchprob as tp
+from mypython.terminal import Color
 
 
 class ABCf(nn.Module):
@@ -19,7 +22,10 @@ class ABCf(nn.Module):
         log C    = diag(fC(xt, vt, ut))
     """
 
-    def __init__(self, dim_x: int) -> None:
+    def __init__(
+        self,
+        dim_x: int,
+    ) -> None:
         super().__init__()
 
         self.f = nn.Linear(3 * dim_x, 3 * dim_x)
@@ -35,10 +41,21 @@ class ABCf(nn.Module):
 
 
 class Velocity(nn.Module):
-    def __init__(self, dim_x: int) -> None:
+    def __init__(
+        self,
+        dim_x: int,
+        fix_abc: Union[None, Tuple[NumberType, NumberType, NumberType]] = None,
+    ) -> None:
         super().__init__()
 
+        if fix_abc is not None:
+            assert len(fix_abc) == 3
+            self.diagA = torch.tensor(fix_abc[0])
+            self.diagB = torch.tensor(fix_abc[1])
+            self.diagC = torch.tensor(fix_abc[2])
+
         self.f_abc = ABCf(dim_x)
+        self.fix_abc = fix_abc
 
     def forward(self, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
         """
@@ -46,14 +63,16 @@ class Velocity(nn.Module):
             A @ x == diag(A) * x
         """
 
-        diagA, diagB, diagC = self.f_abc(x_tn1, u_tn1, v_tn1)
-        # diagA, diagB が 1、すなわちxとvにかかっていたら、簡単にnanになる
-
-        # unbounded and full rank
-        # Firstly, the transition matrices were set to A = 0, B = 0, C = 1.
-        diagA = torch.tensor(0)
-        diagB = torch.tensor(0)
-        diagC = torch.tensor(1)
+        if self.fix_abc is None:
+            diagA, diagB, diagC = self.f_abc(x_tn1, u_tn1, v_tn1)
+            # diagA, diagB が 1、すなわちxとvにかかっていたら、簡単にnanになる
+        else:
+            # Paper:
+            #   unbounded and full rank
+            #   Firstly, the transition matrices were set to A = 0, B = 0, C = 1.
+            diagA = self.diagA
+            diagB = self.diagB
+            diagC = self.diagC
 
         # Color.print(diagA)
         # Color.print(diagB, c=Color.red)
@@ -90,18 +109,19 @@ class Encoder(tp.Normal):
         We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.
     """
 
-    def __init__(self, dim_x: int, dim_middle=512) -> None:
+    def __init__(self, dim_x: int, dim_middle: int, std_function: Callable) -> None:
         super().__init__()
 
         self.fc = VisualEncoder64(dim_output=dim_middle)
         self.mean = nn.Linear(dim_middle, dim_x)
         self.std = nn.Linear(dim_middle, dim_x)
         # self.std = torch.tensor(1)
+        self.std_function = std_function
 
     def forward(self, I_t: Tensor):
         middle = self.fc(I_t)
         mu = self.mean(middle)
-        sigma = torch.relu(self.std(middle))
+        sigma = self.std_function(self.std(middle))
         # std = self.std
         return mu, sigma
 
@@ -109,6 +129,10 @@ class Encoder(tp.Normal):
 class Decoder(tp.Normal):
     """
     p(I_t | x_t)
+
+    Paper:
+        We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.
+
       or
     p(I_t | xhat_t)
     """
@@ -130,20 +154,21 @@ class Pxhat(tp.Normal):
     paperに何の説明もない
     """
 
-    def __init__(self, dim_x: int, dim_xhat: int, dim_middle: int) -> None:
+    def __init__(self, dim_x: int, dim_xhat: int, dim_middle: int, std_function: Callable) -> None:
         super().__init__()
 
         # Color.print(dim_x)
         self.fc = nn.Linear(2 * dim_x, dim_middle)
         self.mean = nn.Linear(dim_middle, dim_xhat)
         self.std = nn.Linear(dim_middle, dim_xhat)
+        self.std_function = std_function
 
     def forward(self, x_tn1: Tensor, u_tn1: Tensor):
         middle = torch.cat([x_tn1, u_tn1], dim=-1)
         # Color.print(middle.shape)
         middle = self.fc(middle)
         mu = self.mean(middle)
-        sigma = self.std(middle).exp()
+        sigma = self.std_function(self.std(middle))
         return mu, sigma
 
 
@@ -203,19 +228,20 @@ class VisualDecoder64(nn.Module):
 
 
 class PXmiddleCat(tp.Normal):
-    def __init__(self, dim_x: int, dim_middle: int) -> None:
+    def __init__(self, dim_x: int, dim_middle: int, std_function: Callable) -> None:
         super().__init__()
 
         # Color.print(dim_x)
         self.fc = nn.Linear(2 * dim_x, dim_middle)
         self.mean = nn.Linear(dim_middle, dim_x)
         self.std = nn.Linear(dim_middle, dim_x)
+        self.std_function = std_function
 
     def forward(self, x_m1_t: Tensor, x_m2_t: Tensor):
         middle = torch.cat([x_m1_t, x_m2_t], dim=-1)
         # Color.print(middle.shape)
         middle = self.fc(middle)
         mu = self.mean(middle)
-        sigma = self.std(middle).exp()
+        sigma = self.std_function(self.std(middle))
         # print(sigma)
         return mu, sigma

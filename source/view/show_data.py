@@ -28,15 +28,18 @@ parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.episodes(parser, required=False, default=10)
 argset.path_data(parser)
 argset.save_anim(parser)
-parser.add_argument(
-    "-o",
-    "--output",
-    metavar="PATH",
-    type=str,
-    help="Path of the video to be saved (Extension is .mp4, etc.)",
-)
-args = parser.parse_args()
+argset.output(parser, help="Path of the video to be saved (Extension is .mp4, etc.)")
+_args = parser.parse_args()
 
+
+class Args:
+    episodes = _args.episodes
+    path_data = _args.path_data
+    save_anim = _args.save_anim
+    output = _args.output
+
+
+args = Args()
 
 if args.save_anim:
     assert args.output is not None
@@ -47,10 +50,10 @@ def main():
     max_episode = len([p for p in Path(args.path_data).glob("*") if p.is_dir()])
 
     BatchData = GetBatchData(
-        args.path_data,
-        0,
-        max_episode,
-        args.episodes,
+        path=args.path_data,
+        startN=0,
+        stopN=max_episode,
+        BS=args.episodes,
         dtype=torch.float32,
     )
     action, observation = next(BatchData)
@@ -88,7 +91,7 @@ def main():
                 self.t += 1
 
             fig.suptitle(
-                f"episode (random): {self.episode_cnt+1}, t = {self.t:3d}, T = {T}",
+                f"Sampled episode: {self.episode_cnt+1}, t = {self.t:3d}, T = {T}",
                 fontname="monospace",
             )
 

@@ -1,0 +1,13 @@
+{
+  eval: {
+    device: "cuda",
+    dtype: "float32",
+
+    // Use data as validational episode data
+    data_start: 1000,
+    data_stop: 1050,
+
+    // model.eval() == mode.train(False)
+    training: false,
+  },
+}

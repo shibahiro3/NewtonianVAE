@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.utils
 import torch.utils.data
-from torch import Tensor
+from torch import NumberType, Tensor
 from typing_extensions import Self
 
 from mypython.terminal import Color
@@ -15,7 +15,7 @@ from .base import Distribution, _to_optional_tensor
 class Bernoulli(Distribution):
     # torch.distributions.Bernoulli
 
-    def __init__(self, mu: Union[int, float, Tensor] = None) -> None:
+    def __init__(self, mu: Union[None, NumberType, Tensor] = None) -> None:
         super().__init__()
 
         self._mu = _to_optional_tensor(mu)

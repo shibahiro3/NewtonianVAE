@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.utils
 import torch.utils.data
-from torch import Tensor
+from torch import NumberType, Tensor
 from typing_extensions import Self
 
 from mypython.terminal import Color
@@ -16,7 +16,9 @@ class Normal(Distribution):
     # torch.distributions.Normal
 
     def __init__(
-        self, mu: Union[int, float, Tensor] = None, sigma: Union[int, float, Tensor] = None
+        self,
+        mu: Union[None, NumberType, Tensor] = None,
+        sigma: Union[None, NumberType, Tensor] = None,
     ) -> None:
         super().__init__()
 

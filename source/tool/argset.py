@@ -31,6 +31,15 @@ def anim_mode(
     parser.add_argument("-a", "--anim-mode", **_kwargs(locals()), **kwargs)
 
 
+def output(
+    parser: argparse.ArgumentParser,
+    metavar="PATH",
+    type=str,
+    **kwargs,
+):
+    parser.add_argument("-o", "--output", **_kwargs(locals()), **kwargs)
+
+
 def cf(
     parser: argparse.ArgumentParser,
     required=True,

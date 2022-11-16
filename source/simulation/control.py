@@ -169,12 +169,16 @@ def main():
                 I_t_dec = torch.full_like(self.observation, torch.nan)
                 x_t = cell.q_encoder.cond(self.observation).rsample()
                 action = self.ctrl.get_action_from_x(x_t)
+                v_t = torch.zeros_like(action)
             else:
-                I_t_dec, x_t = cell.decode(self.observation, self.x_tn1, self.action_pre)
+                I_t_dec, x_t, v_t = cell.decode(
+                    self.observation, self.x_tn1, self.action_pre, self.v_tn1, 0.1
+                )
                 action = self.ctrl.get_action_from_x(x_t)
 
             self.x_tn1 = x_t
             self.action_pre = action
+            self.v_tn1 = v_t
 
             # action = env.sample_random_action()
             self.observation, _, done, position = env.step(action)

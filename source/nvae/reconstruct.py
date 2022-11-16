@@ -81,22 +81,28 @@ def reconstruction():
     # =======
     fig = plt.figure(figsize=figsize)
     mpu.get_figsize(fig)
-    gs = GridSpec(nrows=5, ncols=6)
+    gs = GridSpec(nrows=6, ncols=6)
+
+    _up = 2
 
     class Ax:
         def __init__(self) -> None:
-            self.action = fig.add_subplot(gs[0, 0:2])
-            self.observation = fig.add_subplot(gs[0, 2:4])
-            self.reconstructed = fig.add_subplot(gs[0, 4:6])
-            self.x_mean = fig.add_subplot(gs[1, :4])
-            self.x_dims = fig.add_subplot(gs[1, 4])
-            self.x_map = fig.add_subplot(gs[1, 5])
-            self.v = fig.add_subplot(gs[2, :4])
-            self.v_dims = fig.add_subplot(gs[2, 4])
-            self.xhat_mean = fig.add_subplot(gs[3, :4])
-            self.xhat_mean_dims = fig.add_subplot(gs[3, 4])
-            self.xhat_std = fig.add_subplot(gs[4, :4])
-            self.xhat_std_dims = fig.add_subplot(gs[4, 4])
+            self.action = fig.add_subplot(gs[:_up, 0:2])
+            self.observation = fig.add_subplot(gs[:_up, 2:4])
+            self.reconstructed = fig.add_subplot(gs[:_up, 4:6])
+
+            self.x_mean = fig.add_subplot(gs[_up, :4])
+            self.x_dims = fig.add_subplot(gs[_up, 4])
+            self.x_map = fig.add_subplot(gs[_up, 5])
+
+            self.v = fig.add_subplot(gs[_up + 1, :4])
+            self.v_dims = fig.add_subplot(gs[_up + 1, 4])
+
+            self.xhat_mean = fig.add_subplot(gs[_up + 2, :4])
+            self.xhat_mean_dims = fig.add_subplot(gs[_up + 2, 4])
+
+            self.xhat_std = fig.add_subplot(gs[_up + 3, :4])
+            self.xhat_std_dims = fig.add_subplot(gs[_up + 3, 4])
 
         def clear(self):
             for ax in self.__dict__.values():

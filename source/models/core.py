@@ -10,14 +10,15 @@ TODO:
     to 1.0 between epochs 30 and 60.
 """
 
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.utils
 import torch.utils.data
-from torch import Tensor
+from torch import NumberType, Tensor
 
 import mypython.ai.torchprob as tp
 import mypython.ai.torchprob.debug as tp_debug
@@ -30,19 +31,26 @@ class NewtonianVAECellBase(nn.Module):
         self,
         dim_x: int,
         transition_std: float,
-        regularization: bool,
+        encoder_dim_middle: int,
+        encoder_std_function: str,
+        fix_abc: Union[None, Tuple[NumberType, NumberType, NumberType]] = None,
+        regularization: bool = False,
     ):
         super().__init__()
+
         self._dim_x = dim_x
 
         # v_t = v_{t-1} + Δt・(Ax_{t-1} + Bv_{t-1} + Cu_{t-1})
-        self.f_velocity = Velocity(dim_x)
+        self.f_velocity = Velocity(dim_x, fix_abc)
 
         # p(x_t | x_{t-1}, u_{t-1}; v_t)
         self.p_transition = Transition(transition_std)
 
         # q(x_t | I_t) (posterior)
-        self.q_encoder = Encoder(dim_x)
+        encoder_std_function = _find_function(encoder_std_function)
+        self.q_encoder = Encoder(
+            dim_x, dim_middle=encoder_dim_middle, std_function=encoder_std_function
+        )
 
         self.regularization = regularization
 
@@ -51,11 +59,18 @@ class NewtonianVAECellBase(nn.Module):
         return self._dim_x
 
     def decode(
-        self, I_t: Tensor, x_tn1: Union[None, Tensor] = None, u_tn1: Union[None, Tensor] = None
-    ) -> Tuple[Tensor, Tensor]:
+        self,
+        I_t: Tensor,
+        *args,
+        **kwargs,
+        # x_tn1: Union[None, Tensor] = None,
+        # u_tn1: Union[None, Tensor] = None,
+        # v_tn1: Union[None, Tensor] = None,
+        # dt: float = None,
+    ) -> Tuple[Tensor, Tensor, Optional[Tensor]]:
         """
         Returns:
-            I_t_dec, x_t
+            I_t_dec, x_t, v_t
         """
         NotImplementedError()
 
@@ -71,16 +86,11 @@ class NewtonianVAECell(NewtonianVAECellBase):
                [ log p(I_t | x_t) - KL(q(x_t | I_t)‖ p(x_t | x_{t-1}, u_{t-1}; v_{t-1})) ] ]
     """
 
-    def __init__(
-        self,
-        dim_x: int,
-        transition_std: float,
-        regularization: bool,
-    ) -> None:
-        super().__init__(dim_x, transition_std, regularization)
+    def __init__(self, dim_x, *args, **kwargs) -> None:
+        super().__init__(dim_x=dim_x, *args, **kwargs)
 
         # p(I_t | x_t)
-        self.p_decoder = Decoder(dim_x)
+        self.p_decoder = Decoder(dim_x=dim_x)
 
     def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
 
@@ -91,8 +101,8 @@ class NewtonianVAECell(NewtonianVAECellBase):
             self.p_transition.cond(x_tn1, v_t, dt)
 
             # FIXME: From which distribution should we sample?
-            x_t = self.q_encoder.rsample()
-            # x_t = self.p_transition.rsample()
+            # x_t = self.q_encoder.rsample()
+            x_t = self.p_transition.rsample()
 
             # *_t について、各次元(ピクセル)についてはsum, batch size については mean
             E_ll = tp.log(self.p_decoder, I_t, x_t).sum(dim=(1, 2, 3)).mean(dim=0)
@@ -116,14 +126,14 @@ class NewtonianVAECell(NewtonianVAECellBase):
             # Paper:
             # During inference, vt is computed as
             # vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
-            I_t_dec, x_t = self.decode(I_t)
+            I_t_dec, x_t, _ = self.decode(I_t)
             v_t = (x_t - x_tn1) / dt
             return 0, 0, 0, x_t, v_t
 
-    def decode(self, I_t: Tensor) -> Tuple[Tensor, Tensor]:
+    def decode(self, I_t: Tensor, *args, **kwargs) -> Tuple[Tensor, Tensor]:
         x_t = self.q_encoder.cond(I_t).rsample()
         I_t_dec = self.p_decoder.cond(x_t).decode()
-        return I_t_dec, x_t
+        return I_t_dec, x_t, None
 
 
 class NewtonianVAEDerivationCell(NewtonianVAECellBase):
@@ -136,17 +146,20 @@ class NewtonianVAEDerivationCell(NewtonianVAECellBase):
         dim_x: int,
         dim_xhat: int,
         dim_pxhat_middle: int,
-        transition_std: float,
-        regularization: bool,
+        pxhat_std_function: str,
+        *args,
+        **kwargs,
     ) -> None:
-        super().__init__(dim_x, transition_std, regularization)
+        super().__init__(dim_x=dim_x, *args, **kwargs)
+
         self._dim_xhat = dim_xhat
 
         # p(I_t | xhat_t)
-        self.p_decoder = Decoder(dim_xhat)
+        self.p_decoder = Decoder(dim_x=dim_xhat)
 
         # p(xhat_t | x_{t-1}, u_{t-1})
-        self.p_xhat = Pxhat(dim_x, dim_xhat, dim_pxhat_middle)
+        pxhat_std_function = _find_function(pxhat_std_function)
+        self.p_xhat = Pxhat(dim_x, dim_xhat, dim_pxhat_middle, std_function=pxhat_std_function)
 
     def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
 
@@ -179,7 +192,7 @@ class NewtonianVAEDerivationCell(NewtonianVAECellBase):
             # Paper:
             # During inference, vt is computed as
             # vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
-            I_t_dec, x_t = self.decode(I_t, x_tn1, u_tn1)
+            I_t_dec, x_t, _ = self.decode(I_t, x_tn1, u_tn1)
             v_t = (x_t - x_tn1) / dt
             return 0, 0, 0, x_t, v_t
 
@@ -187,12 +200,13 @@ class NewtonianVAEDerivationCell(NewtonianVAECellBase):
     def dim_xhat(self):
         return self._dim_xhat
 
-    def decode(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor) -> Tuple[Tensor, Tensor]:
+    def decode(
+        self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, *args, **kwargs
+    ) -> Tuple[Tensor, Tensor]:
         x_t = self.q_encoder.cond(I_t).rsample()
-
         xhat_t = self.p_xhat.cond(x_tn1, u_tn1).rsample()
         I_t_dec = self.p_decoder.cond(xhat_t).decode()
-        return I_t_dec, x_t
+        return I_t_dec, x_t, None
 
 
 class NewtonianVAEJIACell(NewtonianVAECellBase):
@@ -202,16 +216,13 @@ class NewtonianVAEJIACell(NewtonianVAECellBase):
     """
 
     def __init__(
-        self,
-        dim_x: int,
-        dim_px_cat_middle: int,
-        transition_std: float,
-        regularization: bool,
+        self, dim_x: int, dim_px_cat_middle: int, pxm_std_function: str, *args, **kwargs
     ) -> None:
-        super().__init__(dim_x, transition_std, regularization)
+        super().__init__(dim_x=dim_x, *args, **kwargs)
 
         # p(x_t | x_m1_t, x_m2_t)
-        self.p_cat = PXmiddleCat(dim_x, dim_px_cat_middle)
+        pxm_std_function = _find_function(pxm_std_function)
+        self.p_cat = PXmiddleCat(dim_x, dim_px_cat_middle, pxm_std_function)
 
         # p(I_t | x_t)
         self.p_decoder = Decoder(dim_x)
@@ -234,17 +245,26 @@ class NewtonianVAEJIACell(NewtonianVAECellBase):
             return E, E_ll.detach(), E_kl.detach(), x_t, v_t
 
         else:
-            I_t_dec, x_t = self.decode(I_t)
+            I_t_dec, x_t, v_t_ = self.decode(I_t, x_tn1, u_tn1, v_tn1, dt)
             v_t = (x_t - x_tn1) / dt
             return 0, 0, 0, x_t, v_t
 
-    def decode(self, I_t: Tensor) -> Tuple[Tensor, Tensor]:
-        x_t = self.q_encoder.cond(I_t).rsample()
+    def decode(
+        self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float
+    ) -> Tuple[Tensor, Tensor]:
+        v_t = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)  # ???
+        x_m1_t = self.q_encoder.cond(I_t).rsample()
+        x_m2_t = self.p_transition.cond(x_tn1, v_t, dt).rsample()
+        x_t = self.p_cat.cond(x_m1_t, x_m2_t).rsample()
         I_t_dec = self.p_decoder.cond(x_t).decode()
-        return I_t_dec, x_t
+        return I_t_dec, x_t, v_t
 
 
-NewtonianVAECellFamily = Union[NewtonianVAECell, NewtonianVAEDerivationCell, NewtonianVAEJIACell]
+NewtonianVAECellFamily = Union[
+    NewtonianVAECell,
+    NewtonianVAEDerivationCell,
+    NewtonianVAEJIACell,
+]
 
 
 def get_NewtonianVAECell(name, *args, **kwargs):
@@ -356,3 +376,10 @@ class CollectTimeSeriesData:
     def as_save(x: Tensor):
         assert x.shape[0] == 1
         return x.detach().squeeze(0).cpu().numpy()
+
+
+def _find_function(function_name: str):
+    try:
+        return getattr(torch, function_name)
+    except:
+        return getattr(F, function_name)

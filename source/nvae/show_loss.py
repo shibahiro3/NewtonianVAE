@@ -12,8 +12,10 @@ from tool import argset
 
 try:
     import tool._plot_config
+
+    figsize = tool._plot_config.figsize_show_loss
 except:
-    pass
+    figsize = None
 
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -37,7 +39,7 @@ def main():
     nll = np.load(Path(d, "LOG_NLL.npy"))
     kl = np.load(Path(d, "LOG_KL.npy"))
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
     mpu.get_figsize(fig)
     gs = GridSpec(nrows=1, ncols=3)
 

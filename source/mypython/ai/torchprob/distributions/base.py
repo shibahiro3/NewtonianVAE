@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.utils
 import torch.utils.data
-from torch import Tensor
+from torch import NumberType, Tensor
 from typing_extensions import Self
 
 from mypython.terminal import Color
@@ -49,7 +49,7 @@ class Distribution(nn.Module):
         raise NotImplementedError()
 
 
-def _to_optional_tensor(x: Union[None, int, float, Tensor]) -> Union[None, Tensor]:
+def _to_optional_tensor(x: Union[None, NumberType, Tensor]) -> Union[None, Tensor]:
     _type = type(x)
     if x is None:
         pass

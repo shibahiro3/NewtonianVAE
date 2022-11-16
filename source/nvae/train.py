@@ -18,7 +18,7 @@ from models.core import (
     NewtonianVAEDerivationCell,
     get_NewtonianVAECell,
 )
-from mypython.ai.torch_util import reproduce
+from mypython.ai.torch_util import print_module_params, reproduce
 from mypython.pyutil import s2dhms_str
 from tool import argset, checker
 from tool.dataloader import GetBatchData
@@ -58,17 +58,15 @@ def train(vh=VisualHandlerBase()):
     bk_.chmod(0o444)  # read only
 
     if params.train.seed is None:
-        seed = np.random.randint(0, 65535)
+        seed = np.random.randint(0, 2**16)
         reproduce(seed)
-
-        seed_f = Path(weight_dir.parent, "seed.txt")
-        with seed_f.open("w") as f:
-            f.write(str(seed))
-        seed_f.chmod(0o444)
+        save_to_file(Path(weight_dir.parent, "seed.txt"), str(seed))
     else:
         reproduce(params.train.seed)
 
-    # LOG_* は学習経過を見るための専用のバッファ　学習のための計算には一切使用しない
+    # LOG_* is a buffer for recording the learning process.
+    # It is not used for any calculations for learning.
+    # Of course, It has nothing to do with the log function.
     LOG_Loss = []
     LOG_NLL = []
     LOG_KL = []
@@ -88,6 +86,7 @@ def train(vh=VisualHandlerBase()):
     device = torch.device(params.train.device if torch.cuda.is_available() else "cpu")
 
     cell = get_NewtonianVAECell(params.model, **params.raw_[params.model])
+    # print_module_params(cell)
 
     if args.resume:
         print('You chose "resume". Select a model to load.')
@@ -98,11 +97,7 @@ def train(vh=VisualHandlerBase()):
         if weight_p is None:
             return
         cell.load_state_dict(torch.load(weight_p))
-
-        resume_f = Path(weight_dir.parent, "resume_from.txt")
-        with resume_f.open("w") as f:
-            f.write(str(weight_p))
-        resume_f.chmod(0o444)
+        save_to_file(Path(weight_dir.parent, "resume_from.txt"), str(weight_p))
 
     cell.type(dtype)
     cell.to(device)
@@ -138,6 +133,7 @@ def train(vh=VisualHandlerBase()):
                 L = -E_sum
                 optimiser.zero_grad()
                 L.backward()
+                # print_module_params(cell, True)
 
                 if params.train.grad_clip_norm is not None:
                     nn.utils.clip_grad_norm_(
@@ -180,6 +176,13 @@ def train(vh=VisualHandlerBase()):
         pass
 
     end_process()
+
+
+def save_to_file(path, text):
+    p = Path(path)
+    with p.open("w") as f:
+        f.write(text)
+    p.chmod(0o444)
 
 
 if __name__ == "__main__":
