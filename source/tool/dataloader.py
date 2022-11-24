@@ -8,79 +8,111 @@ from torch import Tensor
 from mypython.ai.util import BatchIdx
 
 
-class GetBatchData(BatchIdx):
+class DataLoader(BatchIdx):
+    """
+    Ref:
+        torch.utils.data.IterableDataset
+    """
+
     def __init__(
         self,
-        path: Union[str, Path],
-        startN: int,
-        stopN: int,
-        BS: int,
+        root: Union[str, Path],
+        start: int,
+        stop: int,
+        batch_size: int,
         dtype: torch.dtype,
         device=torch.device("cpu"),
     ):
         """
-        path: directory path of data
-            path
+        root: directory path of data
+            root
             ├── 0
             │   ├── action.npy
-            │   └── observation.npy
+            │   ├── observation.npy
+            │   ├── delta.npy
+            │   └── position.npy
             ├── 1
             │   ├── action.npy
-            │   └── observation.npy
+            │   ├── observation.npy
+            │   ├── delta.npy
+            │   └── position.npy
             ...
 
         """
 
-        super().__init__(startN, stopN, BS)
+        super().__init__(start, stop, batch_size)
 
-        self.path = path
+        self.root = root
         self.device = device
         self.dtype = dtype
 
     def __next__(self):
         """
         Returns:
-            action: (N, dim(a)), observation: (N, 3, H, W)
+            action: (N, dim(u)), observation: (N, 3, H, W), ...
         """
-        return _load(self.path, super().__next__(), "TN", dtype=self.dtype, device=self.device)
+        return _load(self.root, super().__next__(), dtype=self.dtype, device=self.device)
 
 
-def _load(path, indexes, mode, dtype, device=torch.device("cpu")):
+def _load(root, indexes, dtype, batch_first=False, device=torch.device("cpu")):
+    """"""
+
     """
-    NT : shape (N, T, *)
-    TN : (T, N, *)
+    if batch_first is True:
+        (N, T, *)
+    else:
+        (T, N, *)
     """
 
-    assert mode in ("NT", "TN")
+    class Pack:
+        def __init__(
+            self, action: Tensor, observation: Tensor, delta: Tensor, position: Tensor
+        ) -> None:
+            self.action = action
+            self.observation = observation
+            self.delta = delta
+            self.position = position
 
-    data_dir = path
+        def __getitem__(self, index):
+            return (self.action, self.observation, self.delta, self.position)[index]
+
+    data_dir = root
+
     data_action = []
     data_observation = []
+    data_dt = []
+    data_position = []
+
+    def _inner_load(i, name):
+        return torch.from_numpy(np.load(Path(data_dir, f"{i}", name))).to(dtype).to(device)
 
     for i in indexes:
-        action = (
-            torch.from_numpy(np.load(Path(data_dir, f"{i}", "action.npy"))).to(dtype).to(device)
-        )
-        observation = (
-            torch.from_numpy(np.load(Path(data_dir, f"{i}", "observation.npy")))
-            .to(dtype)
-            .to(device)
-        )
+        action = _inner_load(i, "action.npy")
+        observation = _inner_load(i, "observation.npy")
+        dt = _inner_load(i, "delta.npy")
+        position = _inner_load(i, "position.npy")
 
         data_action.append(action)
         data_observation.append(observation)
+        data_dt.append(dt)
+        data_position.append(position)
 
-    # NT
     data_action = torch.stack(data_action)
     data_observation = torch.stack(data_observation)
+    data_dt = torch.stack(data_dt).unsqueeze_(-1)
+    data_position = torch.stack(data_position)
 
-    if mode == "TN":
-        data_observation = _swapNT(data_observation)
-        data_action = _swapNT(data_action)
+    if not batch_first:
+        data_observation = _swap01(data_observation)
+        data_action = _swap01(data_action)
+        data_dt = _swap01(data_dt)
+        data_position = _swap01(data_position)
 
-    return data_action, data_observation
+    return Pack(
+        action=data_action, observation=data_observation, delta=data_dt, position=data_position
+    )
 
 
-def _swapNT(x: Tensor):
+def _swap01(x: Tensor):
     assert x.ndim >= 3
     return x.permute((1, 0) + tuple(range(2, x.ndim)))

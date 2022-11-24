@@ -2,9 +2,9 @@ import random
 
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch import nn
 
 
 def reproduce(seed: int = 1234):
@@ -24,3 +24,10 @@ def print_module_params(module: nn.Module, grad=False):
                 print(f"grad: \n{param.grad}\n")
             else:
                 print(f"grad: {param.grad}")  # None
+
+
+def _find_function(function_name: str):
+    try:
+        return getattr(torch, function_name)
+    except:
+        return getattr(F, function_name)

@@ -3,17 +3,23 @@
 # This file is just a sample.
 # You can change the arguments according to your content.
 
-# $1 = reacher2d, pointmass, pointmass_big, ...
+# reacher2d, pointmass, pointmass_big, ... 
+env=$1
+
 
 cd ../
 workspaceFolder=$(pwd)
 export PYTHONPATH="$workspaceFolder/source"
 
-python source/nvae/reconstruct.py \
-	--cf-eval environment/$1/cf/params_eval.json5 \
-	--path-model environment/$1/saves \
-	--path-data environment/$1/data \
-	--path-result environment/$1/results \
-	--episodes 10 \
+
+opts=(
+	--cf-eval environment/$env/cf/params_eval.json5
+	--path-model environment/$env/saves
+	--path-data environment/$env/data
+	--path-result environment/$env/results
+	--episodes 10
+	# --fix-xmap-size 20
 	${@:2}
-	# --path-model reacher2d/saves_trained \
+)
+
+python source/newtonianvae/reconstruct.py ${opts[@]}

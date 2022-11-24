@@ -5,7 +5,7 @@ Ref:
 """
 
 
-from typing import Tuple
+from typing import Tuple, Union
 
 import cv2
 import numpy as np
@@ -13,6 +13,8 @@ import torch
 from dm_control import suite
 from dm_control.suite.wrappers import pixels
 from torch import Tensor
+
+from mypython.terminal import Color
 
 GYM_ENVS = [
     "Pendulum-v0",
@@ -209,21 +211,26 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
         action_repeat: int,
         bit_depth: int,
         action_type: str,
+        position_wrap: Union[None, str] = None,
     ):
         super().__init__(env, False, seed, max_episode_length, action_repeat, bit_depth)
 
         domain, task = env.split("-")
         self.domain = domain
+
         if domain == "reacher":
-            if action_type == "random":
-                self.sample_random_action = super().sample_random_action
+            if action_type == "default":
+                # self.sample_random_action = super().sample_random_action
+                pass
 
             elif action_type == "paper":
+                # deprecated
                 self.sample_random_action = lambda: torch.tensor(
                     [0.5 + (np.random.rand() - 0.5), -np.pi + 0.3 + np.random.rand() * 0.5]
                 )
 
             elif action_type == "equal_paper":
+                # deprecated
                 self.sample_random_action = lambda: torch.tensor([np.random.rand(), -1])
 
             elif action_type == "handmade":
@@ -231,12 +238,22 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
                     [np.random.uniform(-0.3, 0.7), np.random.uniform(-0.2, 0.6)]
                 )
 
+            elif action_type == "handmade2":
+                self.sample_random_action = lambda: torch.tensor(
+                    [np.random.uniform(-0.7, 1), np.random.uniform(-0.8, 1)]
+                )
+
             else:
                 assert False
 
+            if position_wrap is not None:
+                if position_wrap == "endeffector":
+                    self.position_wrapper = reacher_default2endeffectorpos
+
         elif domain == "point_mass":
-            if action_type == "random":
+            if action_type == "default":
                 self.sample_random_action = super().sample_random_action
+
             elif action_type == "circle":
 
                 def f():
@@ -248,6 +265,9 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
                     return torch.tensor([x, y])
 
                 self.sample_random_action = f
+
+            else:
+                assert False
 
     def step(self, action: Tensor) -> Tuple[Tensor, float, bool, np.ndarray]:
         action = action.detach().cpu().numpy()
@@ -263,7 +283,9 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
                 break
 
         observation = _images_to_observation(self.adjust_camera(), self.bit_depth)
-        return observation, 0, done, state.observation["position"]
+        position = self.position_wrapper(state.observation["position"])
+        # print(position)
+        return observation, 0, done, position
 
     def adjust_camera(self):
         """左右の意味不明な星のあつまりみたいなのを消す"""
@@ -271,3 +293,22 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
         camimg = self._env.physics.render(camera_id=0)[:, s : s + 240, :]
         # print(camimg.shape)  # (240, 320, 3) -> (240, 240, 3)
         return camimg
+
+    @staticmethod
+    def position_wrapper(position):
+        return position
+
+
+def reacher_default2endeffectorpos(position):
+    """
+    Returns: target position (end effector)
+    """
+    arg = position[0]
+    wrist = 0.12 * roll_2d(arg)
+    arg += position[1]
+    target = 0.12 * roll_2d(arg)
+    return wrist + target
+
+
+def roll_2d(arg):
+    return np.array([np.cos(arg), np.sin(arg)])

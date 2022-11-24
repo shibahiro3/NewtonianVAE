@@ -5,6 +5,6 @@
     max_episode_length: 1000,
     action_repeat: 1,
     bit_depth: 8,
-    action_type: "circle", // "random", "circle"
+    action_type: "circle", // "default", "circle"
   },
 }

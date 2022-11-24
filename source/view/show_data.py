@@ -11,10 +11,10 @@ from matplotlib.gridspec import GridSpec
 import mypython.error as merror
 import mypython.plotutil as mpu
 import mypython.vision as mv
+from mypython.plotutil import cmap
 from simulation.env import obs2img
 from tool import argset
-from tool.dataloader import GetBatchData
-from tool.util import cmap_plt
+from tool.dataloader import DataLoader
 
 try:
     import tool._plot_config
@@ -49,23 +49,24 @@ def main():
     merror.check_dir(args.path_data)
     max_episode = len([p for p in Path(args.path_data).glob("*") if p.is_dir()])
 
-    BatchData = GetBatchData(
-        path=args.path_data,
-        startN=0,
-        stopN=max_episode,
-        BS=args.episodes,
+    dataloader = DataLoader(
+        root=args.path_data,
+        start=0,
+        stop=max_episode,
+        batch_size=args.episodes,
         dtype=torch.float32,
     )
-    action, observation = next(BatchData)
+    action, observation = next(dataloader)
+
     T = action.shape[0]
     dim_a = action.shape[-1]
 
     fig = plt.figure()
     mpu.get_figsize(fig)
-    gs = GridSpec(nrows=1, ncols=2)
 
     class Ax:
         def __init__(self) -> None:
+            gs = GridSpec(nrows=1, ncols=2)
             self.action = fig.add_subplot(gs[0, 0])
             self.observation = fig.add_subplot(gs[0, 1])
 
@@ -100,7 +101,7 @@ def main():
             l = 1.5
             ax.set_ylim(-l, l)
             a = action[self.t, self.episode_cnt]
-            ax.bar(range(dim_a), a, color=cmap_plt(dim_a, "prism"), width=0.5)
+            ax.bar(range(dim_a), a, color=cmap(dim_a, "prism"), width=0.5)
             ax.set_xticks(range(dim_a))
 
             # ax.set_xticklabels(

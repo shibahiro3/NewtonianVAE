@@ -2,7 +2,7 @@
 profile = "black"
 src_paths = [
     "source/models",
-    "source/nvae",
+    "source/newtonianvae",
 
     "source/simulation",
     "source/tool",

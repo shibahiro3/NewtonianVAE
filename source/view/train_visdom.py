@@ -1,7 +1,7 @@
 import numpy as np
 import visdom
 
-import nvae.train
+import newtonianvae.train
 from tool.visualhandlerbase import VisualHandlerBase
 
 
@@ -37,4 +37,4 @@ class VisualHandler(VisualHandlerBase):
 
 
 if __name__ == "__main__":
-    nvae.train.train(VisualHandler())
+    newtonianvae.train.train(VisualHandler())

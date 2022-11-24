@@ -1,6 +1,6 @@
 from torch.utils.tensorboard import SummaryWriter
 
-import nvae.train
+import newtonianvae.train
 from tool.visualhandlerbase import VisualHandlerBase
 
 
@@ -19,4 +19,4 @@ class VisualHandler(VisualHandlerBase):
 
 
 if __name__ == "__main__":
-    nvae.train.train(VisualHandler("log"))
+    newtonianvae.train.train(VisualHandler("log"))

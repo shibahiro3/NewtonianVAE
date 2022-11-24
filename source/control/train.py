@@ -7,19 +7,13 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.utils
-import torch.utils.data
 from torch import nn, optim
 
 import tool.util
-from models.core import (
-    CollectTimeSeriesData,
-    NewtonianVAECell,
-    NewtonianVAEDerivationCell,
-)
+from models.core import NewtonianVAECell, NewtonianVAEDerivationCell
 from mypython.pyutil import s2dhms_str
 from tool import argset
-from tool.dataloader import GetBatchData
+from tool.dataloader import DataLoader
 from tool.params import Params
 
 

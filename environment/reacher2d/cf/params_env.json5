@@ -5,6 +5,7 @@
     max_episode_length: 100,
     action_repeat: 1,
     bit_depth: 8,
-    action_type: "paper",
+    action_type: "handmade2",
+    // position_wrap: "endeffector",
   },
 }

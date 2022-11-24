@@ -1,10 +1,7 @@
 from typing import List, Optional, Tuple, Union
 
 import torch
-import torch.nn as nn
-import torch.utils
-import torch.utils.data
-from torch import NumberType, Tensor
+from torch import NumberType, Tensor, nn
 from typing_extensions import Self
 
 from mypython.terminal import Color

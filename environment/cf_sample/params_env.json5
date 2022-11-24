@@ -10,6 +10,6 @@
     action_repeat: 1,
     bit_depth: 8,
 
-    action_type: "handmade", // "random", "paper", "equal_paper", "handmade"
+    action_type: "handmade", // "default", "paper", "equal_paper", "handmade"
   },
 }

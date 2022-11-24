@@ -1,10 +1,7 @@
 from typing import List, Optional, Tuple, Union
 
 import torch
-import torch.nn as nn
-import torch.utils
-import torch.utils.data
-from torch import Tensor
+from torch import Tensor, nn
 
 # from .normal import Normal
 from torch.distributions.normal import Normal as torch_Normal

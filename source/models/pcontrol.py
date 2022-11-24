@@ -1,7 +1,6 @@
 from typing import Union
 
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 
 from .core import NewtonianVAECell, NewtonianVAECellFamily, NewtonianVAEDerivationCell
 
@@ -39,9 +38,13 @@ class PurePControl:
 
 
 class PControl(nn.Module):
-    """
-    Paper:
-        P(ut | xt) = N∑n=1 πn(xt) N(ut | Kn(xgoaln − xt), σ2n) (12)
+    r"""
+    Eq (12)
+
+    .. math::
+        \begin{array}{ll}
+            P(\u_t \mid \x_t) = \displaystyle \sum_{n=1}^N \pi_n(\x_t) \mathcal{N}(K_n(\x_{goal} - \x_t), \sigma^2)
+        \end{array}
     """
 
     def __init__(self) -> None:

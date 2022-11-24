@@ -3,7 +3,6 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-import matplotlib.cm as cm
 import numpy as np
 
 from mypython.terminal import Color
@@ -92,9 +91,12 @@ def _get_idx(text, len_list):
                 Color.print("Input integer or exit. again.", c=Color.red)
 
 
-def cmap_plt(N: int, name="rainbow", reverse=False):
-    color_map = cm.get_cmap(name)
-    if reverse:
-        return [color_map(i / N) for i in range(N)]
-    else:
-        return [color_map(1 - i / N) for i in range(N)]
+def backup(src_file, dst_dir, rename):
+    assert Path(src_file).is_file()
+    assert Path(dst_dir).is_dir()
+
+    shutil.copy(src_file, dst_dir)
+    bk = Path(dst_dir, Path(src_file).name)
+    bk_ = Path(dst_dir, rename)
+    bk.rename(bk_)  # 3.7 以前はNoneが返る
+    bk_.chmod(0o444)  # read only

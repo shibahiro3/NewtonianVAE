@@ -3,12 +3,19 @@
 # This file is just a sample.
 # You can change the arguments according to your content.
 
-# $1 = reacher2d, pointmass, pointmass_big, ...
+# reacher2d, pointmass, pointmass_big, ... 
+env=$1
+
 
 cd ../
 workspaceFolder=$(pwd)
 export PYTHONPATH="$workspaceFolder/source"
 
-python source/view/show_data.py \
-	--path-data environment/$1/data \
+
+opts=(
+	--path-data environment/$env/data
 	${@:2}
+)
+
+python source/view/show_data.py ${opts[@]}
+

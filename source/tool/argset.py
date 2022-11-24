@@ -174,6 +174,17 @@ def fix_xmap_size(
     parser.add_argument("--fix-xmap-size", **_kwargs(locals()), **kwargs)
 
 
+def position_size(
+    parser: argparse.ArgumentParser,
+    required=True,
+    type=float,
+    metavar="S",
+    help="position size",
+    **kwargs,
+):
+    parser.add_argument("--position-size", **_kwargs(locals()), **kwargs)
+
+
 def alpha(
     parser: argparse.ArgumentParser,
     required=True,

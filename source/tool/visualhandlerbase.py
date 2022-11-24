@@ -1,8 +1,14 @@
 class VisualHandlerBase:
     def __init__(self):
-        pass
+        self.title = ""
 
     def plot(self, *args, **kwargs) -> None:
+        pass
+
+    def wait_init(self):
+        pass
+
+    def call_end_init(self):
         pass
 
     def call_end(self) -> None:

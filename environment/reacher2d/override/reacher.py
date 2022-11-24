@@ -29,6 +29,8 @@ import numpy as np
 SUITE = containers.TaggedTasks()
 _DEFAULT_TIME_LIMIT = 20
 _BIG_TARGET = .05
+
+# Changed/added by Sugar
 # _SMALL_TARGET = .015
 _SMALL_TARGET = .02
 
@@ -63,8 +65,15 @@ class Physics(mujoco.Physics):
 
   def finger_to_target(self):
     """Returns the vector from target to finger in global coordinates."""
-    return (self.named.data.geom_xpos['target', :2] -
-            self.named.data.geom_xpos['finger', :2])
+
+    # Changed/added by Sugar
+    # Guarantee that the task will not be terminated
+    # True is original implementation
+    if False:
+        return (self.named.data.geom_xpos['target', :2] -
+                self.named.data.geom_xpos['finger', :2])
+    else:
+        return (np.array([0, 0.2]))
 
   def finger_to_target_dist(self):
     """Returns the signed distance between the finger and target surface."""
@@ -91,21 +100,52 @@ class Reacher(base.Task):
     """Sets the state of the environment at the start of each episode."""
     physics.named.model.geom_size['target', 0] = self._target_size
 
-    
-    # Fix init position
-    randomizers.randomize_limited_and_rotational_joints(physics, self.random)
-    # physics.named.data.qpos["shoulder"] = np.array([1])
-    # physics.named.data.qpos["wrist"] = np.array([2])
-    # print(physics.named.data.qpos)
+    # Changed/added by Sugar
+    # Initial arm position
+    # True is original implementation
+    if True:
+        randomizers.randomize_limited_and_rotational_joints(physics, self.random)
+    else:
+        # radian
+
+        # zero
+        physics.named.data.qpos["shoulder"] = np.array([0])
+        physics.named.data.qpos["wrist"] = np.array([0])
+
+        ### 160 [deg] == (8/9)π ≈ 2.79 [rad]
+
+        # red (target)
+        # physics.named.data.qpos["shoulder"] = np.array([(-7/9)*np.pi])
+        # physics.named.data.qpos["wrist"] = np.array([(3/9)*np.pi])
+
+        # green (target2)
+        # physics.named.data.qpos["shoulder"] = np.array([(-4/9)*np.pi])
+        # physics.named.data.qpos["wrist"] = np.array([(6/9)*np.pi])
+
+        # yellow (target3)
+        # physics.named.data.qpos["shoulder"] = np.array([(5/9)*np.pi])
+        # physics.named.data.qpos["wrist"] = np.array([(3/9)*np.pi])
+
+        # paper...?
+        # Here is the initialize process. 
+        # [0.0, 1.0) [rad] == [0.0, 57.29) [deg]
+        # physics.named.data.qpos["shoulder"] = 0.5 + (np.random.rand() - 0.5)
+        # [-2.84, -2.34) [rad] == [-162.72, -134.07) [deg]
+        # physics.named.data.qpos["wrist"] = -np.pi + 0.3 + np.random.rand() * 0.5
+
+        # print(physics.named.data.qpos)
 
 
-    # Randomize target position
-    angle = self.random.uniform(0, 2 * np.pi)
-    radius = self.random.uniform(.05, .20)
-    # physics.named.model.geom_pos['target', 'x'] = radius * np.sin(angle)
-    # physics.named.model.geom_pos['target', 'y'] = radius * np.cos(angle)
-    physics.named.model.geom_pos["target"] = np.array([-0.07, -0.18, 0])
-    physics.named.model.geom_size["target"] = np.array([0.02, 0, 0])
+    # Changed/added by Sugar
+    # Randomize target position (red ball)
+    # True is original implementation
+    if False:
+        angle = self.random.uniform(0, 2 * np.pi)
+        radius = self.random.uniform(.05, .20)
+        physics.named.model.geom_pos['target', 'x'] = radius * np.sin(angle)
+        physics.named.model.geom_pos['target', 'y'] = radius * np.cos(angle)
+    else:
+        physics.named.model.geom_pos["target"] = np.array([-0.07108755, -0.19531144, 0])
 
     super().initialize_episode(physics)
 

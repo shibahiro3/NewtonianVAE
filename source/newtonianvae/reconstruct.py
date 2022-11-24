@@ -3,29 +3,29 @@ import sys
 from pathlib import Path
 from typing import Dict
 
+import json5
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torch.utils
-import torch.utils.data
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
 
 import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
-from load_nvae import load_nvae
 from models.core import (
-    CollectTimeSeriesData,
     NewtonianVAECell,
     NewtonianVAEDerivationCell,
+    as_save,
     get_NewtonianVAECell,
 )
+from mypython.plotutil import cmap
 from mypython.terminal import Prompt
+from newtonianvae.load import load
 from simulation.env import obs2img
 from tool import argset, checker
-from tool.dataloader import GetBatchData
+from tool.dataloader import DataLoader
 from tool.params import Params, ParamsEval
 
 try:
@@ -43,6 +43,7 @@ argset.cf_eval(parser)
 argset.path_model(parser)
 argset.path_data(parser)
 argset.path_result(parser)
+argset.fix_xmap_size(parser, required=False)
 _args = parser.parse_args()
 
 
@@ -53,6 +54,7 @@ class Args:
     path_model = _args.path_model
     path_data = _args.path_data
     path_result = _args.path_result
+    fix_xmap_size = _args.fix_xmap_size
 
 
 args = Args()
@@ -64,45 +66,48 @@ def reconstruction():
 
     torch.set_grad_enabled(False)
 
-    cell, d, weight_p, params, params_eval, dtype, device = load_nvae(args.path_model, args.cf_eval)
+    model, d, weight_p, params, params_eval, dtype, device = load(args.path_model, args.cf_eval)
+    checker.is_same_data(args.path_data, weight_p.parent.parent)
 
     Path(args.path_result).mkdir(parents=True, exist_ok=True)
 
     all_steps = params.train.max_time_length * args.episodes
-    BatchData = GetBatchData(
-        path=args.path_data,
-        startN=params_eval.data_start,
-        stopN=params_eval.data_stop,
-        BS=args.episodes,
+
+    testloader = DataLoader(
+        root=Path(args.path_data, "episodes"),
+        start=params_eval.data_start,
+        stop=params_eval.data_stop,
+        batch_size=args.episodes,
         dtype=dtype,
+        device=device,
     )
-    action, observation = next(BatchData)
+    action, observation, delta, position = next(testloader)
 
     # =======
     fig = plt.figure(figsize=figsize)
     mpu.get_figsize(fig)
-    gs = GridSpec(nrows=6, ncols=6)
-
-    _up = 2
 
     class Ax:
         def __init__(self) -> None:
-            self.action = fig.add_subplot(gs[:_up, 0:2])
-            self.observation = fig.add_subplot(gs[:_up, 2:4])
-            self.reconstructed = fig.add_subplot(gs[:_up, 4:6])
+            gs = GridSpec(nrows=6, ncols=6)
+            up = 2
 
-            self.x_mean = fig.add_subplot(gs[_up, :4])
-            self.x_dims = fig.add_subplot(gs[_up, 4])
-            self.x_map = fig.add_subplot(gs[_up, 5])
+            self.action = fig.add_subplot(gs[:up, 0:2])
+            self.observation = fig.add_subplot(gs[:up, 2:4])
+            self.reconstructed = fig.add_subplot(gs[:up, 4:6])
 
-            self.v = fig.add_subplot(gs[_up + 1, :4])
-            self.v_dims = fig.add_subplot(gs[_up + 1, 4])
+            self.x_mean = fig.add_subplot(gs[up, :4])
+            self.x_dims = fig.add_subplot(gs[up, 4])
+            self.x_map = fig.add_subplot(gs[up, 5])
 
-            self.xhat_mean = fig.add_subplot(gs[_up + 2, :4])
-            self.xhat_mean_dims = fig.add_subplot(gs[_up + 2, 4])
+            self.v = fig.add_subplot(gs[up + 1, :4])
+            self.v_dims = fig.add_subplot(gs[up + 1, 4])
 
-            self.xhat_std = fig.add_subplot(gs[_up + 3, :4])
-            self.xhat_std_dims = fig.add_subplot(gs[_up + 3, 4])
+            self.xhat_mean = fig.add_subplot(gs[up + 2, :4])
+            self.xhat_mean_dims = fig.add_subplot(gs[up + 2, 4])
+
+            self.xhat_std = fig.add_subplot(gs[up + 3, :4])
+            self.xhat_std_dims = fig.add_subplot(gs[up + 3, 4])
 
         def clear(self):
             for ax in self.__dict__.values():
@@ -129,35 +134,30 @@ def reconstruction():
             )
 
         def init(self):
-            self.collector = CollectTimeSeriesData(
-                cell=cell,
-                T=params.train.max_time_length,
-                dtype=dtype,
-            )
+            self.model = model
+            self.model.is_save = True
 
-            self.action, self.observation = (
+            self.action, self.observation, self.delta = (
                 action[:, [self.episode_cnt]],
                 observation[:, [self.episode_cnt]],
+                delta[:, [self.episode_cnt]],
             )
-            self.collector.run(
-                action=self.action,
-                observation=self.observation,
-                device=params_eval.device,
-                is_save=True,
-            )
+            self.model(action=self.action, observation=self.observation, delta=self.delta)
 
             # ----------------
-            self.min_x_mean, self.max_x_mean = _min_max(self.collector.LOG_x_mean)
+            self.min_x_mean, self.max_x_mean = _min_max(self.model.LOG_x_mean)
 
-            self.min_x_mean_dims, self.max_x_mean_dims = _min_max(self.collector.LOG_x_mean, axis=0)
-            # l = 12
-            # self.min_x_mean_dims, self.max_x_mean_dims = np.array([[-l, -l], [l, l]])
+            if args.fix_xmap_size is None:
+                self.min_x_map, self.max_x_map = _min_max(self.model.LOG_x_mean, axis=0)
+            else:
+                l_ = args.fix_xmap_size
+                self.min_x_map, self.max_x_map = np.array([[-l_, -l_], [l_, l_]])
 
-            self.min_v, self.max_v = _min_max(self.collector.LOG_v)
+            self.min_v, self.max_v = _min_max(self.model.LOG_v)
 
-            if type(cell) == NewtonianVAEDerivationCell:
-                self.min_xhat_mean, self.max_xhat_mean = _min_max(self.collector.LOG_xhat_mean)
-                self.min_xhat_std, self.max_xhat_std = _min_max(self.collector.LOG_xhat_std)
+            if "xhat" in model.cell.info:
+                self.min_xhat_mean, self.max_xhat_mean = _min_max(self.model.LOG_xhat_mean)
+                self.min_xhat_std, self.max_xhat_std = _min_max(self.model.LOG_xhat_std)
 
         def anim_func(self, frame_cnt):
             axes.clear()
@@ -173,7 +173,7 @@ def reconstruction():
 
             # ======================================================
             self.t += 1
-            color_action = tool.util.cmap_plt(cell.dim_x, "prism")
+            color_action = cmap(model.cell.dim_x, "prism")
 
             if frame_cnt == -1:
                 self.episode_cnt = np.random.randint(0, args.episodes)
@@ -184,7 +184,7 @@ def reconstruction():
                 self.init()
 
             fig.suptitle(
-                f"validational episode: {self.episode_cnt+1}, t = {self.t:3d}",
+                f"Validational episode: {self.episode_cnt+1}, t = {self.t:3d}",
                 fontname="monospace",
             )
 
@@ -195,13 +195,13 @@ def reconstruction():
             ax.set_title(r"$\mathbf{u}_{t-1}$ (Original)")
             # ax.set_xlabel("$u_x$")
             # ax.set_ylabel("$u_y$")
-            ax.set_aspect(aspect=0.7)
+            ax.set_aspect(0.7)
             # ax.set_xlim(-1, 1)
             ax.set_ylim(-1.2, 1.2)
             # ax.arrow(0, 0, action[t, 0], action[t, 1], head_width=0.05)
             ax.bar(
-                range(cell.dim_x),
-                CollectTimeSeriesData.as_save(self.action[self.t]),
+                range(model.cell.dim_x),
+                as_save(self.action[self.t]),
                 color=color_action,
                 width=0.5,
             )
@@ -210,18 +210,18 @@ def reconstruction():
             # ===============================================================
             ax = axes.observation
             ax.set_title(r"$\mathbf{I}_t$ (Original)")
-            ax.imshow(mv.cnn2plt(obs2img(CollectTimeSeriesData.as_save(self.observation[self.t]))))
+            ax.imshow(mv.cnn2plt(obs2img(as_save(self.observation[self.t]))))
             ax.set_axis_off()
 
             # ===============================================================
             ax = axes.reconstructed
             ax.set_title(r"$\mathbf{I}_t$ (Reconstructed)")
-            ax.imshow(mv.cnn2plt(obs2img(self.collector.LOG_I_dec[self.t])))
+            ax.imshow(mv.cnn2plt(obs2img(self.model.LOG_I_dec[self.t])))
             ax.set_axis_off()
 
             # ===============================================================
             ax = axes.x_mean
-            N = cell.dim_x
+            N = model.cell.dim_x
             ax.set_title(r"mean of $\mathbf{x}_{1:t}$")
             ax.set_xlim(0, params.train.max_time_length)
             ax.set_ylim(self.min_x_mean, self.max_x_mean)
@@ -229,21 +229,21 @@ def reconstruction():
             for i in range(N):
                 ax.plot(
                     range(params.train.max_time_length),
-                    self._attach_nan(self.collector.LOG_x_mean, i),
+                    self._attach_nan(self.model.LOG_x_mean, i),
                     color=color_map(1 - i / N),
                     lw=1,
                 )
 
             # ===============================================================
             ax = axes.x_dims
-            N = cell.dim_x
+            N = model.cell.dim_x
             ax.set_title(r"mean of $\hat{\mathbf{x}}_{t}$  " f"(dim: {N})")
             ax.set_ylim(self.min_x_mean, self.max_x_mean)
             # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
             ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
             ax.bar(
                 range(N),
-                self.collector.LOG_x_mean[self.t],
+                self.model.LOG_x_mean[self.t],
                 color=[color_map(1 - i / N) for i in range(N)],
             )
             ax.tick_params(bottom=False, labelbottom=False)
@@ -251,22 +251,22 @@ def reconstruction():
             # ===============================================================
             ax = axes.x_map
             ax.set_title(r"mean of $\mathbf{x}_{1:t}$")
-            ax.set_xlim(self.min_x_mean_dims[0], self.max_x_mean_dims[0])
-            ax.set_ylim(self.min_x_mean_dims[1], self.max_x_mean_dims[1])
-            ax.set_aspect(aspect=1)
+            ax.set_xlim(self.min_x_map[0], self.max_x_map[0])
+            ax.set_ylim(self.min_x_map[1], self.max_x_map[1])
+            ax.set_aspect(1)
             # ax.set_xticks([self.min_x_mean, self.max_x_mean])
             # ax.set_yticks([self.min_x_mean, self.max_x_mean])
             # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
             # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
             ax.plot(
-                self._attach_nan(self.collector.LOG_x_mean, 0),
-                self._attach_nan(self.collector.LOG_x_mean, 1),
+                self._attach_nan(self.model.LOG_x_mean, 0),
+                self._attach_nan(self.model.LOG_x_mean, 1),
                 marker="o",
                 ms=2,
             )
             ax.plot(
-                self.collector.LOG_x_mean[self.t, 0],
-                self.collector.LOG_x_mean[self.t, 1],
+                self.model.LOG_x_mean[self.t, 0],
+                self.model.LOG_x_mean[self.t, 1],
                 marker="o",
                 ms=5,
                 color="red",
@@ -274,7 +274,7 @@ def reconstruction():
 
             # ===============================================================
             ax = axes.v
-            N = cell.dim_x
+            N = model.cell.dim_x
             ax.set_title(r"$\mathbf{v}_{1:t}$")
             ax.set_xlim(0, params.train.max_time_length)
             ax.set_ylim(self.min_v, self.max_v)
@@ -282,29 +282,29 @@ def reconstruction():
             for i in range(N):
                 ax.plot(
                     range(params.train.max_time_length),
-                    self._attach_nan(self.collector.LOG_v, i),
+                    self._attach_nan(self.model.LOG_v, i),
                     color=color_map(1 - i / N),
                     lw=1,
                 )
 
             # ===============================================================
             ax = axes.v_dims
-            N = cell.dim_x
+            N = model.cell.dim_x
             ax.set_title(r"$\mathbf{v}_t$  " f"(dim: {N})")
             ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
             # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
             ax.set_ylim(self.min_v, self.max_v)
             ax.bar(
                 range(N),
-                self.collector.LOG_v[self.t],
+                self.model.LOG_v[self.t],
                 color=[color_map(1 - i / N) for i in range(N)],
             )
             ax.tick_params(bottom=False, labelbottom=False)
 
-            if type(cell) == NewtonianVAEDerivationCell:
+            if "xhat" in model.cell.info:
                 # ===============================================================
                 ax = axes.xhat_mean
-                N = cell.dim_xhat
+                N = model.cell.dim_xhat
                 ax.set_title(r"mean of $\hat{\mathbf{x}}_{1:t}$")
                 ax.set_xlim(0, params.train.max_time_length)
                 ax.set_ylim(self.min_xhat_mean, self.max_xhat_mean)
@@ -312,27 +312,27 @@ def reconstruction():
                 for i in range(N):
                     ax.plot(
                         range(params.train.max_time_length),
-                        self._attach_nan(self.collector.LOG_xhat_mean, i),
+                        self._attach_nan(self.model.LOG_xhat_mean, i),
                         color=color_map(1 - i / N),
                         lw=1,
                     )
 
                 # ===============================================================
                 ax = axes.xhat_mean_dims
-                N = cell.dim_xhat
+                N = model.cell.dim_xhat
                 ax.set_title(r"mean of $\hat{\mathbf{x}}_t$  " f"(dim: {N})")
                 ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
                 ax.set_ylim(self.min_xhat_mean, self.max_xhat_mean)
                 ax.bar(
                     range(N),
-                    self.collector.LOG_xhat_mean[self.t],
+                    self.model.LOG_xhat_mean[self.t],
                     color=[color_map(1 - i / N) for i in range(N)],
                 )
                 ax.tick_params(bottom=False, labelbottom=False)
 
                 # ===============================================================
                 ax = axes.xhat_std
-                N = cell.dim_xhat
+                N = model.cell.dim_xhat
                 ax.set_title(r"std of $\hat{\mathbf{x}}_{1:t}$")
                 ax.set_xlim(0, params.train.max_time_length)
                 ax.set_ylim(self.min_xhat_std, self.max_xhat_std)
@@ -340,20 +340,20 @@ def reconstruction():
                 for i in range(N):
                     ax.plot(
                         range(params.train.max_time_length),
-                        self._attach_nan(self.collector.LOG_xhat_std, i),
+                        self._attach_nan(self.model.LOG_xhat_std, i),
                         color=color_map(1 - i / N),
                         lw=1,
                     )
 
                 # ===============================================================
                 ax = axes.xhat_std_dims
-                N = cell.dim_xhat
+                N = model.cell.dim_xhat
                 ax.set_title(r"std of $\hat{\mathbf{x}}_t$  " f"(dim: {N})")
                 ax.set_ylim(self.min_xhat_std, self.max_xhat_std)
                 ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
                 ax.bar(
                     range(N),
-                    self.collector.LOG_xhat_std[self.t],
+                    self.model.LOG_xhat_std[self.t],
                     color=[color_map(1 - i / N) for i in range(N)],
                 )
                 ax.tick_params(bottom=False, labelbottom=False)

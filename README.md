@@ -1,14 +1,15 @@
 # Scratch of NewtonianVAE
 
 Paper:
-- Original: https://arxiv.org/abs/2006.01959
-- TS-NVAE: https://arxiv.org/abs/2203.05955
+* Original: https://arxiv.org/abs/2006.01959
+* TS-NVAE: https://arxiv.org/abs/2203.05955
 
 Referenced implementation
-- VRNN: https://github.com/emited/VariationalRecurrentNeuralNetwork
-- World Models: https://github.com/ctallec/world-models
-- PlaNet (RSSM): https://github.com/Kaixhin/PlaNet
+* VRNN: https://github.com/emited/VariationalRecurrentNeuralNetwork
+* World Models: https://github.com/ctallec/world-models
+* PlaNet (RSSM): https://github.com/Kaixhin/PlaNet
 
+You can view the document from [index.html](docs/generated/index.html).
 
 ## Prerequisites
 Install the necessary packages.

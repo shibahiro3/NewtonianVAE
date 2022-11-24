@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>simulation package &mdash; Scratch of NewtonianVAE  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Scratch of NewtonianVAE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">simulation package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#simulation-collect-data-module">simulation.collect_data module</a></li>
+<li><a class="reference internal" href="#simulation-control-module">simulation.control module</a></li>
+<li><a class="reference internal" href="#module-simulation.env">simulation.env module</a><ul>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnv"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnv</span></code></a><ul>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnv.action_range"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnv.action_range</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnv.action_size"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnv.action_size</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnv.adjust_camera"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnv.adjust_camera()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnv.close"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnv.close()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnv.observation_size"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnv.observation_size</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnv.render"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnv.render()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnv.reset"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnv.reset()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnv.sample_random_action"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnv.sample_random_action()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnv.step"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnv.step()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnv.zeros_action"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnv.zeros_action()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnvWrap"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnvWrap</span></code></a><ul>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnvWrap.adjust_camera"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnvWrap.adjust_camera()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnvWrap.position_wrapper"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnvWrap.position_wrapper()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.ControlSuiteEnvWrap.step"><code class="docutils literal notranslate"><span class="pre">ControlSuiteEnvWrap.step()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#simulation.env.img2obs"><code class="docutils literal notranslate"><span class="pre">img2obs()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.obs2img"><code class="docutils literal notranslate"><span class="pre">obs2img()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.postprocess_observation"><code class="docutils literal notranslate"><span class="pre">postprocess_observation()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.preprocess_observation_"><code class="docutils literal notranslate"><span class="pre">preprocess_observation_()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.reacher_default2endeffectorpos"><code class="docutils literal notranslate"><span class="pre">reacher_default2endeffectorpos()</span></code></a></li>
+<li><a class="reference internal" href="#simulation.env.roll_2d"><code class="docutils literal notranslate"><span class="pre">roll_2d()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#simulation-override-module">simulation.override module</a></li>
+<li><a class="reference internal" href="#module-simulation">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Scratch of NewtonianVAE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">simulation package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/simulation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="simulation-package">
+<h1>simulation package<a class="headerlink" href="#simulation-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="simulation-collect-data-module">
+<h2>simulation.collect_data module<a class="headerlink" href="#simulation-collect-data-module" title="Permalink to this heading"></a></h2>
+</section>
+<section id="simulation-control-module">
+<h2>simulation.control module<a class="headerlink" href="#simulation-control-module" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-simulation.env">
+<span id="simulation-env-module"></span><h2>simulation.env module<a class="headerlink" href="#module-simulation.env" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>Ref:</dt><dd><p><a class="reference external" href="https://github.com/Kaixhin/PlaNet/blob/master/env.py">https://github.com/Kaixhin/PlaNet/blob/master/env.py</a>
+<a class="reference external" href="https://github.com/deepmind/dm_control">https://github.com/deepmind/dm_control</a></p>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnv">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simulation.env.</span></span><span class="sig-name descname"><span class="pre">ControlSuiteEnv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symbolic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_episode_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_repeat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bit_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.ControlSuiteEnv" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnv.action_range">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">action_range</span></span><a class="headerlink" href="#simulation.env.ControlSuiteEnv.action_range" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnv.action_size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">action_size</span></span><a class="headerlink" href="#simulation.env.ControlSuiteEnv.action_size" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnv.adjust_camera">
+<span class="sig-name descname"><span class="pre">adjust_camera</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.ControlSuiteEnv.adjust_camera" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnv.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.ControlSuiteEnv.close" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnv.observation_size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">observation_size</span></span><a class="headerlink" href="#simulation.env.ControlSuiteEnv.observation_size" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnv.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.ControlSuiteEnv.render" title="Permalink to this definition"></a></dt>
+<dd><p>綺麗なまま表示する</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnv.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#simulation.env.ControlSuiteEnv.reset" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnv.sample_random_action">
+<span class="sig-name descname"><span class="pre">sample_random_action</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#simulation.env.ControlSuiteEnv.sample_random_action" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnv.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#simulation.env.ControlSuiteEnv.step" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnv.zeros_action">
+<span class="sig-name descname"><span class="pre">zeros_action</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#simulation.env.ControlSuiteEnv.zeros_action" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnvWrap">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simulation.env.</span></span><span class="sig-name descname"><span class="pre">ControlSuiteEnvWrap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_episode_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_repeat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bit_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position_wrap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.ControlSuiteEnvWrap" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#simulation.env.ControlSuiteEnv" title="simulation.env.ControlSuiteEnv"><code class="xref py py-class docutils literal notranslate"><span class="pre">ControlSuiteEnv</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnvWrap.adjust_camera">
+<span class="sig-name descname"><span class="pre">adjust_camera</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.ControlSuiteEnvWrap.adjust_camera" title="Permalink to this definition"></a></dt>
+<dd><p>左右の意味不明な星のあつまりみたいなのを消す</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnvWrap.position_wrapper">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">position_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.ControlSuiteEnvWrap.position_wrapper" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simulation.env.ControlSuiteEnvWrap.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#simulation.env.ControlSuiteEnvWrap.step" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simulation.env.img2obs">
+<span class="sig-prename descclassname"><span class="pre">simulation.env.</span></span><span class="sig-name descname"><span class="pre">img2obs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.img2obs" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simulation.env.obs2img">
+<span class="sig-prename descclassname"><span class="pre">simulation.env.</span></span><span class="sig-name descname"><span class="pre">obs2img</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.obs2img" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simulation.env.postprocess_observation">
+<span class="sig-prename descclassname"><span class="pre">simulation.env.</span></span><span class="sig-name descname"><span class="pre">postprocess_observation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bit_depth</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.postprocess_observation" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simulation.env.preprocess_observation_">
+<span class="sig-prename descclassname"><span class="pre">simulation.env.</span></span><span class="sig-name descname"><span class="pre">preprocess_observation_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bit_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#simulation.env.preprocess_observation_" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simulation.env.reacher_default2endeffectorpos">
+<span class="sig-prename descclassname"><span class="pre">simulation.env.</span></span><span class="sig-name descname"><span class="pre">reacher_default2endeffectorpos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.reacher_default2endeffectorpos" title="Permalink to this definition"></a></dt>
+<dd><p>Returns: target position (end effector)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="simulation.env.roll_2d">
+<span class="sig-prename descclassname"><span class="pre">simulation.env.</span></span><span class="sig-name descname"><span class="pre">roll_2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.roll_2d" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="simulation-override-module">
+<h2>simulation.override module<a class="headerlink" href="#simulation-override-module" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-simulation">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-simulation" title="Permalink to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Sugar.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

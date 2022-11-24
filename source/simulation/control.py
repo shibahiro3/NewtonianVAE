@@ -6,8 +6,6 @@ from typing import Dict
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torch.utils
-import torch.utils.data
 from matplotlib.gridspec import GridSpec
 
 import mypython.plotutil as mpu
@@ -19,12 +17,12 @@ from models.core import (
     get_NewtonianVAECell,
 )
 from models.pcontrol import PurePControl
+from mypython.plotutil import cmap
 from mypython.terminal import Color, Prompt
-from nvae.load_nvae import load_nvae
+from newtonianvae.load import load
 from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img
 from tool import argset, checker
 from tool.params import Params, ParamsEval, ParamsSimEnv
-from tool.util import cmap_plt
 
 try:
     import tool._plot_config
@@ -70,7 +68,7 @@ def main():
 
     torch.set_grad_enabled(False)
 
-    cell, d, weight_p, params, params_eval, dtype, device = load_nvae(args.path_model, args.cf_eval)
+    cell, d, weight_p, params, params_eval, dtype, device = load(args.path_model, args.cf_eval)
     if weight_p is None:
         return
 
@@ -91,11 +89,12 @@ def main():
     # ======
     fig = plt.figure(figsize=figsize)
     mpu.get_figsize(fig)
-    gs = GridSpec(nrows=5, ncols=8)
-    up = 2
 
     class Ax:
         def __init__(self) -> None:
+            gs = GridSpec(nrows=5, ncols=8)
+            up = 2
+
             self.action = fig.add_subplot(gs[:up, 0:2])
             self.Igoal = fig.add_subplot(gs[:up, 2:4])
             self.observation = fig.add_subplot(gs[:up, 4:6])
@@ -150,7 +149,7 @@ def main():
 
             # ======================================================
             self.t += 1
-            color_action = tool.util.cmap_plt(cell.dim_x, "prism")
+            color_action = cmap(cell.dim_x, "prism")
 
             if frame_cnt == -1:
                 self.episode_cnt = np.random.randint(0, args.episodes)
@@ -188,7 +187,7 @@ def main():
             # ===============================================================
             ax = axes.action
             ax.set_title(r"$\mathbf{u}_{t-1}$ (Generated)")
-            ax.set_aspect(aspect=0.7)
+            ax.set_aspect(0.7)
             ax.set_ylim(-1.2, 1.2)
             ax.bar(
                 range(cell.dim_x),
@@ -221,7 +220,7 @@ def main():
             ax.set_title(r"mean of $\mathbf{x}_{1:t}, \; \alpha = $" f"${args.alpha}$")
             ax.set_xlim(-args.fix_xmap_size, args.fix_xmap_size)
             ax.set_ylim(-args.fix_xmap_size, args.fix_xmap_size)
-            ax.set_aspect(aspect=1)
+            ax.set_aspect(1)
             # ax.set_xticks([self.min_x_mean, self.max_x_mean])
             # ax.set_yticks([self.min_x_mean, self.max_x_mean])
             # ax.xaxis.set_major_locator(MaxNLocator(integer=True))

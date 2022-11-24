@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mypython.ai.torchprob.distributions package &mdash; Scratch of NewtonianVAE  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Scratch of NewtonianVAE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">mypython.ai.torchprob.distributions package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mypython.ai.torchprob.distributions.base">mypython.ai.torchprob.distributions.base module</a><ul>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution"><code class="docutils literal notranslate"><span class="pre">Distribution</span></code></a><ul>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution.cond"><code class="docutils literal notranslate"><span class="pre">Distribution.cond()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution.decode"><code class="docutils literal notranslate"><span class="pre">Distribution.decode()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution.forward"><code class="docutils literal notranslate"><span class="pre">Distribution.forward()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution.get_dist_params"><code class="docutils literal notranslate"><span class="pre">Distribution.get_dist_params()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution.loc"><code class="docutils literal notranslate"><span class="pre">Distribution.loc</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution.log_p"><code class="docutils literal notranslate"><span class="pre">Distribution.log_p()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution.rsample"><code class="docutils literal notranslate"><span class="pre">Distribution.rsample()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution.scale"><code class="docutils literal notranslate"><span class="pre">Distribution.scale</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution.training"><code class="docutils literal notranslate"><span class="pre">Distribution.training</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-mypython.ai.torchprob.distributions.bernoulli">mypython.ai.torchprob.distributions.bernoulli module</a><ul>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli"><code class="docutils literal notranslate"><span class="pre">Bernoulli</span></code></a><ul>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.cond"><code class="docutils literal notranslate"><span class="pre">Bernoulli.cond()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.decode"><code class="docutils literal notranslate"><span class="pre">Bernoulli.decode()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.forward"><code class="docutils literal notranslate"><span class="pre">Bernoulli.forward()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.get_dist_params"><code class="docutils literal notranslate"><span class="pre">Bernoulli.get_dist_params()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.loc"><code class="docutils literal notranslate"><span class="pre">Bernoulli.loc</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.log_p"><code class="docutils literal notranslate"><span class="pre">Bernoulli.log_p()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.scale"><code class="docutils literal notranslate"><span class="pre">Bernoulli.scale</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.training"><code class="docutils literal notranslate"><span class="pre">Bernoulli.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.bernoulli.log_bernoulli"><code class="docutils literal notranslate"><span class="pre">log_bernoulli()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-mypython.ai.torchprob.distributions.gmm">mypython.ai.torchprob.distributions.gmm module</a><ul>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.gmm.GMM"><code class="docutils literal notranslate"><span class="pre">GMM</span></code></a><ul>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.gmm.GMM.cond"><code class="docutils literal notranslate"><span class="pre">GMM.cond()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.gmm.GMM.forward"><code class="docutils literal notranslate"><span class="pre">GMM.forward()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.gmm.GMM.log_p"><code class="docutils literal notranslate"><span class="pre">GMM.log_p()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.gmm.GMM.training"><code class="docutils literal notranslate"><span class="pre">GMM.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.gmm.log_gmm"><code class="docutils literal notranslate"><span class="pre">log_gmm()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-mypython.ai.torchprob.distributions.normal">mypython.ai.torchprob.distributions.normal module</a><ul>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.normal.Normal"><code class="docutils literal notranslate"><span class="pre">Normal</span></code></a><ul>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.normal.Normal.cond"><code class="docutils literal notranslate"><span class="pre">Normal.cond()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.normal.Normal.decode"><code class="docutils literal notranslate"><span class="pre">Normal.decode()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.normal.Normal.forward"><code class="docutils literal notranslate"><span class="pre">Normal.forward()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.normal.Normal.get_dist_params"><code class="docutils literal notranslate"><span class="pre">Normal.get_dist_params()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.normal.Normal.loc"><code class="docutils literal notranslate"><span class="pre">Normal.loc</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.normal.Normal.log_p"><code class="docutils literal notranslate"><span class="pre">Normal.log_p()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.normal.Normal.rsample"><code class="docutils literal notranslate"><span class="pre">Normal.rsample()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.normal.Normal.scale"><code class="docutils literal notranslate"><span class="pre">Normal.scale</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.normal.Normal.training"><code class="docutils literal notranslate"><span class="pre">Normal.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.normal.log_normal"><code class="docutils literal notranslate"><span class="pre">log_normal()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.distributions.normal.normal_sample"><code class="docutils literal notranslate"><span class="pre">normal_sample()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-mypython.ai.torchprob.distributions">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Scratch of NewtonianVAE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">mypython.ai.torchprob.distributions package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/mypython.ai.torchprob.distributions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mypython-ai-torchprob-distributions-package">
+<h1>mypython.ai.torchprob.distributions package<a class="headerlink" href="#mypython-ai-torchprob-distributions-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-mypython.ai.torchprob.distributions.base">
+<span id="mypython-ai-torchprob-distributions-base-module"></span><h2>mypython.ai.torchprob.distributions.base module<a class="headerlink" href="#module-mypython.ai.torchprob.distributions.base" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.base.Distribution">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mypython.ai.torchprob.distributions.base.</span></span><span class="sig-name descname"><span class="pre">Distribution</span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.base.Distribution" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.base.Distribution.cond">
+<span class="sig-name descname"><span class="pre">cond</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">cond_vars_k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.base.Distribution.cond" title="Permalink to this definition"></a></dt>
+<dd><p>Compute Θ of Dist(x | Θ) from Dist(x | cond_vars)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.base.Distribution.decode">
+<span class="sig-name descname"><span class="pre">decode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.base.Distribution.decode" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.base.Distribution.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">cond_vars_k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.ai.torchprob.distributions.base.Distribution.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Compute Θ of Dist(x | Θ) from Dist(x | cond_vars)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.base.Distribution.get_dist_params">
+<span class="sig-name descname"><span class="pre">get_dist_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.base.Distribution.get_dist_params" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.base.Distribution.loc">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loc</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#mypython.ai.torchprob.distributions.base.Distribution.loc" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.base.Distribution.log_p">
+<span class="sig-name descname"><span class="pre">log_p</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.base.Distribution.log_p" title="Permalink to this definition"></a></dt>
+<dd><p>log-likelihood of Distribution
+log Dist(x | ・)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.base.Distribution.rsample">
+<span class="sig-name descname"><span class="pre">rsample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.base.Distribution.rsample" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.base.Distribution.scale">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scale</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#mypython.ai.torchprob.distributions.base.Distribution.scale" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.base.Distribution.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mypython.ai.torchprob.distributions.base.Distribution.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-mypython.ai.torchprob.distributions.bernoulli">
+<span id="mypython-ai-torchprob-distributions-bernoulli-module"></span><h2>mypython.ai.torchprob.distributions.bernoulli module<a class="headerlink" href="#module-mypython.ai.torchprob.distributions.bernoulli" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.bernoulli.Bernoulli">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mypython.ai.torchprob.distributions.bernoulli.</span></span><span class="sig-name descname"><span class="pre">Bernoulli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">NumberType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution" title="mypython.ai.torchprob.distributions.base.Distribution"><code class="xref py py-class docutils literal notranslate"><span class="pre">Distribution</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.bernoulli.Bernoulli.cond">
+<span class="sig-name descname"><span class="pre">cond</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">cond_vars_k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.cond" title="Permalink to this definition"></a></dt>
+<dd><p>Compute Θ of Dist(x | Θ) from Dist(x | cond_vars)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.bernoulli.Bernoulli.decode">
+<span class="sig-name descname"><span class="pre">decode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.decode" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.bernoulli.Bernoulli.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">cond_vars_k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Compute μ of Bern(x | μ) from Bern(x | cond_vars)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.bernoulli.Bernoulli.get_dist_params">
+<span class="sig-name descname"><span class="pre">get_dist_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.get_dist_params" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.bernoulli.Bernoulli.loc">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loc</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.loc" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.bernoulli.Bernoulli.log_p">
+<span class="sig-name descname"><span class="pre">log_p</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.log_p" title="Permalink to this definition"></a></dt>
+<dd><p>log-likelihood of Distribution
+log Dist(x | ・)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.bernoulli.Bernoulli.scale">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scale</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.scale" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.bernoulli.Bernoulli.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.bernoulli.log_bernoulli">
+<span class="sig-prename descclassname"><span class="pre">mypython.ai.torchprob.distributions.bernoulli.</span></span><span class="sig-name descname"><span class="pre">log_bernoulli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.1920928955078125e-07</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.bernoulli.log_bernoulli" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Ref:</dt><dd><p><a class="reference external" href="https://docs.chainer.org/en/stable/reference/generated/chainer.functions.bernoulli_nll.html">https://docs.chainer.org/en/stable/reference/generated/chainer.functions.bernoulli_nll.html</a>
+<a class="reference external" href="https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L181">https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L181</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-mypython.ai.torchprob.distributions.gmm">
+<span id="mypython-ai-torchprob-distributions-gmm-module"></span><h2>mypython.ai.torchprob.distributions.gmm module<a class="headerlink" href="#module-mypython.ai.torchprob.distributions.gmm" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.gmm.GMM">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mypython.ai.torchprob.distributions.gmm.</span></span><span class="sig-name descname"><span class="pre">GMM</span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.gmm.GMM" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution" title="mypython.ai.torchprob.distributions.base.Distribution"><code class="xref py py-class docutils literal notranslate"><span class="pre">Distribution</span></code></a></p>
+<p>Gaussian Mixture Model</p>
+<p>∑k=1 K πk N(x | μk, Σk)</p>
+<p>“Normal (Gaussian) distribution” is not multivariate normal distribution.</p>
+<p>K: number of mixtures
+D: the number of features</p>
+<p>pi: shape (<em>, K)
+mus: shape (</em>, K, D)
+sigmas: shape (<a href="#id1"><span class="problematic" id="id2">*</span></a>, K, D)</p>
+<dl class="simple">
+<dt>Ref:</dt><dd><p><a class="reference external" href="https://github.com/ctallec/world-models/blob/master/models/mdrnn.py">https://github.com/ctallec/world-models/blob/master/models/mdrnn.py</a></p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.gmm.GMM.cond">
+<span class="sig-name descname"><span class="pre">cond</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">cond_vars_k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.gmm.GMM.cond" title="Permalink to this definition"></a></dt>
+<dd><p>Compute Θ of Dist(x | Θ) from Dist(x | cond_vars)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.gmm.GMM.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">cond_vars_k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.gmm.GMM.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Compute Θ of Dist(x | Θ) from Dist(x | cond_vars)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.gmm.GMM.log_p">
+<span class="sig-name descname"><span class="pre">log_p</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.gmm.GMM.log_p" title="Permalink to this definition"></a></dt>
+<dd><p>log-likelihood of Distribution
+log Dist(x | ・)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.gmm.GMM.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mypython.ai.torchprob.distributions.gmm.GMM.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.gmm.log_gmm">
+<span class="sig-prename descclassname"><span class="pre">mypython.ai.torchprob.distributions.gmm.</span></span><span class="sig-name descname"><span class="pre">log_gmm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_pi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.ai.torchprob.distributions.gmm.log_gmm" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-mypython.ai.torchprob.distributions.normal">
+<span id="mypython-ai-torchprob-distributions-normal-module"></span><h2>mypython.ai.torchprob.distributions.normal module<a class="headerlink" href="#module-mypython.ai.torchprob.distributions.normal" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.normal.Normal">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mypython.ai.torchprob.distributions.normal.</span></span><span class="sig-name descname"><span class="pre">Normal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">NumberType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">NumberType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.ai.torchprob.distributions.normal.Normal" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mypython.ai.torchprob.distributions.base.Distribution" title="mypython.ai.torchprob.distributions.base.Distribution"><code class="xref py py-class docutils literal notranslate"><span class="pre">Distribution</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.normal.Normal.cond">
+<span class="sig-name descname"><span class="pre">cond</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">cond_vars_k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.normal.Normal.cond" title="Permalink to this definition"></a></dt>
+<dd><p>Compute Θ of Dist(x | Θ) from Dist(x | cond_vars)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.normal.Normal.decode">
+<span class="sig-name descname"><span class="pre">decode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.normal.Normal.decode" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.normal.Normal.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">cond_vars_k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.normal.Normal.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Compute μ, σ of N(x | μ, σ) from N(x | cond_vars)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.normal.Normal.get_dist_params">
+<span class="sig-name descname"><span class="pre">get_dist_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.normal.Normal.get_dist_params" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.normal.Normal.loc">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loc</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#mypython.ai.torchprob.distributions.normal.Normal.loc" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.normal.Normal.log_p">
+<span class="sig-name descname"><span class="pre">log_p</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.normal.Normal.log_p" title="Permalink to this definition"></a></dt>
+<dd><p>log-likelihood of Distribution
+log Dist(x | ・)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.normal.Normal.rsample">
+<span class="sig-name descname"><span class="pre">rsample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.normal.Normal.rsample" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.normal.Normal.scale">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scale</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#mypython.ai.torchprob.distributions.normal.Normal.scale" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.normal.Normal.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mypython.ai.torchprob.distributions.normal.Normal.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.normal.log_normal">
+<span class="sig-prename descclassname"><span class="pre">mypython.ai.torchprob.distributions.normal.</span></span><span class="sig-name descname"><span class="pre">log_normal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.1920928955078125e-07</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.normal.log_normal" title="Permalink to this definition"></a></dt>
+<dd><p>log-likelihood of a Gaussian distribution
+log N(x; μ, σ^2)</p>
+<dl class="simple">
+<dt>Ref:</dt><dd><p><a class="reference external" href="https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L185">https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L185</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.distributions.normal.normal_sample">
+<span class="sig-prename descclassname"><span class="pre">mypython.ai.torchprob.distributions.normal.</span></span><span class="sig-name descname"><span class="pre">normal_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.distributions.normal.normal_sample" title="Permalink to this definition"></a></dt>
+<dd><p>Reparametrization trick</p>
+</dd></dl>
+
+</section>
+<section id="module-mypython.ai.torchprob.distributions">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mypython.ai.torchprob.distributions" title="Permalink to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Sugar.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

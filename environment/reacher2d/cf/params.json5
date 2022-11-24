@@ -1,22 +1,22 @@
 {
-  model: "NewtonianVAEDerivationCell",
+  model: "NewtonianVAEV2",
 
-  NewtonianVAECell: {
+  NewtonianVAEV2: {
     dim_x: 2,
     transition_std: 0.25,
     encoder_dim_middle: 1024,
     encoder_std_function: "softplus",
-    // regularization: false,
+    // regularization: true,
     fix_abc: [0, 0, 1],
   },
 
-  NewtonianVAEDerivationCell: {
+  NewtonianVAEDerivation: {
     dim_x: 2,
     transition_std: 0.25,
     encoder_dim_middle: 1024,
     encoder_std_function: "softplus",
-    // regularization: false,
-    // fix_abc: [0, 0, 1],
+    // regularization: true,
+    fix_abc: [0, 0, 1],
 
     dim_xhat: 32,
     dim_pxhat_middle: 32,
@@ -28,7 +28,7 @@
     transition_std: 0.25,
     encoder_dim_middle: 1024,
     encoder_std_function: "softplus",
-    regularization: false,
+    // regularization: true,
     fix_abc: [0, 0, 1],
 
     dim_px_cat_middle: 32,
@@ -44,8 +44,8 @@
     batch_size: 50,
     grad_clip_norm: null,
     learning_rate: 3e-4,
-    epochs: 300,
-    save_per_epoch: 50,
+    epochs: 600,
+    save_per_epoch: 20,
     max_time_length: 100,
   },
 }

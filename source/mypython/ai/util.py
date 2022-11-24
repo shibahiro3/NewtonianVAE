@@ -1,25 +1,16 @@
-import copy
-import datetime
-import json
-import os
-import random
-import sys
-import time
 from pprint import pprint
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
-import torch.nn as nn
 
 
 class BatchIdx:
-    def __init__(self, startN: int, stopN: int, BS: int):
-        assert BS < stopN - startN
+    def __init__(self, start: int, stop: int, batch_size: int):
+        assert stop - start >= batch_size
 
-        self.N = stopN - startN
-        self.BS = BS
-        self.indexes = np.arange(start=startN, stop=stopN)
+        self.N = stop - start
+        self.BS = batch_size
+        self.indexes = np.arange(start=start, stop=stop)
         self._reset()
 
     def __len__(self):

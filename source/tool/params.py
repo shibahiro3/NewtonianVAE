@@ -93,19 +93,15 @@ class _SimEnv:
         action_repeat: int,
         bit_depth: int,
         action_type: str,
+        position_wrap: Union[None, str] = None,
     ) -> None:
-        domain, task = env.split("-")
-        if domain == "pointmass":
-            assert action_type in ("random", "circle")
-        elif domain == "reacher":
-            assert action_type in ("random", "paper", "equal_paper", "handmade")
-
         self.env = env
         self.seed = seed
         self.max_episode_length = max_episode_length
         self.action_repeat = action_repeat
         self.bit_depth = bit_depth
         self.action_type = action_type
+        self.position_wrap = position_wrap
 
     @property
     def kwargs(self):

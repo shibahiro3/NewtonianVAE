@@ -41,10 +41,10 @@ def main():
 
     fig = plt.figure(figsize=figsize)
     mpu.get_figsize(fig)
-    gs = GridSpec(nrows=1, ncols=3)
 
     class Ax:
         def __init__(self) -> None:
+            gs = GridSpec(nrows=1, ncols=3)
             self.loss = fig.add_subplot(gs[0, 0])
             self.nll = fig.add_subplot(gs[0, 1])
             self.kl = fig.add_subplot(gs[0, 2])

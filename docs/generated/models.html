@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>models package &mdash; Scratch of NewtonianVAE  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Scratch of NewtonianVAE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">models package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-models.component">models.component module</a><ul>
+<li><a class="reference internal" href="#models.component.ABCf"><code class="docutils literal notranslate"><span class="pre">ABCf</span></code></a><ul>
+<li><a class="reference internal" href="#models.component.ABCf.forward"><code class="docutils literal notranslate"><span class="pre">ABCf.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.component.ABCf.training"><code class="docutils literal notranslate"><span class="pre">ABCf.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.component.Decoder"><code class="docutils literal notranslate"><span class="pre">Decoder</span></code></a><ul>
+<li><a class="reference internal" href="#models.component.Decoder.forward"><code class="docutils literal notranslate"><span class="pre">Decoder.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.component.Decoder.training"><code class="docutils literal notranslate"><span class="pre">Decoder.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.component.Encoder"><code class="docutils literal notranslate"><span class="pre">Encoder</span></code></a><ul>
+<li><a class="reference internal" href="#models.component.Encoder.forward"><code class="docutils literal notranslate"><span class="pre">Encoder.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.component.Encoder.training"><code class="docutils literal notranslate"><span class="pre">Encoder.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.component.PXmiddleCat"><code class="docutils literal notranslate"><span class="pre">PXmiddleCat</span></code></a><ul>
+<li><a class="reference internal" href="#models.component.PXmiddleCat.forward"><code class="docutils literal notranslate"><span class="pre">PXmiddleCat.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.component.PXmiddleCat.training"><code class="docutils literal notranslate"><span class="pre">PXmiddleCat.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.component.Pxhat"><code class="docutils literal notranslate"><span class="pre">Pxhat</span></code></a><ul>
+<li><a class="reference internal" href="#models.component.Pxhat.forward"><code class="docutils literal notranslate"><span class="pre">Pxhat.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.component.Pxhat.training"><code class="docutils literal notranslate"><span class="pre">Pxhat.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.component.Transition"><code class="docutils literal notranslate"><span class="pre">Transition</span></code></a><ul>
+<li><a class="reference internal" href="#models.component.Transition.forward"><code class="docutils literal notranslate"><span class="pre">Transition.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.component.Transition.training"><code class="docutils literal notranslate"><span class="pre">Transition.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.component.Velocity"><code class="docutils literal notranslate"><span class="pre">Velocity</span></code></a><ul>
+<li><a class="reference internal" href="#models.component.Velocity.forward"><code class="docutils literal notranslate"><span class="pre">Velocity.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.component.Velocity.training"><code class="docutils literal notranslate"><span class="pre">Velocity.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.component.VisualDecoder64"><code class="docutils literal notranslate"><span class="pre">VisualDecoder64</span></code></a><ul>
+<li><a class="reference internal" href="#models.component.VisualDecoder64.forward"><code class="docutils literal notranslate"><span class="pre">VisualDecoder64.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.component.VisualDecoder64.training"><code class="docutils literal notranslate"><span class="pre">VisualDecoder64.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.component.VisualEncoder64"><code class="docutils literal notranslate"><span class="pre">VisualEncoder64</span></code></a><ul>
+<li><a class="reference internal" href="#models.component.VisualEncoder64.forward"><code class="docutils literal notranslate"><span class="pre">VisualEncoder64.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.component.VisualEncoder64.training"><code class="docutils literal notranslate"><span class="pre">VisualEncoder64.training</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-models.core">models.core module</a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAE"><code class="docutils literal notranslate"><span class="pre">NewtonianVAE</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAE.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAE.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEBase"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEBase</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAEBase.forward"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEBase.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEBase.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEBase.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.NewtonianVAECell"><code class="docutils literal notranslate"><span class="pre">NewtonianVAECell</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAECell.forward"><code class="docutils literal notranslate"><span class="pre">NewtonianVAECell.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAECell.info"><code class="docutils literal notranslate"><span class="pre">NewtonianVAECell.info</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAECell.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAECell.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.NewtonianVAECellBase"><code class="docutils literal notranslate"><span class="pre">NewtonianVAECellBase</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAECellBase.Pack"><code class="docutils literal notranslate"><span class="pre">NewtonianVAECellBase.Pack</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAECellBase.dim_x"><code class="docutils literal notranslate"><span class="pre">NewtonianVAECellBase.dim_x</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAECellBase.info"><code class="docutils literal notranslate"><span class="pre">NewtonianVAECellBase.info</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAECellBase.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAECellBase.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEDerivation"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEDerivation</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAEDerivation.cell"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEDerivation.cell</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEDerivation.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEDerivation.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEDerivationCell"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEDerivationCell</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAEDerivationCell.dim_xhat"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEDerivationCell.dim_xhat</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEDerivationCell.forward"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEDerivationCell.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEDerivationCell.info"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEDerivationCell.info</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEDerivationCell.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEDerivationCell.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Base"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Base</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Base.forward"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Base.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Base.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Base.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Cell"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Cell</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Cell.forward"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Cell.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Cell.info"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Cell.info</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Cell.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Cell.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2CellBase"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2CellBase</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2CellBase.Pack"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2CellBase.Pack</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2CellBase.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2CellBase.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Derivation"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Derivation</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Derivation.cell"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Derivation.cell</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Derivation.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Derivation.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2DerivationCell"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2DerivationCell</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2DerivationCell.dim_xhat"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2DerivationCell.dim_xhat</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2DerivationCell.forward"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2DerivationCell.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2DerivationCell.info"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2DerivationCell.info</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2DerivationCell.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2DerivationCell.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.Stepper"><code class="docutils literal notranslate"><span class="pre">Stepper</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.Stepper.Pack"><code class="docutils literal notranslate"><span class="pre">Stepper.Pack</span></code></a></li>
+<li><a class="reference internal" href="#models.core.Stepper.reset"><code class="docutils literal notranslate"><span class="pre">Stepper.reset()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.core.as_save"><code class="docutils literal notranslate"><span class="pre">as_save()</span></code></a></li>
+<li><a class="reference internal" href="#models.core.get_NewtonianVAE"><code class="docutils literal notranslate"><span class="pre">get_NewtonianVAE()</span></code></a></li>
+<li><a class="reference internal" href="#models.core.get_NewtonianVAECell"><code class="docutils literal notranslate"><span class="pre">get_NewtonianVAECell()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-models.pcontrol">models.pcontrol module</a><ul>
+<li><a class="reference internal" href="#models.pcontrol.PControl"><code class="docutils literal notranslate"><span class="pre">PControl</span></code></a><ul>
+<li><a class="reference internal" href="#models.pcontrol.PControl.training"><code class="docutils literal notranslate"><span class="pre">PControl.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.pcontrol.PurePControl"><code class="docutils literal notranslate"><span class="pre">PurePControl</span></code></a><ul>
+<li><a class="reference internal" href="#models.pcontrol.PurePControl.get_action"><code class="docutils literal notranslate"><span class="pre">PurePControl.get_action()</span></code></a></li>
+<li><a class="reference internal" href="#models.pcontrol.PurePControl.get_action_from_x"><code class="docutils literal notranslate"><span class="pre">PurePControl.get_action_from_x()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-models">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Scratch of NewtonianVAE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">models package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="models-package">
+<h1>models package<a class="headerlink" href="#models-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-models.component">
+<span id="models-component-module"></span><h2>models.component module<a class="headerlink" href="#module-models.component" title="Permalink to this heading"></a></h2>
+<div class="math notranslate nohighlight">
+\[\newcommand{\I}{\mathbf{I}}
+\newcommand{\u}{\mathbf{u}}
+\newcommand{\v}{\mathbf{v}}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\xhat}{\hat{\mathbf{x}}}
+\newcommand{\KL}[2]{\operatorname{KL}\left[ #1 \, \middle\| \, #2 \right]}\]</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="models.component.ABCf">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">ABCf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.ABCf" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll} \\
+    A = \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+    B = -\log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+    C = \log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1}))
+\end{array}\end{split}\]</div>
+<dl>
+<dt>Outputs: diagA, diagB, diagC</dt><dd><ul class="simple">
+<li><p><strong>diagA</strong>: tensor of shape <span class="math notranslate nohighlight">\((*, D)\)</span></p></li>
+<li><p><strong>diagB</strong>: tensor of shape <span class="math notranslate nohighlight">\((*, D)\)</span></p></li>
+<li><p><strong>diagC</strong>: tensor of shape <span class="math notranslate nohighlight">\((*, D)\)</span></p></li>
+</ul>
+<p>where:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+    D ={} &amp; \mathrm{dim}(\u) \\
+\end{aligned}\end{split}\]</div>
+</dd>
+<dt>References in paper:</dt><dd><p>[A, log (-B), log C] = diag(f(xt, vt, ut)),
+where f is a neural network with linear output activation.</p>
+</dd>
+<dt>References in paper (TS-NVAE):</dt><dd><p>A  = diag(fA(xt, vt, ut))</p>
+<p>log (-B) = diag(fB(xt, vt, ut))</p>
+<p>log C    = diag(fC(xt, vt, ut))</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.component.ABCf.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.ABCf.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.component.ABCf.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.component.ABCf.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.component.Decoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">Decoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Decoder" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal" title="mypython.ai.torchprob.distributions.normal.Normal"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normal</span></code></a></p>
+<div class="math notranslate nohighlight">
+\[\begin{array}{ll}
+    p(\I_t \mid \x_{t}) \hspace{5mm} \text{or} \hspace{5mm} p(\I_t \mid \xhat_{t})
+\end{array}\]</div>
+<dl class="simple">
+<dt>References in paper:</dt><dd><p>We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.component.Decoder.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Decoder.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.component.Decoder.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.component.Decoder.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.component.Encoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">Encoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_middle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Encoder" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal" title="mypython.ai.torchprob.distributions.normal.Normal"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normal</span></code></a></p>
+<div class="math notranslate nohighlight">
+\[\begin{array}{ll}
+    q(\x_t \mid \I_t)
+\end{array}\]</div>
+<dl class="simple">
+<dt>References in paper:</dt><dd><p>We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.component.Encoder.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">I_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Encoder.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.component.Encoder.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.component.Encoder.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.component.PXmiddleCat">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">PXmiddleCat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_middle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.PXmiddleCat" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal" title="mypython.ai.torchprob.distributions.normal.Normal"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normal</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.component.PXmiddleCat.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_m1_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_m2_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.PXmiddleCat.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.component.PXmiddleCat.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.component.PXmiddleCat.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.component.Pxhat">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">Pxhat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_xhat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_middle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Pxhat" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal" title="mypython.ai.torchprob.distributions.normal.Normal"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normal</span></code></a></p>
+<div class="math notranslate nohighlight">
+\[\begin{array}{ll}
+    p(\xhat_t \mid \x_{t-1}, \u_{t-1})
+\end{array}\]</div>
+<p>paperに何の説明もない</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.component.Pxhat.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Pxhat.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Compute μ, σ of N(x | μ, σ) from N(x | cond_vars)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.component.Pxhat.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.component.Pxhat.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.component.Transition">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">Transition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Transition" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal" title="mypython.ai.torchprob.distributions.normal.Normal"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normal</span></code></a></p>
+<p>Transition prior. Eq (9).</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll}
+    p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
+\end{array}\end{split}\]</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.component.Transition.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Transition.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Compute μ, σ of N(x | μ, σ) from N(x | cond_vars)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.component.Transition.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.component.Transition.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.component.Velocity">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">Velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix_abc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">NumberType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">NumberType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">NumberType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Velocity" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll}
+    \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
+\end{array}\end{split}\]</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.component.Velocity.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Velocity.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.component.Velocity.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.component.Velocity.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.component.VisualDecoder64">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">VisualDecoder64</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_input:</span> <span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_middle:</span> <span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation=&lt;built-in</span> <span class="pre">method</span> <span class="pre">relu</span> <span class="pre">of</span> <span class="pre">type</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.VisualDecoder64" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<dl class="simple">
+<dt>Inputs: x</dt><dd><ul class="simple">
+<li><p><strong>x</strong>: tensor of shape <span class="math notranslate nohighlight">\((*, \mathrm{dim\_input})\)</span></p></li>
+</ul>
+</dd>
+<dt>Outputs: y</dt><dd><ul class="simple">
+<li><p><strong>y</strong>: tensor of shape <span class="math notranslate nohighlight">\((*, 3, 64, 64)\)</span></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.component.VisualDecoder64.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.VisualDecoder64.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.component.VisualDecoder64.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.component.VisualDecoder64.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.component.VisualEncoder64">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">VisualEncoder64</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_output:</span> <span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation=&lt;built-in</span> <span class="pre">method</span> <span class="pre">relu</span> <span class="pre">of</span> <span class="pre">type</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.VisualEncoder64" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<dl class="simple">
+<dt>Inputs: x</dt><dd><ul class="simple">
+<li><p><strong>x</strong>: tensor of shape <span class="math notranslate nohighlight">\((*, 3, 64, 64)\)</span></p></li>
+</ul>
+</dd>
+<dt>Outputs: y</dt><dd><ul class="simple">
+<li><p><strong>y</strong>: tensor of shape <span class="math notranslate nohighlight">\((*, \mathrm{dim\_output})\)</span></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.component.VisualEncoder64.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.VisualEncoder64.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.component.VisualEncoder64.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.component.VisualEncoder64.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-models.core">
+<span id="models-core-module"></span><h2>models.core module<a class="headerlink" href="#module-models.core" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAE" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAEBase" title="models.core.NewtonianVAEBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAEBase</span></code></a></p>
+<p>Computes ELBO based on formula (11).</p>
+<p>Computes according to the following formula:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll} \\
+    A = f(\x_{t-1}, \v_{t-1}, \u_{t-1}) \\
+    B = -\log f(\x_{t-1}, \v_{t-1}, \u_{t-1}) \\
+    C = \log f(\x_{t-1}, \v_{t-1}, \u_{t-1}) \\
+    \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
+    \x_{t} \sim p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t}) \\
+    E = \displaystyle \sum_t \left( \log (\I_t \mid \x_t) - \KL{q(\x_t \mid \I_t)}{p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t})} \right)
+\end{array}\end{split}\]</div>
+<p>where:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll}
+    \v_0 = \boldsymbol{0} \\
+    \x_0 \sim q(\x_0 \mid \I_0) \\
+    p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
+    \x_{t-2} \leftarrow \x_{t-1}
+\end{array}\end{split}\]</div>
+<p>During evaluation:</p>
+<div class="math notranslate nohighlight">
+\[\begin{array}{ll}
+    \v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t
+\end{array}\]</div>
+<dl>
+<dt>Inputs: action, observation, dt</dt><dd><ul class="simple">
+<li><p><strong>action</strong>: tensor of shape <span class="math notranslate nohighlight">\((T, N, D)\)</span></p></li>
+<li><p><strong>observation</strong>: tensor of shape <span class="math notranslate nohighlight">\((T, N, 3, 64, 64)\)</span></p></li>
+<li><p><strong>dt</strong>: tensor of shape <span class="math notranslate nohighlight">\((T)\)</span></p></li>
+</ul>
+<p>where:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+    N ={} &amp; \text{batch size} \\
+    T ={} &amp; \text{sequence length} \\
+    D ={} &amp; \mathrm{dim}(\u) \\
+\end{aligned}\end{split}\]</div>
+</dd>
+<dt>References in paper:</dt><dd><ul class="simple">
+<li><p>During inference, vt is computed as
+vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).</p></li>
+<li><p>we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAE.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAE.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEBase</span></span><a class="headerlink" href="#models.core.NewtonianVAEBase" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEBase.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEBase.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEBase.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAEBase.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAECell">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAECell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAECell" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAECellBase" title="models.core.NewtonianVAECellBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAECellBase</span></code></a></p>
+<p>Eq (11)</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.core.NewtonianVAECell.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">I_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAECell.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="models.core.NewtonianVAECell.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#models.core.NewtonianVAECell.info" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAECell.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAECell.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAECellBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAECellBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transition_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoder_dim_middle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoder_std_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix_abc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">NumberType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">NumberType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">NumberType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularization</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAECellBase" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Classes that inherit from this class should not store variables from the previous time internally,
+as well as
+<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.RNNCell.html">RNNCell</a>,
+<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.LSTMCell.html">LSTMCell</a>,
+and <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.GRUCell.html">GRUCell</a>.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAECellBase.Pack">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Pack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_ll</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_kl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAECellBase.Pack" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="models.core.NewtonianVAECellBase.dim_x">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dim_x</span></span><a class="headerlink" href="#models.core.NewtonianVAECellBase.dim_x" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="models.core.NewtonianVAECellBase.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">set</span></em><a class="headerlink" href="#models.core.NewtonianVAECellBase.info" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAECellBase.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAECellBase.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEDerivation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEDerivation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEDerivation" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAEBase" title="models.core.NewtonianVAEBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAEBase</span></code></a></p>
+<p>Computes ELBO based on formula (23).</p>
+<p>Computes according to the following formula:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll} \\
+    \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
+    \x_{t} \sim p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t}) \\
+    \xhat_{t} \sim p(\xhat_t \mid \x_{t-1}, \u_{t-1}) \\
+    E = \displaystyle \sum_t \left( \log (\I_t \mid \xhat_t) - \KL{q(\x_t \mid \I_t)}{p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t})} \right)
+\end{array}\end{split}\]</div>
+<p>where:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll}
+    \v_0 = \boldsymbol{0} \\
+    \x_0 \sim q(\x_0 \mid \I_0) \\
+    p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
+    \v_{t} \leftarrow \v_{t-1} \\
+    \x_{t} \leftarrow \x_{t-1}
+\end{array}\end{split}\]</div>
+<p>During evaluation:</p>
+<div class="math notranslate nohighlight">
+\[\begin{array}{ll}
+    \v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t
+\end{array}\]</div>
+<dl>
+<dt>Inputs: action, observation, dt</dt><dd><ul class="simple">
+<li><p><strong>action</strong>: tensor of shape <span class="math notranslate nohighlight">\((T, N, D)\)</span></p></li>
+<li><p><strong>observation</strong>: tensor of shape <span class="math notranslate nohighlight">\((T, N, 3, 64, 64)\)</span></p></li>
+<li><p><strong>dt</strong>: tensor of shape <span class="math notranslate nohighlight">\((T)\)</span></p></li>
+</ul>
+<p>where:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+    N ={} &amp; \text{batch size} \\
+    T ={} &amp; \text{sequence length} \\
+    D ={} &amp; \mathrm{dim}(\u) \\
+\end{aligned}\end{split}\]</div>
+</dd>
+<dt>References in paper:</dt><dd><ul class="simple">
+<li><p>During inference, vt is computed as
+vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).</p></li>
+<li><p>we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEDerivation.cell">
+<span class="sig-name descname"><span class="pre">cell</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#models.core.NewtonianVAECell" title="models.core.NewtonianVAECell"><span class="pre">NewtonianVAECell</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEDerivationCell" title="models.core.NewtonianVAEDerivationCell"><span class="pre">NewtonianVAEDerivationCell</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#models.core.NewtonianVAEDerivation.cell" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEDerivation.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAEDerivation.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEDerivationCell">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEDerivationCell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_xhat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_pxhat_middle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pxhat_std_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEDerivationCell" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAECellBase" title="models.core.NewtonianVAECellBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAECellBase</span></code></a></p>
+<p>Eq (23)</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEDerivationCell.dim_xhat">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dim_xhat</span></span><a class="headerlink" href="#models.core.NewtonianVAEDerivationCell.dim_xhat" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEDerivationCell.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">I_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEDerivationCell.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEDerivationCell.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#models.core.NewtonianVAEDerivationCell.info" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEDerivationCell.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAEDerivationCell.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAEV2Base" title="models.core.NewtonianVAEV2Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAEV2Base</span></code></a></p>
+<p>Computes ELBO based on formula (11).</p>
+<p>This implementation was based on Mr. <a class="reference external" href="https://github.com/ItoMasaki">Ito</a>’s opinion.</p>
+<p>Computes according to the following formula:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll} \\
+    \x_{t-1} \sim q(\x_{t-1} \mid \I_{t-1}) \\
+    \v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t \\
+    A = \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+    B = -\log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+    C = \log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+    \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
+    \x_{t} \sim p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t}) \\
+    ELBO = \displaystyle \sum_t \left( \log (\I_t \mid \x_t) - \KL{q(\x_t \mid \I_t)}{p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t})} \right)
+\end{array}\end{split}\]</div>
+<p>where:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll}
+    p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
+    \x_{t-2} \leftarrow \x_{t-1}
+\end{array}\end{split}\]</div>
+<p>The initial values follow the formula below:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll}
+    \v_0 = \boldsymbol{0} \\
+    \x_0 \sim q(\x_0 \mid \I_0)
+\end{array}\end{split}\]</div>
+<p>LOG_x is collected about <span class="math notranslate nohighlight">\(\x_{t} \sim q(\x_t \mid \I_t)\)</span>.</p>
+<dl>
+<dt>Inputs: action, observation, dt</dt><dd><ul class="simple">
+<li><p><strong>action</strong>: tensor of shape <span class="math notranslate nohighlight">\((T, N, D)\)</span></p></li>
+<li><p><strong>observation</strong>: tensor of shape <span class="math notranslate nohighlight">\((T, N, 3, 64, 64)\)</span></p></li>
+<li><p><strong>dt</strong>: tensor of shape <span class="math notranslate nohighlight">\((T)\)</span></p></li>
+</ul>
+<p>where:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+    N ={} &amp; \text{batch size} \\
+    T ={} &amp; \text{sequence length} \\
+    D ={} &amp; \mathrm{dim}(\u) \\
+\end{aligned}\end{split}\]</div>
+</dd>
+<dt>References in paper:</dt><dd><ul class="simple">
+<li><p>During inference, vt is computed as
+vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).</p></li>
+<li><p>we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAEV2.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Base">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEV2Base</span></span><a class="headerlink" href="#models.core.NewtonianVAEV2Base" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Base.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2Base.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Base.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAEV2Base.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Cell">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEV2Cell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2Cell" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAEV2CellBase" title="models.core.NewtonianVAEV2CellBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAEV2CellBase</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Cell.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">I_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_tn2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2Cell.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Cell.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#models.core.NewtonianVAEV2Cell.info" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Cell.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAEV2Cell.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2CellBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEV2CellBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2CellBase" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAECellBase" title="models.core.NewtonianVAECellBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAECellBase</span></code></a></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2CellBase.Pack">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Pack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_ll</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_kl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2CellBase.Pack" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2CellBase.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAEV2CellBase.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Derivation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEV2Derivation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2Derivation" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAEV2Base" title="models.core.NewtonianVAEV2Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAEV2Base</span></code></a></p>
+<p>Computes ELBO based on formula (23).</p>
+<p>Computes according to the following formula:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll} \\
+    \x_{t-1} \sim q(\x_{t-1} \mid \I_{t-1}) \\
+    \v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t \\
+    A = \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+    B = -\log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+    C = \log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+    \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
+    \xhat_{t} \sim p(\xhat_t \mid \x_{t-1}, \u_{t-1}) \\
+    ELBO = \displaystyle \sum_t \left( \log (\I_t \mid \xhat_t) - \KL{q(\x_t \mid \I_t)}{p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t})} \right)
+\end{array}\end{split}\]</div>
+<p>where:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll}
+    p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
+    \x_{t-2} \leftarrow \x_{t-1}
+\end{array}\end{split}\]</div>
+<p>The initial values follow the formula below:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll}
+    \v_0 = \boldsymbol{0} \\
+    \x_0 \sim q(\x_0 \mid \I_0)
+\end{array}\end{split}\]</div>
+<p>LOG_x is collected about <span class="math notranslate nohighlight">\(\x_{t} \sim q(\x_t \mid \I_t)\)</span>.</p>
+<dl>
+<dt>Inputs: action, observation, dt</dt><dd><ul class="simple">
+<li><p><strong>action</strong>: tensor of shape <span class="math notranslate nohighlight">\((T, N, D)\)</span></p></li>
+<li><p><strong>observation</strong>: tensor of shape <span class="math notranslate nohighlight">\((T, N, 3, 64, 64)\)</span></p></li>
+<li><p><strong>dt</strong>: tensor of shape <span class="math notranslate nohighlight">\((T)\)</span></p></li>
+</ul>
+<p>where:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+    N ={} &amp; \text{batch size} \\
+    T ={} &amp; \text{sequence length} \\
+    D ={} &amp; \mathrm{dim}(\u) \\
+\end{aligned}\end{split}\]</div>
+</dd>
+<dt>References in paper:</dt><dd><ul class="simple">
+<li><p>During inference, vt is computed as
+vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).</p></li>
+<li><p>we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Derivation.cell">
+<span class="sig-name descname"><span class="pre">cell</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#models.core.NewtonianVAEV2Cell" title="models.core.NewtonianVAEV2Cell"><span class="pre">NewtonianVAEV2Cell</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEV2DerivationCell" title="models.core.NewtonianVAEV2DerivationCell"><span class="pre">NewtonianVAEV2DerivationCell</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#models.core.NewtonianVAEV2Derivation.cell" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Derivation.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAEV2Derivation.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2DerivationCell">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEV2DerivationCell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_xhat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_pxhat_middle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pxhat_std_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2DerivationCell" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAEV2CellBase" title="models.core.NewtonianVAEV2CellBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAEV2CellBase</span></code></a></p>
+<p>Eq (23)</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2DerivationCell.dim_xhat">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dim_xhat</span></span><a class="headerlink" href="#models.core.NewtonianVAEV2DerivationCell.dim_xhat" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2DerivationCell.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">I_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_tn2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2DerivationCell.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2DerivationCell.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#models.core.NewtonianVAEV2DerivationCell.info" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2DerivationCell.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAEV2DerivationCell.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.Stepper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">Stepper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#models.core.NewtonianVAECell" title="models.core.NewtonianVAECell"><span class="pre">NewtonianVAECell</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEDerivationCell" title="models.core.NewtonianVAEDerivationCell"><span class="pre">NewtonianVAEDerivationCell</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEV2Cell" title="models.core.NewtonianVAEV2Cell"><span class="pre">NewtonianVAEV2Cell</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEV2DerivationCell" title="models.core.NewtonianVAEV2DerivationCell"><span class="pre">NewtonianVAEV2DerivationCell</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.Stepper" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="models.core.Stepper.Pack">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Pack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">I_t_dec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.Stepper.Pack" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.core.Stepper.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#models.core.Stepper.reset" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.core.as_save">
+<span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">as_save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.as_save" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.core.get_NewtonianVAE">
+<span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">get_NewtonianVAE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#models.core.NewtonianVAE" title="models.core.NewtonianVAE"><span class="pre">NewtonianVAE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEDerivation" title="models.core.NewtonianVAEDerivation"><span class="pre">NewtonianVAEDerivation</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEV2" title="models.core.NewtonianVAEV2"><span class="pre">NewtonianVAEV2</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEV2Derivation" title="models.core.NewtonianVAEV2Derivation"><span class="pre">NewtonianVAEV2Derivation</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#models.core.get_NewtonianVAE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="models.core.get_NewtonianVAECell">
+<span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">get_NewtonianVAECell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#models.core.NewtonianVAECell" title="models.core.NewtonianVAECell"><span class="pre">NewtonianVAECell</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEDerivationCell" title="models.core.NewtonianVAEDerivationCell"><span class="pre">NewtonianVAEDerivationCell</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEV2Cell" title="models.core.NewtonianVAEV2Cell"><span class="pre">NewtonianVAEV2Cell</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEV2DerivationCell" title="models.core.NewtonianVAEV2DerivationCell"><span class="pre">NewtonianVAEV2DerivationCell</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#models.core.get_NewtonianVAECell" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-models.pcontrol">
+<span id="models-pcontrol-module"></span><h2>models.pcontrol module<a class="headerlink" href="#module-models.pcontrol" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="models.pcontrol.PControl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.pcontrol.</span></span><span class="sig-name descname"><span class="pre">PControl</span></span><a class="headerlink" href="#models.pcontrol.PControl" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Eq (12)</p>
+<div class="math notranslate nohighlight">
+\[\begin{array}{ll}
+    P(\u_t \mid \x_t) = \displaystyle \sum_{n=1}^N \pi_n(\x_t) \mathcal{N}(K_n(\x_{goal} - \x_t), \sigma^2)
+\end{array}\]</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.pcontrol.PControl.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.pcontrol.PControl.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.pcontrol.PurePControl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.pcontrol.</span></span><span class="sig-name descname"><span class="pre">PurePControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Igoal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#models.core.NewtonianVAECell" title="models.core.NewtonianVAECell"><span class="pre">NewtonianVAECell</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEDerivationCell" title="models.core.NewtonianVAEDerivationCell"><span class="pre">NewtonianVAEDerivationCell</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEV2Cell" title="models.core.NewtonianVAEV2Cell"><span class="pre">NewtonianVAEV2Cell</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#models.core.NewtonianVAEV2DerivationCell" title="models.core.NewtonianVAEV2DerivationCell"><span class="pre">NewtonianVAEV2DerivationCell</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.pcontrol.PurePControl" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Paper:
+we sample random starting and goal states, and successively
+apply the control law ut ∝ (x(Igoal) − xt(It)).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.pcontrol.PurePControl.get_action">
+<span class="sig-name descname"><span class="pre">get_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">I_t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.pcontrol.PurePControl.get_action" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.pcontrol.PurePControl.get_action_from_x">
+<span class="sig-name descname"><span class="pre">get_action_from_x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.pcontrol.PurePControl.get_action_from_x" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-models">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-models" title="Permalink to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Sugar.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

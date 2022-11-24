@@ -5,24 +5,19 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+import json5
 import numpy as np
 import torch
-import torch.utils
-import torch.utils.data
 from torch import nn, optim
 
 import tool.util
-from models.core import (
-    CollectTimeSeriesData,
-    NewtonianVAECell,
-    NewtonianVAEDerivationCell,
-    get_NewtonianVAECell,
-)
+from models.core import get_NewtonianVAE
 from mypython.ai.torch_util import print_module_params, reproduce
 from mypython.pyutil import s2dhms_str
 from tool import argset, checker
-from tool.dataloader import GetBatchData
+from tool.dataloader import DataLoader
 from tool.params import Params
+from tool.util import backup
 from tool.visualhandlerbase import VisualHandlerBase
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -49,20 +44,59 @@ def train(vh=VisualHandlerBase()):
     params = Params(args.cf)
     print("params:")
     print(params)
-    weight_dir = Path(args.path_save, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), "weight")
-    weight_dir.mkdir(parents=True, exist_ok=True)
-    bk = Path(weight_dir.parent, Path(args.cf).name)
-    shutil.copy(args.cf, bk)
-    bk_ = Path(weight_dir.parent, "params_bk.json5")
-    bk.rename(bk_)  # 3.7 以前はNoneが返る
-    bk_.chmod(0o444)  # read only
+
+    vh.title = params.model
+    vh.call_end_init()
 
     if params.train.seed is None:
         seed = np.random.randint(0, 2**16)
-        reproduce(seed)
-        save_to_file(Path(weight_dir.parent, "seed.txt"), str(seed))
     else:
-        reproduce(params.train.seed)
+        seed = params.train.seed
+
+    reproduce(seed)
+
+    weight_dir = Path(args.path_save, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), "weight")
+    weight_dir.mkdir(parents=True, exist_ok=True)
+    backup(args.cf, weight_dir.parent, "params_bk.json5")
+
+    dtype: torch.dtype = getattr(torch, params.train.dtype)
+    checker.cuda(params.train.device)
+    device = torch.device(params.train.device if torch.cuda.is_available() else "cpu")
+
+    trainloader = DataLoader(
+        root=Path(args.path_data, "episodes"),
+        start=params.train.data_start,
+        stop=params.train.data_stop,
+        batch_size=params.train.batch_size,
+        dtype=dtype,
+        device=device,
+    )
+
+    model = get_NewtonianVAE(params.model, **params.raw_[params.model])
+    # print_module_params(cell)
+
+    if args.resume:
+        print('You chose "resume". Select a model to load.')
+        d = tool.util.select_date(args.path_save)
+        if d is None:
+            return
+        weight_p = tool.util.select_weight(d)
+        if weight_p is None:
+            return
+        model.cell.load_state_dict(torch.load(weight_p))
+
+        weight_p_s = str(weight_p)
+    else:
+        weight_p_s = None
+
+    model.type(dtype)
+    model.to(device)
+    model.train()
+
+    optimiser = optim.Adam(model.parameters(), params.train.learning_rate)
+
+    init_info = {"seed": seed, "resume_from": weight_p_s, "data_from": args.path_data}
+    save_to_file(Path(weight_dir.parent, "init_info.json5"), json5.dumps(init_info, indent=2))
 
     # LOG_* is a buffer for recording the learning process.
     # It is not used for any calculations for learning.
@@ -80,54 +114,16 @@ def train(vh=VisualHandlerBase()):
         tool.util.delete_useless_saves(args.path_save)
         print("end of train")
 
-    dtype: torch.dtype = getattr(torch, params.train.dtype)
-
-    checker.cuda(params.train.device)
-    device = torch.device(params.train.device if torch.cuda.is_available() else "cpu")
-
-    cell = get_NewtonianVAECell(params.model, **params.raw_[params.model])
-    # print_module_params(cell)
-
-    if args.resume:
-        print('You chose "resume". Select a model to load.')
-        d = tool.util.select_date(args.path_save)
-        if d is None:
-            return
-        weight_p = tool.util.select_weight(d)
-        if weight_p is None:
-            return
-        cell.load_state_dict(torch.load(weight_p))
-        save_to_file(Path(weight_dir.parent, "resume_from.txt"), str(weight_p))
-
-    cell.type(dtype)
-    cell.to(device)
-
-    collector = CollectTimeSeriesData(
-        cell=cell,
-        T=params.train.max_time_length,
-        dtype=dtype,
-    )
-
     time_start = time.perf_counter()
     try:
-        cell.train()
-        optimiser = optim.Adam(cell.parameters(), params.train.learning_rate)
-
         for epoch in range(1, params.train.epochs + 1):
-            BatchData = GetBatchData(
-                path=args.path_data,
-                startN=params.train.data_start,
-                stopN=params.train.data_stop,
-                BS=params.train.batch_size,
-                dtype=dtype,
-            )
+            for action, observation, delta, position in trainloader:
+                E_sum: torch.Tensor
+                LOG_E_ll_sum: torch.Tensor
+                LOG_E_kl_sum: torch.Tensor
 
-            for action, observation in BatchData:
-                E_sum, LOG_E_ll_sum, LOG_E_kl_sum = collector.run(
-                    action=action,
-                    observation=observation,
-                    device=params.train.device,
-                    is_save=False,
+                E_sum, LOG_E_ll_sum, LOG_E_kl_sum = model(
+                    action=action, observation=observation, delta=delta
                 )
 
                 L = -E_sum
@@ -137,7 +133,7 @@ def train(vh=VisualHandlerBase()):
 
                 if params.train.grad_clip_norm is not None:
                     nn.utils.clip_grad_norm_(
-                        cell.parameters(), params.train.grad_clip_norm, norm_type=2
+                        model.parameters(), params.train.grad_clip_norm, norm_type=2
                     )
 
                 optimiser.step()
@@ -169,7 +165,7 @@ def train(vh=VisualHandlerBase()):
                     return
 
             if epoch % params.train.save_per_epoch == 0:
-                torch.save(cell.state_dict(), Path(weight_dir, f"{epoch}.pth"))
+                torch.save(model.cell.state_dict(), Path(weight_dir, f"{epoch}.pth"))
                 print("saved")
 
     except KeyboardInterrupt:

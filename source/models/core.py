@@ -1,8 +1,5 @@
-"""
-x_t    == x_t
-x_tn1  == x_{t-1}
-
-TODO:
+r"""
+.. TODO:
     Paper:
     In the point mass experiments
     we found it useful to anneal the KL term in the ELBO,
@@ -10,23 +7,38 @@ TODO:
     to 1.0 between epochs 30 and 60.
 """
 
+"""
+x_t    == x_t
+x_tn1  == x_{t-1}
+x_tn2  == x_{t-2}
+x_tp1  == x_{t+1}
+x_tp2  == x_{t+2}
+"""
+
 from typing import Optional, Tuple, Union
 
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils
-import torch.utils.data
-from torch import NumberType, Tensor
+from torch import NumberType, Tensor, nn
 
 import mypython.ai.torchprob as tp
 import mypython.ai.torchprob.debug as tp_debug
+from mypython.ai.torch_util import _find_function
+from mypython.terminal import Color
 
 from .component import Decoder, Encoder, Pxhat, PXmiddleCat, Transition, Velocity
 
 
 class NewtonianVAECellBase(nn.Module):
+    """
+    Classes that inherit from this class should not store variables from the previous time internally,
+    as well as
+    `RNNCell <https://pytorch.org/docs/stable/generated/torch.nn.RNNCell.html>`_,
+    `LSTMCell <https://pytorch.org/docs/stable/generated/torch.nn.LSTMCell.html>`_,
+    and `GRUCell <https://pytorch.org/docs/stable/generated/torch.nn.GRUCell.html>`_.
+    """
+
     def __init__(
         self,
         dim_x: int,
@@ -54,36 +66,28 @@ class NewtonianVAECellBase(nn.Module):
 
         self.regularization = regularization
 
+        self.force_training = False  # for add_graph of tensorboard
+
     @property
     def dim_x(self):
         return self._dim_x
 
-    def decode(
-        self,
-        I_t: Tensor,
-        *args,
-        **kwargs,
-        # x_tn1: Union[None, Tensor] = None,
-        # u_tn1: Union[None, Tensor] = None,
-        # v_tn1: Union[None, Tensor] = None,
-        # dt: float = None,
-    ) -> Tuple[Tensor, Tensor, Optional[Tensor]]:
-        """
-        Returns:
-            I_t_dec, x_t, v_t
-        """
-        NotImplementedError()
+    @property
+    def info(self) -> set:
+        return set()
+
+    class Pack:
+        def __init__(self, E: Tensor, E_ll: Tensor, E_kl: Tensor, x_t: Tensor, v_t: Tensor):
+            self.E = E  # Use for training
+            self.E_ll = E_ll
+            self.E_kl = E_kl
+            self.x_t = x_t  # Use for training
+            self.v_t = v_t  # Use for training
 
 
 class NewtonianVAECell(NewtonianVAECellBase):
     """
-    Eq (11) : t -> t-1, +KL -> -KL (mistake)
-
-    Ignore v_t or v_{t-1}
-
-    L = E_{q(x_{t-1} | I_{t-1}) q(x_{t-2} | I_{t-2})}
-            [ E_{p(x_t | x_{t-1}, u_{t-1}; v_{t-1})
-               [ log p(I_t | x_t) - KL(q(x_t | I_t)‖ p(x_t | x_{t-1}, u_{t-1}; v_{t-1})) ] ]
+    Eq (11)
     """
 
     def __init__(self, dim_x, *args, **kwargs) -> None:
@@ -92,48 +96,31 @@ class NewtonianVAECell(NewtonianVAECellBase):
         # p(I_t | x_t)
         self.p_decoder = Decoder(dim_x=dim_x)
 
-    def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
+    def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: Tensor):
+        """"""
 
-        if self.training:
+        if self.training or self.force_training:
             v_t = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)
-
-            self.q_encoder.cond(I_t)
-            self.p_transition.cond(x_tn1, v_t, dt)
-
-            # FIXME: From which distribution should we sample?
-            # x_t = self.q_encoder.rsample()
-            x_t = self.p_transition.rsample()
-
+            x_t = self.p_transition.cond(x_tn1, v_t, dt).rsample()
             # *_t について、各次元(ピクセル)についてはsum, batch size については mean
             E_ll = tp.log(self.p_decoder, I_t, x_t).sum(dim=(1, 2, 3)).mean(dim=0)
-            E_kl = tp.KLdiv(self.q_encoder, self.p_transition).sum(dim=1).mean(dim=0)
-
+            E_kl = tp.KLdiv(self.q_encoder.cond(I_t), self.p_transition).sum(dim=1).mean(dim=0)
             E = E_ll - E_kl
 
             if self.regularization:
-                # Paper:
-                # we added an additional regularization term
-                # to the latent space, KL(q(x|I)‖N (0, 1))
                 E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
 
-            # FIXME: From which distribution should we sample?
-            # x_t = self.p_transition.rsample()
-            # x_t = self.q_encoder.rsample()
-
-            return E, E_ll.detach(), E_kl.detach(), x_t, v_t
+            return super().Pack(E=E, E_ll=E_ll.detach(), E_kl=E_kl.detach(), x_t=x_t, v_t=v_t)
 
         else:
-            # Paper:
-            # During inference, vt is computed as
-            # vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
-            I_t_dec, x_t, _ = self.decode(I_t)
-            v_t = (x_t - x_tn1) / dt
-            return 0, 0, 0, x_t, v_t
+            x_t = self.q_encoder.cond(I_t).rsample()
+            self.p_decoder.cond(x_t)  # for cell.p_decoder.decode()
+            v_t = (x_t - x_tn1) / dt  # for only visualize
+            return super().Pack(E=0, E_ll=0, E_kl=0, x_t=x_t, v_t=v_t)
 
-    def decode(self, I_t: Tensor, *args, **kwargs) -> Tuple[Tensor, Tensor]:
-        x_t = self.q_encoder.cond(I_t).rsample()
-        I_t_dec = self.p_decoder.cond(x_t).decode()
-        return I_t_dec, x_t, None
+    @property
+    def info(self) -> str:
+        return {"V1"}
 
 
 class NewtonianVAEDerivationCell(NewtonianVAECellBase):
@@ -161,210 +148,155 @@ class NewtonianVAEDerivationCell(NewtonianVAECellBase):
         pxhat_std_function = _find_function(pxhat_std_function)
         self.p_xhat = Pxhat(dim_x, dim_xhat, dim_pxhat_middle, std_function=pxhat_std_function)
 
-    def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
+    def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: Tensor):
+        """"""
 
-        if self.training:
+        if self.training or self.force_training:
             v_t = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)
-
-            # E_{p(xhat_t | x_{t-1}, u_{t-1})}[...]
             xhat_t = self.p_xhat.cond(x_tn1, u_tn1).rsample()
-
-            self.p_transition.cond(x_tn1, v_t, dt)
-            self.q_encoder.cond(I_t)
-
             E_ll = tp.log(self.p_decoder, I_t, xhat_t).sum(dim=(1, 2, 3)).mean(dim=0)
-            E_kl = tp.KLdiv(self.q_encoder, self.p_transition).sum(dim=1).mean(dim=0)
-
+            E_kl = (
+                tp.KLdiv(self.q_encoder.cond(I_t), self.p_transition.cond(x_tn1, v_t, dt))
+                .sum(dim=1)
+                .mean(dim=0)
+            )
             E = E_ll - E_kl
 
             if self.regularization:
-                # Paper:
-                # we added an additional regularization term
-                # to the latent space, KL(q(x|I)‖N (0, 1))
                 E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
 
-            # E_{q(x_{t-1} | I_{t-1}) ...}[ E[...] ]  (for next step: x_t of code becomes x_tn1)
             x_t = self.q_encoder.rsample()
 
-            return E, E_ll.detach(), E_kl.detach(), x_t, v_t
+            return super().Pack(E=E, E_ll=E_ll.detach(), E_kl=E_kl.detach(), x_t=x_t, v_t=v_t)
 
         else:
-            # Paper:
-            # During inference, vt is computed as
-            # vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
-            I_t_dec, x_t, _ = self.decode(I_t, x_tn1, u_tn1)
+            x_t = self.q_encoder.cond(I_t).rsample()
+            xhat_t = self.p_xhat.cond(x_tn1, u_tn1).rsample()
             v_t = (x_t - x_tn1) / dt
-            return 0, 0, 0, x_t, v_t
+
+            self.p_decoder.cond(xhat_t)  # for cell.p_decoder.decode()
+            return super().Pack(E=0, E_ll=0, E_kl=0, x_t=x_t, v_t=v_t)
 
     @property
     def dim_xhat(self):
         return self._dim_xhat
 
-    def decode(
-        self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, *args, **kwargs
-    ) -> Tuple[Tensor, Tensor]:
-        x_t = self.q_encoder.cond(I_t).rsample()
-        xhat_t = self.p_xhat.cond(x_tn1, u_tn1).rsample()
-        I_t_dec = self.p_decoder.cond(xhat_t).decode()
-        return I_t_dec, x_t, None
+    @property
+    def info(self) -> str:
+        return {"V1", "xhat"}
 
 
-class NewtonianVAEJIACell(NewtonianVAECellBase):
-    """
-    Suggester: https://github.com/ada526
-    Implementor: https://github.com/SatohKazuto
-    """
+# class NewtonianVAEJIACell(NewtonianVAECellBase):
+#     """
+#     Suggester: https://github.com/ada526
+#     Implementor: https://github.com/SatohKazuto
+#     """
 
-    def __init__(
-        self, dim_x: int, dim_px_cat_middle: int, pxm_std_function: str, *args, **kwargs
-    ) -> None:
-        super().__init__(dim_x=dim_x, *args, **kwargs)
+#     def __init__(
+#         self, dim_x: int, dim_px_cat_middle: int, pxm_std_function: str, *args, **kwargs
+#     ) -> None:
+#         super().__init__(dim_x=dim_x, *args, **kwargs)
 
-        # p(x_t | x_m1_t, x_m2_t)
-        pxm_std_function = _find_function(pxm_std_function)
-        self.p_cat = PXmiddleCat(dim_x, dim_px_cat_middle, pxm_std_function)
+#         # p(x_t | x_m1_t, x_m2_t)
+#         pxm_std_function = _find_function(pxm_std_function)
+#         self.p_cat = PXmiddleCat(dim_x, dim_px_cat_middle, pxm_std_function)
 
-        # p(I_t | x_t)
-        self.p_decoder = Decoder(dim_x)
+#         # p(I_t | x_t)
+#         self.p_decoder = Decoder(dim_x)
 
-    def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
+#     def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
 
-        if self.training:
-            v_t = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)
-            x_m1_t = self.q_encoder.cond(I_t).rsample()
-            x_m2_t = self.p_transition.cond(x_tn1, v_t, dt).rsample()
-            x_t = self.p_cat.cond(x_m1_t, x_m2_t).rsample()
+#         if self.training or self.force_training:
+#             v_t = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)
+#             x_m1_t = self.q_encoder.cond(I_t).rsample()
+#             x_m2_t = self.p_transition.cond(x_tn1, v_t, dt).rsample()
+#             x_t = self.p_cat.cond(x_m1_t, x_m2_t).rsample()
 
-            E_ll = tp.log(self.p_decoder, I_t, x_t).sum(dim=(1, 2, 3)).mean(dim=0)
-            E_kl = tp.KLdiv(self.q_encoder, self.p_cat).sum(dim=1).mean(dim=0)
-            E = E_ll - E_kl
+#             E_ll = tp.log(self.p_decoder, I_t, x_t).sum(dim=(1, 2, 3)).mean(dim=0)
+#             E_kl = tp.KLdiv(self.q_encoder, self.p_cat).sum(dim=1).mean(dim=0)
+#             E = E_ll - E_kl
 
-            if self.regularization:
-                E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
+#             if self.regularization:
+#                 E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
 
-            return E, E_ll.detach(), E_kl.detach(), x_t, v_t
+#             return E, E_ll.detach(), E_kl.detach(), x_t, v_t
 
-        else:
-            I_t_dec, x_t, v_t_ = self.decode(I_t, x_tn1, u_tn1, v_tn1, dt)
-            v_t = (x_t - x_tn1) / dt
-            return 0, 0, 0, x_t, v_t
+#         else:
+#             I_t_dec, x_t, v_t_ = self.decode(I_t, x_tn1, u_tn1, v_tn1, dt)
+#             v_t = (x_t - x_tn1) / dt
+#             return {
+#                 "E": 0,
+#                 "E_ll": 0,
+#                 "E_kl": 0,
+#                 "x_t": x_t,
+#                 "v_t": v_t,
+#             }
 
-    def decode(
-        self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float
-    ) -> Tuple[Tensor, Tensor]:
-        v_t = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)  # ???
-        x_m1_t = self.q_encoder.cond(I_t).rsample()
-        x_m2_t = self.p_transition.cond(x_tn1, v_t, dt).rsample()
-        x_t = self.p_cat.cond(x_m1_t, x_m2_t).rsample()
-        I_t_dec = self.p_decoder.cond(x_t).decode()
-        return I_t_dec, x_t, v_t
-
-
-NewtonianVAECellFamily = Union[
-    NewtonianVAECell,
-    NewtonianVAEDerivationCell,
-    NewtonianVAEJIACell,
-]
-
-
-def get_NewtonianVAECell(name, *args, **kwargs):
-    if name == "NewtonianVAECell":
-        cell = NewtonianVAECell(*args, **kwargs)
-    elif name == "NewtonianVAEDerivationCell":
-        cell = NewtonianVAEDerivationCell(*args, **kwargs)
-    elif name == "NewtonianVAEJIACell":
-        cell = NewtonianVAEJIACell(*args, **kwargs)
-    else:
-        assert False
-
-    return cell
+#     def decode(
+#         self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float
+#     ) -> Tuple[Tensor, Tensor]:
+#         v_t = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)  # ???
+#         x_m1_t = self.q_encoder.cond(I_t).rsample()
+#         x_m2_t = self.p_transition.cond(x_tn1, v_t, dt).rsample()
+#         x_t = self.p_cat.cond(x_m1_t, x_m2_t).rsample()
+#         I_t_dec = self.p_decoder.cond(x_t).decode()
+#         return I_t_dec, x_t, v_t
 
 
-class Stepper:
-    def __init__(self, cell: NewtonianVAECellFamily) -> None:
-        self.cell = cell
-        self._is_reset = False
+class NewtonianVAEBase(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.is_save = False
 
-    def reset(self):
-        self._is_reset = True
+        self.cell: Union[NewtonianVAECell, NewtonianVAEDerivationCell]
 
-    def step(self, u_tn1: Tensor, I_t: Tensor) -> Tuple[Tensor, Tensor]:
-        assert u_tn1.ndim == 2 and I_t.ndim == 4
-        assert u_tn1.shape[0] == I_t.shape[0]  # = N
+    def forward(self, action: Tensor, observation: Tensor, delta: Tensor):
+        """"""
 
-        if self._is_reset:
-            # shape (BS, dim(u))
-            self.v_ = torch.zeros(
-                size=(u_tn1.shape[1], u_tn1.shape[-1]), device=u_tn1.device, dtype=u_tn1.dtype
-            )
-            self.x_ = self.cell.q_encoder.cond(I_t).rsample()
-
-        else:
-            E, E_ll, E_kl, self.x_, self.v_ = self.cell(I_t, self.x_, u_tn1, self.v_, 0.1)
-
-        return self.x_, self.v_
-
-
-class CollectTimeSeriesData:
-    def __init__(self, cell: NewtonianVAECellFamily, T: int, dtype: torch.dtype) -> None:
-        xp = np
-        self.cell = cell
-        dtype = torch.empty((), dtype=dtype).numpy().dtype
-
-        self.LOG_x = xp.full((T, cell.dim_x), xp.nan, dtype=dtype)
-        self.LOG_x_mean = xp.full((T, cell.dim_x), xp.nan, dtype=dtype)
-        self.LOG_v = xp.full((T, cell.dim_x), xp.nan, dtype=dtype)
-        self.LOG_I_dec = xp.full((T, 3, 64, 64), xp.nan, dtype=dtype)
-
-        if type(cell) == NewtonianVAEDerivationCell:
-            self.LOG_xhat_mean = xp.full((T, cell.dim_xhat), xp.nan, dtype=dtype)
-            self.LOG_xhat_std = xp.full((T, cell.dim_xhat), xp.nan, dtype=dtype)
-
-    def run(
-        self,
-        action: Tensor,
-        observation: Tensor,
-        device: torch.device,
-        is_save=False,
-    ):
         T = len(action)
+
+        self._init_LOG(T=T, dtype=action.dtype)
 
         E_sum: Tensor = 0  # = Nagative ELBO
         LOG_E_ll_sum: Tensor = 0
         LOG_E_kl_sum: Tensor = 0
 
         for t in range(T):
-            u_tn1, I_t = action[t].to(device), observation[t].to(device)
+            u_tn1, I_t = action[t], observation[t]
 
             if t == 0:
-                # shape (BS, dim(u))
-                v_t = torch.zeros(
-                    size=(action.shape[1], action.shape[-1]), device=device, dtype=action.dtype
-                )
+                BS, D = action.shape[1], action.shape[-1]
+                v_t = torch.zeros(size=(BS, D), device=action.device, dtype=action.dtype)
                 x_t = self.cell.q_encoder.cond(I_t).rsample()
+                x_tn1 = x_t
+                v_tn1 = v_t
+
             else:
-                E, E_ll, E_kl, x_t, v_t = self.cell(I_t, x_tn1, u_tn1, v_tn1, 0.1)
+                output: NewtonianVAECellBase.Pack = self.cell(
+                    I_t=I_t, x_tn1=x_tn1, u_tn1=u_tn1, v_tn1=v_tn1, dt=delta[t]
+                )
 
-                E_sum += E
-                LOG_E_ll_sum += E_ll
-                LOG_E_kl_sum += E_kl
+                E_sum += output.E
+                LOG_E_ll_sum += output.E_ll
+                LOG_E_kl_sum += output.E_kl
 
-                if is_save:
-                    self.LOG_I_dec[t] = self.as_save(self.cell.p_decoder.decode())
-                    if type(self.cell) == NewtonianVAEDerivationCell:
-                        self.LOG_xhat_std[t] = self.as_save(self.cell.p_xhat.scale)
-                        self.LOG_xhat_mean[t] = self.as_save(self.cell.p_xhat.loc)
+                if self.is_save:
+                    self.LOG_I_dec[t] = as_save(self.cell.p_decoder.decode())
+                    if "xhat" in self.cell.info:
+                        self.LOG_xhat_std[t] = as_save(self.cell.p_xhat.scale)
+                        self.LOG_xhat_mean[t] = as_save(self.cell.p_xhat.loc)
 
-            x_tn1, v_tn1 = x_t, v_t
+                x_tn1 = output.x_t
+                v_tn1 = output.v_t
 
-            #### DEBUG:
+            # ### DEBUG:
             # print(f"time: {t}")
             # tp_debug.check_dist_model(self.cell)
 
-            if is_save:
-                self.LOG_x[t] = self.as_save(x_t)
-                self.LOG_v[t] = self.as_save(v_t)
-                self.LOG_x_mean[t] = self.as_save(self.cell.q_encoder.loc)
+            if self.is_save:
+                self.LOG_x[t] = as_save(x_t)
+                self.LOG_v[t] = as_save(v_t)
+                self.LOG_x_mean[t] = as_save(self.cell.q_encoder.loc)
 
         E_sum /= T
         LOG_E_ll_sum /= T
@@ -372,14 +304,566 @@ class CollectTimeSeriesData:
 
         return E_sum, LOG_E_ll_sum, LOG_E_kl_sum
 
-    @staticmethod
-    def as_save(x: Tensor):
-        assert x.shape[0] == 1
-        return x.detach().squeeze(0).cpu().numpy()
+    def _init_LOG(self, T: int, dtype: torch.dtype):
+        xp = np
+        dtype = torch.empty((), dtype=dtype).numpy().dtype
+
+        self.LOG_x = xp.full((T, self.cell.dim_x), xp.nan, dtype=dtype)
+        self.LOG_x_mean = xp.full((T, self.cell.dim_x), xp.nan, dtype=dtype)
+        self.LOG_v = xp.full((T, self.cell.dim_x), xp.nan, dtype=dtype)
+        self.LOG_I_dec = xp.full((T, 3, 64, 64), xp.nan, dtype=dtype)
+
+        if "xhat" in self.cell.info:
+            self.LOG_xhat_mean = xp.full((T, self.cell.dim_xhat), xp.nan, dtype=dtype)
+            self.LOG_xhat_std = xp.full((T, self.cell.dim_xhat), xp.nan, dtype=dtype)
 
 
-def _find_function(function_name: str):
-    try:
-        return getattr(torch, function_name)
-    except:
-        return getattr(F, function_name)
+class NewtonianVAE(NewtonianVAEBase):
+    r"""Computes ELBO based on formula (11).
+
+    Computes according to the following formula:
+
+    .. math::
+        \begin{array}{ll} \\
+            A = f(\x_{t-1}, \v_{t-1}, \u_{t-1}) \\
+            B = -\log f(\x_{t-1}, \v_{t-1}, \u_{t-1}) \\
+            C = \log f(\x_{t-1}, \v_{t-1}, \u_{t-1}) \\
+            \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
+            \x_{t} \sim p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t}) \\
+            E = \displaystyle \sum_t \left( \log (\I_t \mid \x_t) - \KL{q(\x_t \mid \I_t)}{p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t})} \right)
+        \end{array}
+
+    where:
+
+    .. math::
+        \begin{array}{ll}
+            \v_0 = \boldsymbol{0} \\
+            \x_0 \sim q(\x_0 \mid \I_0) \\
+            p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
+            \x_{t-2} \leftarrow \x_{t-1}
+        \end{array}
+
+    During evaluation:
+
+    .. math::
+        \begin{array}{ll}
+            \v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t
+        \end{array}
+
+
+    Inputs: action, observation, dt
+        * **action**: tensor of shape :math:`(T, N, D)`
+        * **observation**: tensor of shape :math:`(T, N, 3, 64, 64)`
+        * **dt**: tensor of shape :math:`(T)`
+
+        where:
+
+        .. math::
+            \begin{aligned}
+                N ={} & \text{batch size} \\
+                T ={} & \text{sequence length} \\
+                D ={} & \mathrm{dim}(\u) \\
+            \end{aligned}
+
+    References in paper:
+        * During inference, vt is computed as 
+          vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
+        * we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__()
+
+        self.cell = NewtonianVAECell(*args, **kwargs)
+
+
+class NewtonianVAEDerivation(NewtonianVAEBase):
+    r"""Computes ELBO based on formula (23).
+
+    Computes according to the following formula:
+
+    .. math::
+        \begin{array}{ll} \\
+            \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
+            \x_{t} \sim p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t}) \\
+            \xhat_{t} \sim p(\xhat_t \mid \x_{t-1}, \u_{t-1}) \\
+            E = \displaystyle \sum_t \left( \log (\I_t \mid \xhat_t) - \KL{q(\x_t \mid \I_t)}{p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t})} \right)
+        \end{array}
+
+    where:
+
+    .. math::
+        \begin{array}{ll}
+            \v_0 = \boldsymbol{0} \\
+            \x_0 \sim q(\x_0 \mid \I_0) \\
+            p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
+            \v_{t} \leftarrow \v_{t-1} \\
+            \x_{t} \leftarrow \x_{t-1}
+        \end{array}
+
+    During evaluation:
+
+    .. math::
+        \begin{array}{ll}
+            \v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t
+        \end{array}
+
+
+    Inputs: action, observation, dt
+        * **action**: tensor of shape :math:`(T, N, D)`
+        * **observation**: tensor of shape :math:`(T, N, 3, 64, 64)`
+        * **dt**: tensor of shape :math:`(T)`
+
+        where:
+
+        .. math::
+            \begin{aligned}
+                N ={} & \text{batch size} \\
+                T ={} & \text{sequence length} \\
+                D ={} & \mathrm{dim}(\u) \\
+            \end{aligned}
+
+    References in paper:
+        * During inference, vt is computed as 
+          vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
+        * we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__()
+
+        self.cell = NewtonianVAEDerivationCell(*args, **kwargs)
+
+
+######################################## V2 ########################################
+
+
+class NewtonianVAEV2CellBase(NewtonianVAECellBase):
+    def __init__(self, dim_x, *args, **kwargs) -> None:
+        super().__init__(dim_x=dim_x, *args, **kwargs)
+
+    class Pack:
+        def __init__(
+            self, E: Tensor, E_ll: Tensor, E_kl: Tensor, x_tn1: Tensor, x_t: Tensor, v_t: Tensor
+        ):
+            self.E = E  # Use for training
+            self.E_ll = E_ll
+            self.E_kl = E_kl
+            self.x_tn1 = x_tn1  # Use for training
+            self.x_t = x_t
+            self.v_t = v_t
+
+
+class NewtonianVAEV2Cell(NewtonianVAEV2CellBase):
+    def __init__(self, dim_x, *args, **kwargs) -> None:
+        super().__init__(dim_x=dim_x, *args, **kwargs)
+
+        # p(I_t | x_t)
+        self.p_decoder = Decoder(dim_x=dim_x)
+
+    def forward(self, I_tn1: Tensor, I_t: Tensor, x_tn2: Tensor, u_tn1: Tensor, dt: Tensor):
+        """"""
+
+        x_tn1 = self.q_encoder.cond(I_tn1).rsample()
+        v_tn1 = (x_tn1 - x_tn2) / dt
+        v_t: Tensor = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)
+        x_t = self.p_transition.cond(x_tn1, v_t, dt).rsample()
+        E_ll = tp.log(self.p_decoder, I_t, x_t).sum(dim=(1, 2, 3)).mean(dim=0)
+        E_kl = tp.KLdiv(self.q_encoder.cond(I_t), self.p_transition).sum(dim=1).mean(dim=0)
+        E = E_ll - E_kl
+
+        if self.regularization:
+            E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
+
+        x_t_ = self.q_encoder.rsample()
+
+        return super().Pack(
+            E=E,
+            E_ll=E_ll.detach(),
+            E_kl=E_kl.detach(),
+            x_tn1=x_tn1,
+            x_t=x_t_.detach(),
+            v_t=v_t.detach(),
+        )
+
+    @property
+    def info(self) -> str:
+        return {"V2"}
+
+
+class NewtonianVAEV2DerivationCell(NewtonianVAEV2CellBase):
+    """
+    Eq (23)
+    """
+
+    def __init__(
+        self,
+        dim_x: int,
+        dim_xhat: int,
+        dim_pxhat_middle: int,
+        pxhat_std_function: str,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(dim_x=dim_x, *args, **kwargs)
+
+        self._dim_xhat = dim_xhat
+
+        # p(I_t | xhat_t)
+        self.p_decoder = Decoder(dim_x=dim_xhat)
+
+        # p(xhat_t | x_{t-1}, u_{t-1})
+        pxhat_std_function = _find_function(pxhat_std_function)
+        self.p_xhat = Pxhat(dim_x, dim_xhat, dim_pxhat_middle, std_function=pxhat_std_function)
+
+    def forward(self, I_tn1: Tensor, I_t: Tensor, x_tn2: Tensor, u_tn1: Tensor, dt: Tensor):
+        x_tn1 = self.q_encoder.cond(I_tn1).rsample()
+        v_tn1 = (x_tn1 - x_tn2) / dt
+        v_t: Tensor = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)
+        xhat_t = self.p_xhat.cond(x_tn1, u_tn1).rsample()
+        E_ll = tp.log(self.p_decoder, I_t, xhat_t).sum(dim=(1, 2, 3)).mean(dim=0)
+        E_kl = (
+            tp.KLdiv(self.q_encoder.cond(I_t), self.p_transition.cond(x_tn1, v_t, dt))
+            .sum(dim=1)
+            .mean(dim=0)
+        )
+        E = E_ll - E_kl
+
+        if self.regularization:
+            E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
+
+        x_t = self.q_encoder.rsample()
+
+        return super().Pack(
+            E=E,
+            E_ll=E_ll.detach(),
+            E_kl=E_kl.detach(),
+            x_tn1=x_tn1,
+            x_t=x_t.detach(),
+            v_t=v_t.detach(),
+        )
+
+    @property
+    def dim_xhat(self):
+        return self._dim_xhat
+
+    @property
+    def info(self) -> str:
+        return {"V2", "xhat"}
+
+
+class NewtonianVAEV2Base(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.is_save = False
+
+        self.cell: Union[NewtonianVAEV2Cell, NewtonianVAEV2DerivationCell]
+
+    def forward(self, action: Tensor, observation: Tensor, delta: Tensor):
+        """"""
+
+        T = len(action)
+
+        self._init_LOG(T=T, dtype=action.dtype)
+
+        E_sum: Tensor = 0  # = Nagative ELBO
+        LOG_E_ll_sum: Tensor = 0
+        LOG_E_kl_sum: Tensor = 0
+
+        for t in range(T):
+            u_tn1, I_t = action[t], observation[t]
+
+            if t == 0:
+                BS, D = action.shape[1], action.shape[-1]
+                v_t = torch.zeros(size=(BS, D), device=action.device, dtype=action.dtype)
+                x_t = self.cell.q_encoder.cond(I_t).rsample()
+
+                x_tn2 = x_t
+
+            else:
+                I_tn1 = observation[t - 1]
+                output: NewtonianVAEV2CellBase.Pack = self.cell(
+                    I_tn1=I_tn1, I_t=I_t, x_tn2=x_tn2, u_tn1=u_tn1, dt=delta[t]
+                )
+
+                E_sum += output.E
+                LOG_E_ll_sum += output.E_ll
+                LOG_E_kl_sum += output.E_kl
+
+                if self.is_save:
+                    self.LOG_I_dec[t] = as_save(self.cell.p_decoder.decode())
+                    if "xhat" in self.cell.info:
+                        self.LOG_xhat_std[t] = as_save(self.cell.p_xhat.scale)
+                        self.LOG_xhat_mean[t] = as_save(self.cell.p_xhat.loc)
+
+                x_tn2 = output.x_tn1
+
+                # only for save
+                x_t = output.x_t
+                v_t = output.v_t
+
+            # ### DEBUG:
+            # print(f"time: {t}")
+            # tp_debug.check_dist_model(self.cell)
+
+            if self.is_save:
+                self.LOG_x[t] = as_save(x_t)
+                self.LOG_v[t] = as_save(v_t)
+                self.LOG_x_mean[t] = as_save(self.cell.q_encoder.loc)
+
+        E_sum /= T
+        LOG_E_ll_sum /= T
+        LOG_E_kl_sum /= T
+
+        return E_sum, LOG_E_ll_sum, LOG_E_kl_sum
+
+    def _init_LOG(self, T: int, dtype: torch.dtype):
+        xp = np
+        dtype = torch.empty((), dtype=dtype).numpy().dtype
+
+        self.LOG_x = xp.full((T, self.cell.dim_x), xp.nan, dtype=dtype)
+        self.LOG_x_mean = xp.full((T, self.cell.dim_x), xp.nan, dtype=dtype)
+        self.LOG_v = xp.full((T, self.cell.dim_x), xp.nan, dtype=dtype)
+        self.LOG_I_dec = xp.full((T, 3, 64, 64), xp.nan, dtype=dtype)
+
+        if "xhat" in self.cell.info:
+            self.LOG_xhat_mean = xp.full((T, self.cell.dim_xhat), xp.nan, dtype=dtype)
+            self.LOG_xhat_std = xp.full((T, self.cell.dim_xhat), xp.nan, dtype=dtype)
+
+
+class NewtonianVAEV2(NewtonianVAEV2Base):
+    r"""Computes ELBO based on formula (11).
+
+    This implementation was based on Mr. `Ito <https://github.com/ItoMasaki>`_'s opinion.
+
+    Computes according to the following formula:
+
+    .. math::
+        \begin{array}{ll} \\
+            \x_{t-1} \sim q(\x_{t-1} \mid \I_{t-1}) \\
+            \v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t \\
+            A = \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+            B = -\log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+            C = \log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+            \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
+            \x_{t} \sim p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t}) \\
+            ELBO = \displaystyle \sum_t \left( \log (\I_t \mid \x_t) - \KL{q(\x_t \mid \I_t)}{p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t})} \right)
+        \end{array}
+
+    where:
+
+    .. math::
+        \begin{array}{ll}
+            p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
+            \x_{t-2} \leftarrow \x_{t-1}
+        \end{array}
+
+    The initial values follow the formula below:
+
+    .. math::
+        \begin{array}{ll}
+            \v_0 = \boldsymbol{0} \\
+            \x_0 \sim q(\x_0 \mid \I_0)
+        \end{array}
+
+    LOG_x is collected about :math:`\x_{t} \sim q(\x_t \mid \I_t)`.
+    
+    Inputs: action, observation, dt
+        * **action**: tensor of shape :math:`(T, N, D)`
+        * **observation**: tensor of shape :math:`(T, N, 3, 64, 64)`
+        * **dt**: tensor of shape :math:`(T)`
+
+        where:
+
+        .. math::
+            \begin{aligned}
+                N ={} & \text{batch size} \\
+                T ={} & \text{sequence length} \\
+                D ={} & \mathrm{dim}(\u) \\
+            \end{aligned}
+
+    References in paper:
+        * During inference, vt is computed as 
+          vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
+        * we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__()
+
+        self.cell = NewtonianVAEV2Cell(*args, **kwargs)
+
+
+class NewtonianVAEV2Derivation(NewtonianVAEV2Base):
+    r"""Computes ELBO based on formula (23).
+
+    Computes according to the following formula:
+
+    .. math::
+        \begin{array}{ll} \\
+            \x_{t-1} \sim q(\x_{t-1} \mid \I_{t-1}) \\
+            \v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t \\
+            A = \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+            B = -\log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+            C = \log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+            \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
+            \xhat_{t} \sim p(\xhat_t \mid \x_{t-1}, \u_{t-1}) \\
+            ELBO = \displaystyle \sum_t \left( \log (\I_t \mid \xhat_t) - \KL{q(\x_t \mid \I_t)}{p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t})} \right)
+        \end{array}
+
+    where:
+
+    .. math::
+        \begin{array}{ll}
+            p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
+            \x_{t-2} \leftarrow \x_{t-1}
+        \end{array}
+
+    The initial values follow the formula below:
+
+    .. math::
+        \begin{array}{ll}
+            \v_0 = \boldsymbol{0} \\
+            \x_0 \sim q(\x_0 \mid \I_0)
+        \end{array}
+
+    LOG_x is collected about :math:`\x_{t} \sim q(\x_t \mid \I_t)`.
+
+    Inputs: action, observation, dt
+        * **action**: tensor of shape :math:`(T, N, D)`
+        * **observation**: tensor of shape :math:`(T, N, 3, 64, 64)`
+        * **dt**: tensor of shape :math:`(T)`
+
+        where:
+
+        .. math::
+            \begin{aligned}
+                N ={} & \text{batch size} \\
+                T ={} & \text{sequence length} \\
+                D ={} & \mathrm{dim}(\u) \\
+            \end{aligned}
+
+    References in paper:
+        * During inference, vt is computed as 
+          vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
+        * we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__()
+
+        self.cell = NewtonianVAEV2DerivationCell(*args, **kwargs)
+
+
+_NewtonianVAECellFamily = [
+    NewtonianVAECell,
+    NewtonianVAEDerivationCell,
+    NewtonianVAEV2Cell,
+    NewtonianVAEV2DerivationCell,
+]
+NewtonianVAECellFamily = Union[
+    NewtonianVAECell,
+    NewtonianVAEDerivationCell,
+    NewtonianVAEV2Cell,
+    NewtonianVAEV2DerivationCell,
+]
+_NewtonianVAEFamily = [
+    NewtonianVAE,
+    NewtonianVAEDerivation,
+    NewtonianVAEV2,
+    NewtonianVAEV2Derivation,
+]
+NewtonianVAEFamily = Union[
+    NewtonianVAE,
+    NewtonianVAEDerivation,
+    NewtonianVAEV2,
+    NewtonianVAEV2Derivation,
+]
+
+
+class Stepper:
+    class Pack:
+        def __init__(self, I_t_dec: Tensor, x_t: Tensor, v_t: Tensor) -> None:
+            self.I_t_dec = I_t_dec
+            self.x_t = x_t
+            self.v_t = v_t
+
+    def __init__(self, cell: NewtonianVAECellFamily) -> None:
+        self.cell = cell
+        self._is_reset = False
+
+        if "V1" in cell.info:
+            self.step = self._stepV1
+        elif "V2" in cell.info:
+            self.step = self._stepV2
+        else:
+            assert False
+
+    def reset(self):
+        self._is_reset = True
+
+    def _stepV1(self, u_tn1: Tensor, I_t: Tensor, dt: Tensor):
+        assert u_tn1.ndim >= 2 and I_t.ndim >= 4
+        assert u_tn1.shape[0] == I_t.shape[0]  # = N
+
+        # NewtonianVAEBase # ref
+
+        if self._is_reset:
+            BS, D = u_tn1.shape[1], u_tn1.shape[-1]
+            v_t = torch.zeros(size=(BS, D), device=u_tn1.device, dtype=u_tn1.dtype)
+            x_t = self.cell.q_encoder.cond(I_t).rsample()
+            self.x_ = x_t
+            self.v_ = v_t
+
+        else:
+            output: NewtonianVAECellBase.Pack = self.cell(
+                I_t=I_t, x_tn1=self.x_, u_tn1=u_tn1, v_tn1=self.v_, dt=dt
+            )
+            self.x_ = output.x_t
+            self.v_ = output.v_t
+
+        I_t_dec = self.cell.p_decoder.decode()
+        return self.Pack(I_t_dec=I_t_dec, x_t=self.x_, v_t=self.v_)
+
+    def _stepV2(self, u_tn1: Tensor, I_t: Tensor, dt: Tensor):
+        assert u_tn1.ndim >= 2 and I_t.ndim >= 4
+        assert u_tn1.shape[0] == I_t.shape[0]  # = N
+
+        # NewtonianVAEV2Base # ref
+
+        if self._is_reset:
+            BS, D = u_tn1.shape[1], I_t.shape[-1]
+            v_t = torch.zeros(size=(BS, D), device=u_tn1.device, dtype=u_tn1.dtype)
+            x_t = self.cell.q_encoder.cond(I_t).rsample()
+
+            self.x_tn2 = x_t
+
+        else:
+            output: NewtonianVAEV2CellBase.Pack = self.cell(
+                I_tn1=self.I_tn1, I_t=I_t, x_tn2=self.x_tn2, u_tn1=u_tn1, dt=dt
+            )
+
+            self.x_tn2 = output.x_tn1
+
+        self.I_tn1 = I_t
+        I_t_dec = self.cell.p_decoder.decode()
+        return self.Pack(I_t_dec=I_t_dec, x_t=output.x_t, v_t=output.v_t)
+
+
+def as_save(x: Tensor):
+    assert x.shape[0] == 1  # N (BS)
+    return x.detach().squeeze(0).cpu().numpy()
+
+
+def get_NewtonianVAECell(name: str, *args, **kwargs) -> NewtonianVAECellFamily:
+    for T in _NewtonianVAECellFamily:
+        if name == T.__name__ or name == T.__name__[:-4]:
+            return T(*args, **kwargs)
+    assert False
+
+
+def get_NewtonianVAE(name: str, *args, **kwargs) -> NewtonianVAEFamily:
+    for T in _NewtonianVAEFamily:
+        if name == T.__name__ or name == T.__name__ + "Cell":
+            return T(*args, **kwargs)
+    assert False

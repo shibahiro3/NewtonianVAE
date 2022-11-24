@@ -1,24 +1,55 @@
+r"""
+.. math::
+    \newcommand{\I}{\mathbf{I}}
+    \newcommand{\u}{\mathbf{u}}
+    \newcommand{\v}{\mathbf{v}}
+    \newcommand{\x}{\mathbf{x}}
+    \newcommand{\xhat}{\hat{\mathbf{x}}}
+    \newcommand{\KL}[2]{\operatorname{KL}\left[ #1 \, \middle\| \, #2 \right]}
+"""
+
 from typing import Callable, Optional, Tuple, Union
 
 import torch
-import torch.nn as nn
-import torch.utils
-import torch.utils.data
-from torch import NumberType, Tensor
+from torch import NumberType, Tensor, nn
 
 import mypython.ai.torchprob as tp
 from mypython.terminal import Color
 
 
 class ABCf(nn.Module):
-    """
-    Paper:
+    r"""
+
+    .. math::
+        \begin{array}{ll} \\
+            A = \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+            B = -\log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
+            C = \log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1}))
+        \end{array}
+
+
+    Outputs: diagA, diagB, diagC
+        * **diagA**: tensor of shape :math:`(*, D)`
+        * **diagB**: tensor of shape :math:`(*, D)`
+        * **diagC**: tensor of shape :math:`(*, D)`
+
+        where:
+
+        .. math::
+            \begin{aligned}
+                D ={} & \mathrm{dim}(\u) \\
+            \end{aligned}
+
+
+    References in paper:
         [A, log (-B), log C] = diag(f(xt, vt, ut)),
         where f is a neural network with linear output activation.
 
-    Paper (TS-NVAE):
-              A  = diag(fA(xt, vt, ut))
+    References in paper (TS-NVAE):
+        A  = diag(fA(xt, vt, ut))
+
         log (-B) = diag(fB(xt, vt, ut))
+
         log C    = diag(fC(xt, vt, ut))
     """
 
@@ -31,16 +62,20 @@ class ABCf(nn.Module):
         self.f = nn.Linear(3 * dim_x, 3 * dim_x)
 
     def forward(self, x_tn1: Tensor, v_tn1: Tensor, u_tn1: Tensor):
-        """
-        Returns:
-            diag(A), diag(B), diag(C)
-        """
+        """"""
         abc = self.f(torch.cat([x_tn1, v_tn1, u_tn1], dim=-1))
         diagA, log_diagnB, log_diagC = torch.chunk(abc, 3, dim=-1)
         return diagA, -log_diagnB.exp(), log_diagC.exp()
 
 
 class Velocity(nn.Module):
+    r"""
+    .. math::
+        \begin{array}{ll}
+            \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
+        \end{array}
+    """
+
     def __init__(
         self,
         dim_x: int,
@@ -58,6 +93,8 @@ class Velocity(nn.Module):
         self.fix_abc = fix_abc
 
     def forward(self, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
+        """"""
+
         """
         if A is diagonal matrix:
             A @ x == diag(A) * x
@@ -83,12 +120,12 @@ class Velocity(nn.Module):
 
 
 class Transition(tp.Normal):
-    """
-    transition prior
-    p(xt | x_{t-1}, u_{t-1}; vt)
+    r"""Transition prior. Eq (9).
 
-    Paper:
-        p(xt | x_{t-1}, u_{t-1}; vt) =  N(xt | x_{t-1} + ∆t·vt, σ^2)   (9)
+    .. math::
+        \begin{array}{ll}
+            p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
+        \end{array}
     """
 
     def __init__(self, std=1.0) -> None:
@@ -102,10 +139,13 @@ class Transition(tp.Normal):
 
 
 class Encoder(tp.Normal):
-    """
-    q(x_t | I_t)
+    r"""
+    .. math::
+        \begin{array}{ll}
+            q(\x_t \mid \I_t)
+        \end{array}
 
-    Paper:
+    References in paper:
         We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.
     """
 
@@ -119,6 +159,7 @@ class Encoder(tp.Normal):
         self.std_function = std_function
 
     def forward(self, I_t: Tensor):
+        """"""
         middle = self.fc(I_t)
         mu = self.mean(middle)
         sigma = self.std_function(self.std(middle))
@@ -127,14 +168,14 @@ class Encoder(tp.Normal):
 
 
 class Decoder(tp.Normal):
-    """
-    p(I_t | x_t)
+    r"""
+    .. math::
+        \begin{array}{ll}
+            p(\I_t \mid \x_{t}) \hspace{5mm} \text{or} \hspace{5mm} p(\I_t \mid \xhat_{t})
+        \end{array}
 
-    Paper:
+    References in paper:
         We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.
-
-      or
-    p(I_t | xhat_t)
     """
 
     def __init__(self, dim_x: int, std=1.0) -> None:
@@ -144,12 +185,16 @@ class Decoder(tp.Normal):
         self.std = torch.tensor(std)
 
     def forward(self, x_t: Tensor):
+        """"""
         return self.dec(x_t), self.std
 
 
 class Pxhat(tp.Normal):
-    """
-    p(xhat_t | x_{t-1}, u_{t-1})
+    r"""
+    .. math::
+        \begin{array}{ll}
+            p(\xhat_t \mid \x_{t-1}, \u_{t-1})
+        \end{array}
 
     paperに何の説明もない
     """
@@ -173,8 +218,12 @@ class Pxhat(tp.Normal):
 
 
 class VisualEncoder64(nn.Module):
-    """
-    (*, 3, 64, 64) -> (*, dim_output)
+    r"""
+    Inputs: x
+        * **x**: tensor of shape :math:`(*, 3, 64, 64)`
+
+    Outputs: y
+        * **y**: tensor of shape :math:`(*, \mathrm{dim\_output})`
     """
 
     def __init__(self, dim_output: int, activation=torch.relu) -> None:
@@ -190,6 +239,7 @@ class VisualEncoder64(nn.Module):
         self.fc = nn.Identity() if dim_output == 1024 else nn.Linear(1024, dim_output)
 
     def forward(self, x: Tensor):
+        """"""
         x = self.activation(self.conv1(x))
         x = self.activation(self.conv2(x))
         x = self.activation(self.conv3(x))
@@ -201,8 +251,12 @@ class VisualEncoder64(nn.Module):
 
 
 class VisualDecoder64(nn.Module):
-    """
-    (*, dim_input) -> (*, 3, 64, 64)
+    r"""
+    Inputs: x
+        * **x**: tensor of shape :math:`(*, \mathrm{dim\_input})`
+
+    Outputs: y
+        * **y**: tensor of shape :math:`(*, 3, 64, 64)`
     """
 
     def __init__(self, dim_input: int, dim_middle: int, activation=torch.relu):
@@ -218,6 +272,7 @@ class VisualDecoder64(nn.Module):
         self.conv4 = nn.ConvTranspose2d(32, 3, 6, stride=2)
 
     def forward(self, x: Tensor):
+        """"""
         x = self.fc1(x)
         x = x.reshape(-1, self.dim_middle, 1, 1)
         x = self.activation(self.conv1(x))
@@ -238,6 +293,7 @@ class PXmiddleCat(tp.Normal):
         self.std_function = std_function
 
     def forward(self, x_m1_t: Tensor, x_m2_t: Tensor):
+        """"""
         middle = torch.cat([x_m1_t, x_m2_t], dim=-1)
         # Color.print(middle.shape)
         middle = self.fc(middle)

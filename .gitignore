@@ -1,13 +1,27 @@
+# Common #
+##########
+_*
+*_
+
+# Virtual environment #
+#######################
 venv/
+
+# binary data #
+###############
 data*/
 save*/
 result*/
 log*/
 
-qt
+# Docs html #
+#############
+docs/*
+!docs/generated
 
-_*
-*_
+# Source #
+##########
+qt
 !__init__.py
 
 

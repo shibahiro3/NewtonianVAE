@@ -2,10 +2,7 @@ from pprint import pprint
 from typing import List, Optional, Tuple, Union
 
 import torch
-import torch.nn as nn
-import torch.utils
-import torch.utils.data
-from torch import Tensor
+from torch import Tensor, nn
 
 from mypython.terminal import Color
 
