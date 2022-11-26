@@ -20,13 +20,14 @@ from models.core import (
     as_save,
     get_NewtonianVAECell,
 )
-from mypython.plotutil import cmap
-from mypython.terminal import Prompt
-from newtonianvae.load import load
+from mypython.plotutil import Axis_aspect_2d, cmap
+from mypython.terminal import Color, Prompt
+from newtonianvae.load import get_path_data, load
 from simulation.env import obs2img
 from tool import argset, checker
 from tool.dataloader import DataLoader
 from tool.params import Params, ParamsEval
+from tool.util import Preferences
 
 try:
     import tool._plot_config
@@ -41,7 +42,7 @@ argset.episodes(parser)
 argset.anim_mode(parser)
 argset.cf_eval(parser)
 argset.path_model(parser)
-argset.path_data(parser)
+argset.path_data(parser, required=False)
 argset.path_result(parser)
 argset.fix_xmap_size(parser, required=False)
 _args = parser.parse_args()
@@ -67,14 +68,14 @@ def reconstruction():
     torch.set_grad_enabled(False)
 
     model, d, weight_p, params, params_eval, dtype, device = load(args.path_model, args.cf_eval)
-    checker.is_same_data(args.path_data, weight_p.parent.parent)
+    data_path = get_path_data(args.path_data, d)
 
     Path(args.path_result).mkdir(parents=True, exist_ok=True)
 
     all_steps = params.train.max_time_length * args.episodes
 
     testloader = DataLoader(
-        root=Path(args.path_data, "episodes"),
+        root=Path(data_path, "episodes"),
         start=params_eval.data_start,
         stop=params_eval.data_stop,
         batch_size=args.episodes,
@@ -85,11 +86,12 @@ def reconstruction():
 
     # =======
     fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.9)
     mpu.get_figsize(fig)
 
     class Ax:
         def __init__(self) -> None:
-            gs = GridSpec(nrows=6, ncols=6)
+            gs = GridSpec(nrows=6, ncols=6, hspace=0.4, wspace=0.5)
             up = 2
 
             self.action = fig.add_subplot(gs[:up, 0:2])
@@ -195,7 +197,6 @@ def reconstruction():
             ax.set_title(r"$\mathbf{u}_{t-1}$ (Original)")
             # ax.set_xlabel("$u_x$")
             # ax.set_ylabel("$u_y$")
-            ax.set_aspect(0.7)
             # ax.set_xlim(-1, 1)
             ax.set_ylim(-1.2, 1.2)
             # ax.arrow(0, 0, action[t, 0], action[t, 1], head_width=0.05)
@@ -206,6 +207,7 @@ def reconstruction():
                 width=0.5,
             )
             ax.tick_params(bottom=False, labelbottom=False)
+            Axis_aspect_2d(ax, 1)
 
             # ===============================================================
             ax = axes.observation
@@ -222,7 +224,7 @@ def reconstruction():
             # ===============================================================
             ax = axes.x_mean
             N = model.cell.dim_x
-            ax.set_title(r"mean of $\mathbf{x}_{1:t}$")
+            ax.set_title(r"$\mathbf{x}_{1:t}$")
             ax.set_xlim(0, params.train.max_time_length)
             ax.set_ylim(self.min_x_mean, self.max_x_mean)
             ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
@@ -237,7 +239,7 @@ def reconstruction():
             # ===============================================================
             ax = axes.x_dims
             N = model.cell.dim_x
-            ax.set_title(r"mean of $\hat{\mathbf{x}}_{t}$  " f"(dim: {N})")
+            ax.set_title(r"$\mathbf{x}_{t}$  " f"(dim: {N})")
             ax.set_ylim(self.min_x_mean, self.max_x_mean)
             # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
             ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
@@ -247,10 +249,11 @@ def reconstruction():
                 color=[color_map(1 - i / N) for i in range(N)],
             )
             ax.tick_params(bottom=False, labelbottom=False)
+            Axis_aspect_2d(ax, 1)
 
             # ===============================================================
             ax = axes.x_map
-            ax.set_title(r"mean of $\mathbf{x}_{1:t}$")
+            ax.set_title(r"$\mathbf{x}_{1:t}$")
             ax.set_xlim(self.min_x_map[0], self.max_x_map[0])
             ax.set_ylim(self.min_x_map[1], self.max_x_map[1])
             ax.set_aspect(1)
@@ -300,12 +303,13 @@ def reconstruction():
                 color=[color_map(1 - i / N) for i in range(N)],
             )
             ax.tick_params(bottom=False, labelbottom=False)
+            Axis_aspect_2d(ax, 1)
 
             if "xhat" in model.cell.info:
                 # ===============================================================
                 ax = axes.xhat_mean
                 N = model.cell.dim_xhat
-                ax.set_title(r"mean of $\hat{\mathbf{x}}_{1:t}$")
+                ax.set_title(r"$\hat{\mathbf{x}}_{1:t}$")
                 ax.set_xlim(0, params.train.max_time_length)
                 ax.set_ylim(self.min_xhat_mean, self.max_xhat_mean)
                 ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
@@ -320,7 +324,7 @@ def reconstruction():
                 # ===============================================================
                 ax = axes.xhat_mean_dims
                 N = model.cell.dim_xhat
-                ax.set_title(r"mean of $\hat{\mathbf{x}}_t$  " f"(dim: {N})")
+                ax.set_title(r"$\hat{\mathbf{x}}_t$  " f"(dim: {N})")
                 ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
                 ax.set_ylim(self.min_xhat_mean, self.max_xhat_mean)
                 ax.bar(
@@ -329,6 +333,7 @@ def reconstruction():
                     color=[color_map(1 - i / N) for i in range(N)],
                 )
                 ax.tick_params(bottom=False, labelbottom=False)
+                Axis_aspect_2d(ax, 1)
 
                 # ===============================================================
                 ax = axes.xhat_std
@@ -357,8 +362,7 @@ def reconstruction():
                     color=[color_map(1 - i / N) for i in range(N)],
                 )
                 ax.tick_params(bottom=False, labelbottom=False)
-
-            fig.tight_layout()
+                Axis_aspect_2d(ax, 1)
 
     p = AnimPack()
 

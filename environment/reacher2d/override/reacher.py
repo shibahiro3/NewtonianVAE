@@ -106,11 +106,13 @@ class Reacher(base.Task):
     if True:
         randomizers.randomize_limited_and_rotational_joints(physics, self.random)
     else:
+        pass
+
         # radian
 
         # zero
-        physics.named.data.qpos["shoulder"] = np.array([0])
-        physics.named.data.qpos["wrist"] = np.array([0])
+        # physics.named.data.qpos["shoulder"] = np.array([0])
+        # physics.named.data.qpos["wrist"] = np.array([0])
 
         ### 160 [deg] == (8/9)π ≈ 2.79 [rad]
 

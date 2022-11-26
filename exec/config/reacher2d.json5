@@ -1,30 +1,30 @@
 {
   // Class name of the model to use for training
-  model: "NewtonianVAEDerivationCell",
+  model: "NewtonianVAEV2",
 
-  NewtonianVAECell: {
+  NewtonianVAEV2: {
     dim_x: 2,
-    transition_std: 0.25,
-    encoder_dim_middle: 512,
+    transition_std: 0.1,
+    encoder_dim_middle: 1024,
     encoder_std_function: "softplus",
-
-    // Fix values for A, B, C  (Optional)
-    // Paper: Firstly, the transition matrices were set to A = 0, B = 0, C = 1.
-    fix_abc: [0, 0, 1],
 
     // Use KL(q(x|I)‖N (0, 1))  (Optional)
     // If not specified, it is equivalent to false.
     // Paper: Secondly, we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
-    regularization: false,
+    // regularization: true,
+
+    // Fix values for A, B, C  (Optional)
+    // Paper: Firstly, the transition matrices were set to A = 0, B = 0, C = 1.
+    fix_abc: [0, 0, 1],
   },
 
-  NewtonianVAEDerivationCell: {
+  NewtonianVAEDerivation: {
     dim_x: 2,
     transition_std: 0.25,
-    encoder_dim_middle: 512,
+    encoder_dim_middle: 1024,
     encoder_std_function: "softplus",
+    // regularization: true,
     fix_abc: [0, 0, 1],
-    regularization: false,
 
     dim_xhat: 32,
     dim_pxhat_middle: 32,
@@ -34,10 +34,10 @@
   NewtonianVAEJIACell: {
     dim_x: 2,
     transition_std: 0.25,
-    encoder_dim_middle: 512,
+    encoder_dim_middle: 1024,
     encoder_std_function: "softplus",
+    // regularization: true,
     fix_abc: [0, 0, 1],
-    regularization: false,
 
     dim_px_cat_middle: 32,
     pxm_std_function: "softplus",
@@ -50,11 +50,10 @@
     // Random seed  (Optional)
     // If null, the seed is determined automatically and the seed used is stored in seed.txt.
     // If not specified, it is equivalent to null.
-    seed: null, // null or int
+    seed: null, // int or null
 
+    // === Paper ===
     /*
-      Paper:
-      
       To train the models, we generate 1000 random se-
       quences with 100 time-steps for the point mass and
       reacher-2D systems, and 30 time-steps for the fetch-3D
@@ -71,17 +70,15 @@
     data_stop: 1000,
 
     // Small batch size (like 1) makes learning very slow...
-    // If you get torch.cuda.OutOfMemoryError, make it smaller.
-    batch_size: 50,
+    // If this value is large, you may get torch.cuda.OutOfMemoryError.
+    batch_size: 5,
 
-    grad_clip_norm: null, // Number type or null
     learning_rate: 3e-4,
-
-    epochs: 300,
-    save_per_epoch: 50,
-
-    // Use the time from 0 to max_time_length - 1 (= T) in the data set
-    // Of course, this value must not exceed the maximum time that the data has.
+    epochs: 3000,
     max_time_length: 100,
+    // =============
+
+    save_per_epoch: 20,
+    grad_clip_norm: null, // Number type or null
   },
 }

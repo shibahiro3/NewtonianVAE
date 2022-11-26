@@ -3,7 +3,7 @@
 # This file is just a sample.
 # You can change the arguments according to your content.
 
-# reacher2d, pointmass, pointmass_big, ... 
+# reacher2d, point_mass, ...
 env=$1
 
 
@@ -14,14 +14,13 @@ export PYTHONPATH="$workspaceFolder/source"
 
 if [ "$env" == "reacher2d" ]; then
 	domain="reacher"
-elif [ "$env" == "pointmass" ] || [ "$env" == "pointmass_big" ]; then
-	domain="point_mass"
 else
-	echo "Unknown environment"
-	exit 0
+	domain=$env
 fi
 
-python source/simulation/override.py $domain $workspaceFolder/environment/$env/override
+override=$workspaceFolder/environment/$env/override
+
+python source/simulation/override.py $domain $override
 
 
 # Paper:
@@ -30,16 +29,16 @@ python source/simulation/override.py $domain $workspaceFolder/environment/$env/o
 # reacher-2D systems, and 30 time-steps for the fetch-3D
 # system.
 
-
+path_data=environment/$env/data
 opts=(
-	--cf-simenv environment/$env/cf/params_env.json5
-	# --path-data environment/$env/data
-	--path-data environment/$env/data_handmade2
-	--path-result environment/$env/results
+	--cf-simenv   exec/config/${env}_env.json5
+	--path-data   $path_data
 	--episodes 1050 # for train: 1000, for eval: 50
-	--position-size 3 # position_wrap: null
-	# --position-size 0.35 # position_wrap: "endeffector"
+	# --save_anim
 	${@:2}
 )
 
 python source/simulation/collect_data.py ${opts[@]}
+
+cp -fr $override $path_data
+chmod 444 $path_data/override/*

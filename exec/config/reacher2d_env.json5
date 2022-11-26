@@ -1,11 +1,11 @@
 {
-  simenv: {
+  ControlSuiteEnvWrap: {
     env: "reacher-hard",
     seed: 1,
     max_episode_length: 100,
     action_repeat: 1,
     bit_depth: 8,
-    action_type: "handmade2",
+    // action_type: "default",
     // position_wrap: "endeffector",
   },
 }

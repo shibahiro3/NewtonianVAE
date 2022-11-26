@@ -78,15 +78,17 @@
 <li><a class="reference internal" href="#tool.params.ParamsEval.kwargs"><code class="docutils literal notranslate"><span class="pre">ParamsEval.kwargs</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#tool.params.ParamsSimEnv"><code class="docutils literal notranslate"><span class="pre">ParamsSimEnv</span></code></a><ul>
-<li><a class="reference internal" href="#tool.params.ParamsSimEnv.kwargs"><code class="docutils literal notranslate"><span class="pre">ParamsSimEnv.kwargs</span></code></a></li>
-</ul>
-</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-tool.util">tool.util module</a><ul>
+<li><a class="reference internal" href="#tool.util.Preferences"><code class="docutils literal notranslate"><span class="pre">Preferences</span></code></a><ul>
+<li><a class="reference internal" href="#tool.util.Preferences.get"><code class="docutils literal notranslate"><span class="pre">Preferences.get()</span></code></a></li>
+<li><a class="reference internal" href="#tool.util.Preferences.put"><code class="docutils literal notranslate"><span class="pre">Preferences.put()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#tool.util.backup"><code class="docutils literal notranslate"><span class="pre">backup()</span></code></a></li>
 <li><a class="reference internal" href="#tool.util.delete_useless_saves"><code class="docutils literal notranslate"><span class="pre">delete_useless_saves()</span></code></a></li>
+<li><a class="reference internal" href="#tool.util.get_data_path"><code class="docutils literal notranslate"><span class="pre">get_data_path()</span></code></a></li>
 <li><a class="reference internal" href="#tool.util.select_date"><code class="docutils literal notranslate"><span class="pre">select_date()</span></code></a></li>
 <li><a class="reference internal" href="#tool.util.select_weight"><code class="docutils literal notranslate"><span class="pre">select_weight()</span></code></a></li>
 </ul>
@@ -195,7 +197,7 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tool.argset.path_result">
-<span class="sig-prename descclassname"><span class="pre">tool.argset.</span></span><span class="sig-name descname"><span class="pre">path_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser:</span> <span class="pre">~argparse.ArgumentParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metavar='DIR_PATH'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">help='Directory</span> <span class="pre">path</span> <span class="pre">for</span> <span class="pre">result'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.argset.path_result" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">tool.argset.</span></span><span class="sig-name descname"><span class="pre">path_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser:</span> <span class="pre">~argparse.ArgumentParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metavar='DIR_PATH'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">help='Directory</span> <span class="pre">path</span> <span class="pre">for</span> <span class="pre">result\nIf</span> <span class="pre">specified</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">videos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etc.</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">will</span> <span class="pre">be</span> <span class="pre">stored</span> <span class="pre">in</span> <span class="pre">that</span> <span class="pre">directory.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.argset.path_result" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -279,20 +281,25 @@
 
 </dd></dl>
 
+</section>
+<section id="module-tool.util">
+<span id="tool-util-module"></span><h2>tool.util module<a class="headerlink" href="#module-tool.util" title="Permalink to this heading"></a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="tool.params.ParamsSimEnv">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tool.params.</span></span><span class="sig-name descname"><span class="pre">ParamsSimEnv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.params.ParamsSimEnv" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_SimEnv</span></code></p>
-<dl class="py property">
-<dt class="sig sig-object py" id="tool.params.ParamsSimEnv.kwargs">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">kwargs</span></span><a class="headerlink" href="#tool.params.ParamsSimEnv.kwargs" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="tool.util.Preferences">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tool.util.</span></span><span class="sig-name descname"><span class="pre">Preferences</span></span><a class="headerlink" href="#tool.util.Preferences" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tool.util.Preferences.get">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.Preferences.get" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tool.util.Preferences.put">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.Preferences.put" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
-</section>
-<section id="module-tool.util">
-<span id="tool-util-module"></span><h2>tool.util module<a class="headerlink" href="#module-tool.util" title="Permalink to this heading"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="tool.util.backup">
 <span class="sig-prename descclassname"><span class="pre">tool.util.</span></span><span class="sig-name descname"><span class="pre">backup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.backup" title="Permalink to this definition"></a></dt>
@@ -301,6 +308,11 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="tool.util.delete_useless_saves">
 <span class="sig-prename descclassname"><span class="pre">tool.util.</span></span><span class="sig-name descname"><span class="pre">delete_useless_saves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_date_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.delete_useless_saves" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tool.util.get_data_path">
+<span class="sig-prename descclassname"><span class="pre">tool.util.</span></span><span class="sig-name descname"><span class="pre">get_data_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_time_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.get_data_path" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">

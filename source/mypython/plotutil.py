@@ -24,17 +24,21 @@ def get_figsize(fig):
     fig.canvas.mpl_connect("resize_event", _callback)
 
 
-def Axis_aspect_2d(ax, aspect: float, x: np.ndarray, y: np.ndarray, margin=0.1):
-    assert margin >= 0
-    xmin = np.nanmin(x) - margin
-    xmax = np.nanmax(x) + margin
-    ymin = np.nanmin(y) - margin
-    ymax = np.nanmax(y) + margin
+def Axis_aspect_2d(ax, aspect: float):
+    """Put after ax.plot() series"""
+    xmin, xmax = ax.get_xlim()
+    ymin, ymax = ax.get_ylim()
     xlen = np.abs(xmax - xmin)
     ylen = np.abs(ymax - ymin)
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(ymin, ymax)
     ax.set_aspect(aspect * (xlen / ylen))
+
+
+def cartesian_coordinate(ax, r):
+    ax.set_xlim(-r, r)
+    ax.set_ylim(-r, r)
+    ax.set_aspect(1)
+    ax.hlines(0, -r, r, color="black")
+    ax.vlines(0, -r, r, color="black")
 
 
 def anim_mode(mode: str, fig, anim_func, frames: int, freeze_cnt=0, interval=33, save_path=None):

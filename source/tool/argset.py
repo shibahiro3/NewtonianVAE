@@ -9,7 +9,7 @@ def save_anim(
     help="Save animation",
     **kwargs,
 ):
-    parser.add_argument("-s", "--save-anim", **_kwargs(locals()), **kwargs)
+    parser.add_argument("--save-anim", **_kwargs(locals()), **kwargs)
 
 
 def resume(
@@ -143,10 +143,10 @@ def path_save(
 
 def path_result(
     parser: argparse.ArgumentParser,
-    required=True,
+    required=False,
     type=str,
     metavar="DIR_PATH",
-    help="Directory path for result",
+    help="Directory path for result\nIf specified, videos, etc., will be stored in that directory.",
     **kwargs,
 ):
     parser.add_argument("--path-result", **_kwargs(locals()), **kwargs)

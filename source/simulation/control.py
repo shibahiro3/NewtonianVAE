@@ -1,8 +1,10 @@
 import argparse
 import sys
 from pathlib import Path
+from pprint import pprint
 from typing import Dict
 
+import json5
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -14,15 +16,15 @@ import tool.util
 from models.core import (
     NewtonianVAECell,
     NewtonianVAEDerivationCell,
+    NewtonianVAEV2Cell,
     get_NewtonianVAECell,
 )
 from models.pcontrol import PurePControl
-from mypython.plotutil import cmap
+from mypython.plotutil import Axis_aspect_2d, cmap
 from mypython.terminal import Color, Prompt
 from newtonianvae.load import load
 from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img
 from tool import argset, checker
-from tool.params import Params, ParamsEval, ParamsSimEnv
 
 try:
     import tool._plot_config
@@ -68,9 +70,11 @@ def main():
 
     torch.set_grad_enabled(False)
 
-    cell, d, weight_p, params, params_eval, dtype, device = load(args.path_model, args.cf_eval)
+    model, d, weight_p, params, params_eval, dtype, device = load(args.path_model, args.cf_eval)
     if weight_p is None:
         return
+
+    assert type(model.cell) == NewtonianVAEV2Cell
 
     Path(args.path_result).mkdir(parents=True, exist_ok=True)
 
@@ -81,19 +85,19 @@ def main():
 
     all_steps = max_time_length * args.episodes
 
-    params_env = ParamsSimEnv(args.cf_simenv)
-    env = ControlSuiteEnvWrap(**params_env.kwargs)
+    env = ControlSuiteEnvWrap(**json5.load(open(args.cf_simenv))["ControlSuiteEnvWrap"])
 
     Igoal = mv.cv2cnn(np.load(args.goal_img)).unsqueeze_(0).to(device)
 
     # ======
     fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=1)
     mpu.get_figsize(fig)
 
     class Ax:
         def __init__(self) -> None:
-            gs = GridSpec(nrows=5, ncols=8)
-            up = 2
+            gs = GridSpec(nrows=5, ncols=8, hspace=0)
+            up = 3
 
             self.action = fig.add_subplot(gs[:up, 0:2])
             self.Igoal = fig.add_subplot(gs[:up, 2:4])
@@ -125,12 +129,11 @@ def main():
             )
 
         def init(self):
-            self.ctrl = PurePControl(img2obs(Igoal), args.alpha, cell)
-            # print(self.ctrl.x_goal)
+            self.ctrl = PurePControl(img2obs(Igoal), args.alpha, model.cell)
             self.observation = env.reset().to(device)
             xp = np
             self.LOG_x = xp.full(
-                (max_time_length, cell.dim_x),
+                (max_time_length, model.cell.dim_x),
                 xp.nan,
                 dtype=torch.empty((), dtype=dtype).numpy().dtype,
             )
@@ -149,7 +152,7 @@ def main():
 
             # ======================================================
             self.t += 1
-            color_action = cmap(cell.dim_x, "prism")
+            color_action = cmap(model.cell.dim_x, "prism")
 
             if frame_cnt == -1:
                 self.episode_cnt = np.random.randint(0, args.episodes)
@@ -164,20 +167,26 @@ def main():
                 fontname="monospace",
             )
 
-            if self.t == 0:
-                I_t_dec = torch.full_like(self.observation, torch.nan)
-                x_t = cell.q_encoder.cond(self.observation).rsample()
-                action = self.ctrl.get_action_from_x(x_t)
-                v_t = torch.zeros_like(action)
-            else:
-                I_t_dec, x_t, v_t = cell.decode(
-                    self.observation, self.x_tn1, self.action_pre, self.v_tn1, 0.1
-                )
-                action = self.ctrl.get_action_from_x(x_t)
+            # if self.t == 0:
+            #     I_t_dec = torch.full_like(self.observation, torch.nan)
+            #     x_t = model.cell.q_encoder.cond(self.observation).rsample()
+            #     action = self.ctrl.get_action_from_x(x_t)
+            #     v_t = torch.zeros_like(action)
+            # else:
+            #     I_t_dec, x_t, v_t = model.cell.decode(
+            #         self.observation, self.x_tn1, self.action_pre, self.v_tn1, 0.1
+            #     )
+            #     action = self.ctrl.get_action_from_x(x_t)
 
-            self.x_tn1 = x_t
-            self.action_pre = action
-            self.v_tn1 = v_t
+            ### core ###
+            x_t = model.cell.q_encoder.cond(self.observation).rsample()
+            action = self.ctrl.get_action_from_x(x_t)
+            I_t_dec = model.cell.p_decoder.cond(x_t).decode()
+            ############
+
+            # self.x_tn1 = x_t
+            # self.action_pre = action
+            # self.v_tn1 = v_t
 
             # action = env.sample_random_action()
             self.observation, _, done, position = env.step(action)
@@ -187,20 +196,20 @@ def main():
             # ===============================================================
             ax = axes.action
             ax.set_title(r"$\mathbf{u}_{t-1}$ (Generated)")
-            ax.set_aspect(0.7)
             ax.set_ylim(-1.2, 1.2)
             ax.bar(
-                range(cell.dim_x),
+                range(model.cell.dim_x),
                 action.detach().squeeze(0).cpu(),
                 color=color_action,
                 width=0.5,
             )
             ax.tick_params(bottom=False, labelbottom=False)
+            Axis_aspect_2d(ax, 1)
 
             # ===============================================================
             ax = axes.observation
             ax.set_title(r"$\mathbf{I}_t$ (Env.)")
-            ax.imshow(mv.cnn2plt(obs2img(self.observation.detach().squeeze(0).cpu())))
+            ax.imshow(mv.cnn2plt(obs2img(self.observation.detach().cpu())))
             ax.set_axis_off()
 
             # ===============================================================
@@ -217,10 +226,9 @@ def main():
 
             # ===============================================================
             ax = axes.x_map
-            ax.set_title(r"mean of $\mathbf{x}_{1:t}, \; \alpha = $" f"${args.alpha}$")
+            ax.set_title(r"$\mathbf{x}_{1:t}, \; \alpha = $" f"${args.alpha}$")
             ax.set_xlim(-args.fix_xmap_size, args.fix_xmap_size)
             ax.set_ylim(-args.fix_xmap_size, args.fix_xmap_size)
-            ax.set_aspect(1)
             # ax.set_xticks([self.min_x_mean, self.max_x_mean])
             # ax.set_yticks([self.min_x_mean, self.max_x_mean])
             # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -248,8 +256,7 @@ def main():
                 label=r"$\mathbf{x}_{goal}$",
             )
             ax.legend(loc="lower left")
-
-            fig.tight_layout()
+            Axis_aspect_2d(ax, 1)
 
     p = AnimPack()
 

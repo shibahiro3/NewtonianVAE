@@ -12,14 +12,28 @@ workspaceFolder=$(pwd)
 export PYTHONPATH="$workspaceFolder/source"
 
 
+if [ "$env" == "reacher2d" ]; then
+	domain="reacher"
+else
+	domain=$env
+fi
+
+override=$workspaceFolder/environment/$env/override
+
+python source/simulation/override.py $domain $override
+
+
 opts=(
 	--cf-eval     exec/config/${env}_eval.json5
+	--cf-simenv   exec/config/${env}_env.json5
 	--path-model  environment/$env/saves
 	--path-result environment/$env/results
+	--goal-img    environment/$env/observation_imgs/obs_green.npy
 	--episodes 10
-	# --fix-xmap-size 20
-	# --anim-mode save
+	--fix-xmap-size 25
+
+	--alpha 0.1
 	${@:2}
 )
 
-python source/newtonianvae/reconstruct.py ${opts[@]}
+python source/simulation/control.py ${opts[@]}

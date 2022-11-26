@@ -13,9 +13,8 @@ export PYTHONPATH="$workspaceFolder/source"
 
 
 opts=(
-	--cf-eval environment/$env/cf/params_eval.json5
-	--path-model environment/$env/saves
-	--path-data environment/$env/data
+	--cf-eval     exec/config/${env}_eval.json5
+	--path-model  environment/$env/saves
 	--path-result environment/$env/results
 	--episodes 50
 	${@:2}

@@ -84,6 +84,9 @@ class NewtonianVAECellBase(nn.Module):
             self.x_t = x_t  # Use for training
             self.v_t = v_t  # Use for training
 
+    def __call__(self, *args, **kwargs) -> Pack:
+        return super().__call__(*args, **kwargs)
+
 
 class NewtonianVAECell(NewtonianVAECellBase):
     """
@@ -272,9 +275,7 @@ class NewtonianVAEBase(nn.Module):
                 v_tn1 = v_t
 
             else:
-                output: NewtonianVAECellBase.Pack = self.cell(
-                    I_t=I_t, x_tn1=x_tn1, u_tn1=u_tn1, v_tn1=v_tn1, dt=delta[t]
-                )
+                output = self.cell(I_t=I_t, x_tn1=x_tn1, u_tn1=u_tn1, v_tn1=v_tn1, dt=delta[t])
 
                 E_sum += output.E
                 LOG_E_ll_sum += output.E_ll
@@ -303,6 +304,9 @@ class NewtonianVAEBase(nn.Module):
         LOG_E_kl_sum /= T
 
         return E_sum, LOG_E_ll_sum, LOG_E_kl_sum
+
+    def __call__(self, *args, **kwargs) -> Tuple[Tensor, Tensor, Tensor]:
+        return super().__call__(*args, **kwargs)
 
     def _init_LOG(self, T: int, dtype: torch.dtype):
         xp = np
@@ -453,6 +457,9 @@ class NewtonianVAEV2CellBase(NewtonianVAECellBase):
             self.x_t = x_t
             self.v_t = v_t
 
+    def __call__(self, *args, **kwargs) -> Pack:
+        return super().__call__(*args, **kwargs)
+
 
 class NewtonianVAEV2Cell(NewtonianVAEV2CellBase):
     def __init__(self, dim_x, *args, **kwargs) -> None:
@@ -582,9 +589,7 @@ class NewtonianVAEV2Base(nn.Module):
 
             else:
                 I_tn1 = observation[t - 1]
-                output: NewtonianVAEV2CellBase.Pack = self.cell(
-                    I_tn1=I_tn1, I_t=I_t, x_tn2=x_tn2, u_tn1=u_tn1, dt=delta[t]
-                )
+                output = self.cell(I_tn1=I_tn1, I_t=I_t, x_tn2=x_tn2, u_tn1=u_tn1, dt=delta[t])
 
                 E_sum += output.E
                 LOG_E_ll_sum += output.E_ll
@@ -616,6 +621,9 @@ class NewtonianVAEV2Base(nn.Module):
         LOG_E_kl_sum /= T
 
         return E_sum, LOG_E_ll_sum, LOG_E_kl_sum
+
+    def __call__(self, *args, **kwargs) -> Tuple[Tensor, Tensor, Tensor]:
+        return super().__call__(*args, **kwargs)
 
     def _init_LOG(self, T: int, dtype: torch.dtype):
         xp = np

@@ -70,15 +70,6 @@
 <h1>source<a class="headerlink" href="#source" title="Permalink to this heading"></a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="control.html">control package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="control.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="control.html#module-control.train">control.train module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="control.html#control.train.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="control.html#module-control">Module contents</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">models package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="models.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html#module-models.component">models.component module</a><ul>
@@ -242,6 +233,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mypython.html#module-mypython.plotutil">mypython.plotutil module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.plotutil.Axis_aspect_2d"><code class="docutils literal notranslate"><span class="pre">Axis_aspect_2d()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.plotutil.anim_mode"><code class="docutils literal notranslate"><span class="pre">anim_mode()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.plotutil.cartesian_coordinate"><code class="docutils literal notranslate"><span class="pre">cartesian_coordinate()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.plotutil.cmap"><code class="docutils literal notranslate"><span class="pre">cmap()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.plotutil.get_figsize"><code class="docutils literal notranslate"><span class="pre">get_figsize()</span></code></a></li>
 </ul>
@@ -308,6 +300,7 @@
 <li class="toctree-l2"><a class="reference internal" href="newtonianvae.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="newtonianvae.html#newtonianvae-correlation-module">newtonianvae.correlation module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="newtonianvae.html#module-newtonianvae.load">newtonianvae.load module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="newtonianvae.html#newtonianvae.load.get_path_data"><code class="docutils literal notranslate"><span class="pre">get_path_data()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="newtonianvae.html#newtonianvae.load.load"><code class="docutils literal notranslate"><span class="pre">load()</span></code></a></li>
 </ul>
 </li>
@@ -346,6 +339,7 @@
 <li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.env.postprocess_observation"><code class="docutils literal notranslate"><span class="pre">postprocess_observation()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.env.preprocess_observation_"><code class="docutils literal notranslate"><span class="pre">preprocess_observation_()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.env.reacher_default2endeffectorpos"><code class="docutils literal notranslate"><span class="pre">reacher_default2endeffectorpos()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.env.reacher_fix_arg_range"><code class="docutils literal notranslate"><span class="pre">reacher_fix_arg_range()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.env.roll_2d"><code class="docutils literal notranslate"><span class="pre">roll_2d()</span></code></a></li>
 </ul>
 </li>
@@ -392,15 +386,17 @@
 <li class="toctree-l4"><a class="reference internal" href="tool.html#tool.params.ParamsEval.kwargs"><code class="docutils literal notranslate"><span class="pre">ParamsEval.kwargs</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.params.ParamsSimEnv"><code class="docutils literal notranslate"><span class="pre">ParamsSimEnv</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.params.ParamsSimEnv.kwargs"><code class="docutils literal notranslate"><span class="pre">ParamsSimEnv.kwargs</span></code></a></li>
-</ul>
-</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tool.html#module-tool.util">tool.util module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.Preferences"><code class="docutils literal notranslate"><span class="pre">Preferences</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.Preferences.get"><code class="docutils literal notranslate"><span class="pre">Preferences.get()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.Preferences.put"><code class="docutils literal notranslate"><span class="pre">Preferences.put()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.backup"><code class="docutils literal notranslate"><span class="pre">backup()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.delete_useless_saves"><code class="docutils literal notranslate"><span class="pre">delete_useless_saves()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.get_data_path"><code class="docutils literal notranslate"><span class="pre">get_data_path()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.select_date"><code class="docutils literal notranslate"><span class="pre">select_date()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.select_weight"><code class="docutils literal notranslate"><span class="pre">select_weight()</span></code></a></li>
 </ul>

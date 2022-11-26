@@ -50,23 +50,26 @@ CONTROL_SUITE_ENVS = [
 
 
 def img2obs(x):
+    """range [0, 1] -> [-0.5, 0.5]"""
     return x - 0.5
 
 
 def obs2img(x):
+    """range [-0.5, 0.5] -> [0, 1]"""
     return x + 0.5
 
 
-# Preprocesses an observation inplace (from float32 Tensor [0, 255] to [-0.5, 0.5])
 def preprocess_observation_(observation: Tensor, bit_depth: int) -> None:
+    """Preprocesses an observation inplace (from float32 Tensor [0, 255] to [-0.5, 0.5])"""
     # Quantise to given bit depth and centre
-    observation.div_(2 ** (8 - bit_depth)).floor_().div_(2**bit_depth).sub_(0.5)  # <<< -0.5
+    observation.div_(2 ** (8 - bit_depth)).floor_().div_(2**bit_depth).sub_(0.5)
+
     # Dequantise (to approx. match likelihood of PDF of continuous images vs. PMF of discrete images)
     observation.add_(torch.rand_like(observation).div_(2**bit_depth))
 
 
-# Postprocess an observation for storage (from float32 numpy array [-0.5, 0.5] to uint8 numpy array [0, 255])
 def postprocess_observation(observation, bit_depth):
+    """Postprocess an observation for storage (from float32 numpy array [-0.5, 0.5] to uint8 numpy array [0, 255])"""
     return np.clip(
         np.floor((observation + 0.5) * 2**bit_depth) * 2 ** (8 - bit_depth),
         0,
@@ -74,18 +77,23 @@ def postprocess_observation(observation, bit_depth):
     ).astype(np.uint8)
 
 
-def _images_to_observation(images: np.ndarray, bit_depth: int, size=64) -> Tensor:
+def _images_to_observation(image: np.ndarray, bit_depth: int, size=64) -> Tensor:
     """
-    Return:
-        image: cnn input  shape (N, RGB, H, W)  from -0.5 to 0.5
+    Returns:
+        image: cnn input
+            shape (3, size, size), range [-0.5, 0.5], color order = RGB
     """
-    images: Tensor = torch.tensor(
-        cv2.resize(images, (size, size), interpolation=cv2.INTER_LINEAR).transpose(2, 0, 1),
+
+    # Resize and put channel first
+    image: Tensor = torch.tensor(
+        cv2.resize(image, (size, size), interpolation=cv2.INTER_LINEAR).transpose(2, 0, 1),
         dtype=torch.float32,
-    )  # Resize and put channel first
+    )
+
     # Quantise, centre and dequantise inplace
-    preprocess_observation_(images, bit_depth)
-    return images.unsqueeze(dim=0)  # Add batch dimension
+    preprocess_observation_(image, bit_depth)
+
+    return image  # .unsqueeze(dim=0)  # Add batch dimension
 
 
 class ControlSuiteEnv:
@@ -186,7 +194,7 @@ class ControlSuiteEnv:
                 axis=0,
             ),
             dtype=torch.float32,
-        ).unsqueeze(dim=0)
+        )  # .unsqueeze(dim=0)
 
     def adjust_camera(self):
         camimg = self._env.physics.render(camera_id=0)  # id=1はfinger目線だったw
@@ -210,17 +218,27 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
         max_episode_length: int,
         action_repeat: int,
         bit_depth: int,
-        action_type: str,
-        position_wrap: Union[None, str] = None,
+        action_type: str = "default",
+        position_wrap: str = "None",
     ):
-        super().__init__(env, False, seed, max_episode_length, action_repeat, bit_depth)
+        super().__init__(
+            env=env,
+            symbolic=False,
+            seed=seed,
+            max_episode_length=max_episode_length,
+            action_repeat=action_repeat,
+            bit_depth=bit_depth,
+        )
+
+        self.action_type = action_type
+        self.position_wrap = position_wrap
 
         domain, task = env.split("-")
         self.domain = domain
+        self.task = task
 
         if domain == "reacher":
             if action_type == "default":
-                # self.sample_random_action = super().sample_random_action
                 pass
 
             elif action_type == "paper":
@@ -243,16 +261,39 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
                     [np.random.uniform(-0.7, 1), np.random.uniform(-0.8, 1)]
                 )
 
+            elif action_type == "handmade3":
+                self.sample_random_action = lambda: torch.tensor(
+                    [np.random.uniform(-0.5, 0.7), np.random.uniform(-0.3, 0.5)]
+                )
+            elif action_type == "handmade4":
+
+                def f():
+                    a0min = np.random.uniform(-1, 1)
+                    a0max = np.random.uniform(a0min, 1)
+                    a1min = np.random.uniform(-1, 1)
+                    a1max = np.random.uniform(a1min, 1)
+                    # print("===========")
+                    # print(a0min, a0max)
+                    # print(a1min, a1max)
+                    return torch.tensor(
+                        [np.random.uniform(a0min, a0max), np.random.uniform(a1min, a1max)]
+                    )
+
+                self.sample_random_action = f
+
             else:
                 assert False
 
-            if position_wrap is not None:
-                if position_wrap == "endeffector":
-                    self.position_wrapper = reacher_default2endeffectorpos
+            if position_wrap == "None":
+                pass
+            elif position_wrap == "endeffector":
+                self.position_wrapper = reacher_default2endeffectorpos
+            else:
+                assert False
 
         elif domain == "point_mass":
             if action_type == "default":
-                self.sample_random_action = super().sample_random_action
+                pass
 
             elif action_type == "circle":
 
@@ -270,6 +311,14 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
                 assert False
 
     def step(self, action: Tensor) -> Tuple[Tensor, float, bool, np.ndarray]:
+        """
+        Returns: observation, reward, done, position
+            * **observation**: shape = (3, 64, 64), range = [-0.5, 0.5], color order = RGB
+            * **reward**: 0
+            * **done**: True when time reaches max_episode_length // action_repeat
+            * **position**: coordinate, or two angle, etc. depends on env
+        """
+
         action = action.detach().cpu().numpy()
 
         done = False
@@ -284,11 +333,10 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
 
         observation = _images_to_observation(self.adjust_camera(), self.bit_depth)
         position = self.position_wrapper(state.observation["position"])
-        # print(position)
         return observation, 0, done, position
 
     def adjust_camera(self):
-        """左右の意味不明な星のあつまりみたいなのを消す"""
+        """Erase the cluster of stars on the left and right"""
         s = (320 - 240) // 2
         camimg = self._env.physics.render(camera_id=0)[:, s : s + 240, :]
         # print(camimg.shape)  # (240, 320, 3) -> (240, 240, 3)
@@ -301,14 +349,25 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
 
 def reacher_default2endeffectorpos(position):
     """
+    Args:
+        position: shape (*, 2)
+
     Returns: target position (end effector)
     """
-    arg = position[0]
+    arg = position[..., 0]
     wrist = 0.12 * roll_2d(arg)
-    arg += position[1]
+    arg += position[..., 1]
     target = 0.12 * roll_2d(arg)
     return wrist + target
 
 
 def roll_2d(arg):
-    return np.array([np.cos(arg), np.sin(arg)])
+    return np.stack([np.cos(arg), np.sin(arg)]).T
+
+
+def reacher_fix_arg_range(arg):
+    arg_ = np.where(
+        (-np.pi < arg) & (arg < np.pi), arg, arg - 2 * np.pi * (arg // (2 * np.pi)) - np.pi
+    )
+    # assert (-np.pi < arg_).all().item() and (arg_ < np.pi).all().item()
+    return arg_

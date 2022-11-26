@@ -4,6 +4,8 @@ Ref:
     https://github.com/deepmind/dm_control/blob/main/dm_control/suite/reacher.xml
 
     https://github.com/deepmind/dm_control/blob/main/dm_control/suite/point_mass.py
+    https://github.com/deepmind/dm_control/blob/main/dm_control/suite/point_mass.xml
+
     ...
 """
 
@@ -25,10 +27,10 @@ if len(site_packages) > 0:
             pre = sys.argv[2] if len(sys.argv) > 2 else ""
             Path(suite, f"{domain}.py").write_text(Path(pre, f"{domain}.py").open().read())
             Path(suite, f"{domain}.xml").write_text(Path(pre, f"{domain}.xml").open().read())
-            print("Done")
 
             print("write to:")
             print(Path(suite, f"{domain}.py"))
             print(Path(suite, f"{domain}.xml"))
+            break
 else:
     print("Sorry...")

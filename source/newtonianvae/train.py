@@ -17,7 +17,7 @@ from mypython.pyutil import s2dhms_str
 from tool import argset, checker
 from tool.dataloader import DataLoader
 from tool.params import Params
-from tool.util import backup
+from tool.util import Preferences, backup
 from tool.visualhandlerbase import VisualHandlerBase
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -95,8 +95,10 @@ def train(vh=VisualHandlerBase()):
 
     optimiser = optim.Adam(model.parameters(), params.train.learning_rate)
 
-    init_info = {"seed": seed, "resume_from": weight_p_s, "data_from": args.path_data}
-    save_to_file(Path(weight_dir.parent, "init_info.json5"), json5.dumps(init_info, indent=2))
+    Preferences.put(weight_dir.parent, "seed", seed)
+    Preferences.put(weight_dir.parent, "resume_from", weight_p_s)
+    Preferences.put(weight_dir.parent, "data_from", args.path_data)
+    Preferences.put(weight_dir.parent, "data_id", Preferences.get(args.path_data, "id"))
 
     # LOG_* is a buffer for recording the learning process.
     # It is not used for any calculations for learning.
@@ -118,10 +120,6 @@ def train(vh=VisualHandlerBase()):
     try:
         for epoch in range(1, params.train.epochs + 1):
             for action, observation, delta, position in trainloader:
-                E_sum: torch.Tensor
-                LOG_E_ll_sum: torch.Tensor
-                LOG_E_kl_sum: torch.Tensor
-
                 E_sum, LOG_E_ll_sum, LOG_E_kl_sum = model(
                     action=action, observation=observation, delta=delta
                 )

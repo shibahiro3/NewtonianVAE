@@ -27,23 +27,17 @@ class Color:
     cyan = "\x1b[96m"
     white = "\x1b[97m"
 
-    def print(*values, color=None, c=None, sep=" ", **kwargs):
-        assert (color is None) or (c is None)
-
+    def print(*values, c=green, sep="", **kwargs):
         text = ""
         for i, e in enumerate(values):
             text += str(e)
             if i < len(values) - 1:
                 text += sep
+        builtins.print(c + text + Color.reset, sep=sep, **kwargs)
 
-        c_ = color if color is not None else c
-        if c_ is None:
-            c_ = Color.green
-        print(c_ + text + Color.reset, sep=sep, **kwargs)
-
-    def pprint(obj, color=green):
+    def pprint(obj, c=green):
         s = pprint.pformat(obj)
-        print(color + s + Color.reset)
+        builtins.print(c + s + Color.reset)
 
     boldblack = "\x1b[1;90m"
     boldred = "\x1b[1;91m"

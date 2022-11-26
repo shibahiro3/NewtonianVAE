@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
+import json5
 import numpy as np
 
 from mypython.terminal import Color
@@ -100,3 +101,29 @@ def backup(src_file, dst_dir, rename):
     bk_ = Path(dst_dir, rename)
     bk.rename(bk_)  # 3.7 以前はNoneが返る
     bk_.chmod(0o444)  # read only
+
+
+def get_data_path(arg_data, trained_time_dir):
+    if arg_data is not None:
+        data_p = Path(arg_data)
+        init_info_p = Path(trained_time_dir, "init_info.json5")
+        if init_info_p.exists():
+            pass
+
+
+class Preferences:
+    @staticmethod
+    def put(dir, name, value):
+        p = Path(dir, f"{name}.json5")
+        with open(p, mode="w") as f:
+            json5.dump({"value": value}, f)
+        p.chmod(0o444)
+
+    @staticmethod
+    def get(dir, name):
+        ret = None
+        p = Path(dir, f"{name}.json5")
+        if p.exists():
+            with open(p, mode="r") as f:
+                ret = json5.load(f).get("value")
+        return ret

@@ -14,24 +14,16 @@ from matplotlib.ticker import FormatStrFormatter
 import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
-from models.core import (
-    NewtonianVAECell,
-    NewtonianVAEDerivationCell,
-    as_save,
-    get_NewtonianVAECell,
-)
 from mypython.plotutil import Axis_aspect_2d, cmap
-from mypython.terminal import Prompt
-from newtonianvae.load import load
-from simulation.env import obs2img
+from mypython.terminal import Color, Prompt
+from newtonianvae.load import get_path_data, load
 from tool import argset, checker
 from tool.dataloader import DataLoader
-from tool.params import Params, ParamsEval
 
 try:
     import tool._plot_config
 
-    figsize = tool._plot_config.figsize_reconstruct
+    figsize = tool._plot_config.figsize_correlation
 except:
     figsize = None
 
@@ -41,7 +33,7 @@ argset.episodes(parser)
 argset.anim_mode(parser)
 argset.cf_eval(parser)
 argset.path_model(parser)
-argset.path_data(parser)
+argset.path_data(parser, required=False)
 argset.path_result(parser)
 # argset.fix_xmap_size(parser, required=False)
 _args = parser.parse_args()
@@ -67,14 +59,12 @@ def correlation():
     torch.set_grad_enabled(False)
 
     model, d, weight_p, params, params_eval, dtype, device = load(args.path_model, args.cf_eval)
-    checker.is_same_data(args.path_data, weight_p.parent.parent)
+    data_path = get_path_data(args.path_data, d)
 
     Path(args.path_result).mkdir(parents=True, exist_ok=True)
 
-    all_steps = params.train.max_time_length * args.episodes
-
     testloader = DataLoader(
-        root=Path(args.path_data, "episodes"),
+        root=Path(data_path, "episodes"),
         start=params_eval.data_start,
         stop=params_eval.data_stop,
         batch_size=args.episodes,
@@ -89,10 +79,16 @@ def correlation():
     latent_map = []
     physical = []
 
-    for i in range(args.episodes):
-        model(action=action[:, [i]], observation=observation[:, [i]], delta=delta[:, [i]])
-        latent_map_ = model.LOG_x
-        physical_ = position[:, i]
+    for episode in range(args.episodes):
+        model(
+            action=action[:, [episode]],
+            observation=observation[:, [episode]],
+            delta=delta[:, [episode]],
+        )
+        latent_map_ = model.LOG_x  # (T, dim(u))
+        physical_ = position[:, episode]  # (T, dim(u))
+        # physical_ = reacher_default2endeffectorpos(physical_)
+        # physical_ = reacher_fix_arg_range(physical_)
         corr_x = np.corrcoef(physical_[:, 0], latent_map_[:, 0])[0, 1]
         corr_y = np.corrcoef(physical_[:, 1], latent_map_[:, 1])[0, 1]
         print(corr_x, corr_y)
@@ -100,20 +96,24 @@ def correlation():
         physical.append(physical_)
 
     print("=== whole ===")
-    latent_map = np.concatenate(latent_map)
-    physical = np.concatenate(physical)
-    print(latent_map.shape)
-    print(physical.shape)
-    corr_x = np.corrcoef(physical[:, 0], latent_map[:, 0])[0, 1]
-    corr_y = np.corrcoef(physical[:, 1], latent_map[:, 1])[0, 1]
+    latent_map = np.stack(latent_map)
+    physical = np.stack(physical)
+
+    BS, T, D = latent_map.shape
+
+    corr_x = np.corrcoef(physical.reshape((-1, D))[:, 0], latent_map.reshape((-1, D))[:, 0])[0, 1]
+    corr_y = np.corrcoef(physical.reshape((-1, D))[:, 1], latent_map.reshape((-1, D))[:, 1])[0, 1]
     print(corr_x, corr_y)
 
-    fig = plt.figure(figsize=(4.76, 7.56))
+    # =====================================================
+
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(left=0.05, right=0.95, bottom=0.07, top=0.95)
     mpu.get_figsize(fig)
 
     class Ax:
         def __init__(self) -> None:
-            gs = GridSpec(nrows=4, ncols=1, hspace=0.7)
+            gs = GridSpec(nrows=4, ncols=1, hspace=0.8)
             self.physical = fig.add_subplot(gs[0, 0])
             self.latent_map = fig.add_subplot(gs[1, 0])
             self.x = fig.add_subplot(gs[2, 0])
@@ -121,8 +121,9 @@ def correlation():
 
     axes = Ax()
 
+    batch_color = cmap(args.episodes, "rainbow")
+
     s = 0.1
-    labelsize = 8
 
     l_latent_0 = r"latent element (0)"
     l_latent_1 = r"latent element (1)"
@@ -135,42 +136,49 @@ def correlation():
     l_physical_1 = r"physical angle ($\theta_2$)"
 
     ax = axes.latent_map
-    x = latent_map[:, 0]
-    y = latent_map[:, 1]
+    x = latent_map[..., 0]
+    y = latent_map[..., 1]
     ax.set_title("Latent map")
-    ax.set_xlabel(l_latent_0, fontsize=labelsize)
-    ax.set_ylabel(l_latent_1, fontsize=labelsize)
-    ax.scatter(x, y, s=s)
-    Axis_aspect_2d(ax, 0.8, x, y)
+    ax.set_xlabel(l_latent_0)
+    ax.set_ylabel(l_latent_1)
+    # ax.scatter(x.flatten(), y.flatten(), s=s)
+    for i in range(args.episodes):
+        ax.scatter(x[i], y[i], s=s, color=batch_color[i])
+    Axis_aspect_2d(ax, 0.8)
 
     ax = axes.physical
-    x = physical[:, 0]
-    y = physical[:, 1]
+    x = physical[..., 0]
+    y = physical[..., 1]
     ax.set_title("Physical")
-    ax.set_xlabel(l_physical_0, fontsize=labelsize)
-    ax.set_ylabel(l_physical_1, fontsize=labelsize)
-    ax.scatter(x, y, s=s)
-    Axis_aspect_2d(ax, 0.8, x, y)
+    ax.set_xlabel(l_physical_0)
+    ax.set_ylabel(l_physical_1)
+    # ax.scatter(x.flatten(), y.flatten(), s=s)
+    for i in range(args.episodes):
+        ax.scatter(x[i], y[i], s=s, color=batch_color[i])
+    Axis_aspect_2d(ax, 0.8)
 
     ax = axes.x
-    x = physical[:, 0]
-    y = latent_map[:, 0]
-    ax.set_title(f"X Correlation = {corr_x:.4f}")
-    ax.set_xlabel(l_physical_0, fontsize=labelsize)
-    ax.set_ylabel(l_latent_0, fontsize=labelsize)
-    ax.scatter(x, y, s=s)
-    Axis_aspect_2d(ax, 0.8, x, y)
+    x = physical[..., 0]
+    y = latent_map[..., 0]
+    ax.set_title(f"Correlation = {corr_x:.4f}")
+    ax.set_xlabel(l_physical_0)
+    ax.set_ylabel(l_latent_0)
+    # ax.scatter(x.flatten(), y.flatten(), s=s)
+    for i in range(args.episodes):
+        ax.scatter(x[i], y[i], s=s, color=batch_color[i])
+    Axis_aspect_2d(ax, 0.8)
 
     ax = axes.y
-    x = physical[:, 1]
-    y = latent_map[:, 1]
-    ax.set_title(f"Y Correlation = {corr_y:.4f}")
-    ax.set_xlabel(l_physical_1, fontsize=labelsize)
-    ax.set_ylabel(l_latent_1, fontsize=labelsize)
-    ax.scatter(x, y, s=s)
-    Axis_aspect_2d(ax, 0.8, x, y)
+    x = physical[..., 1]
+    y = latent_map[..., 1]
+    ax.set_title(f"Correlation = {corr_y:.4f}")
+    ax.set_xlabel(l_physical_1)
+    ax.set_ylabel(l_latent_1)
+    # ax.scatter(x.flatten(), y.flatten(), s=s)
+    for i in range(args.episodes):
+        ax.scatter(x[i], y[i], s=s, color=batch_color[i])
+    Axis_aspect_2d(ax, 0.8)
 
-    # fig.tight_layout()
     plt.show()
 
 

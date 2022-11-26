@@ -224,6 +224,9 @@ class VisualEncoder64(nn.Module):
 
     Outputs: y
         * **y**: tensor of shape :math:`(*, \mathrm{dim\_output})`
+
+    Ref impl:
+        https://github.com/ctallec/world-models/blob/master/models/vae.py#L32
     """
 
     def __init__(self, dim_output: int, activation=torch.relu) -> None:
@@ -257,6 +260,9 @@ class VisualDecoder64(nn.Module):
 
     Outputs: y
         * **y**: tensor of shape :math:`(*, 3, 64, 64)`
+
+    Ref impl:
+        https://github.com/ctallec/world-models/blob/master/models/vae.py#L10
     """
 
     def __init__(self, dim_input: int, dim_middle: int, activation=torch.relu):
