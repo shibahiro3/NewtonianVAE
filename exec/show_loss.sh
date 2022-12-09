@@ -13,7 +13,9 @@ export PYTHONPATH="$workspaceFolder/source"
 
 
 opts=(
-	--path-model environment/$env/saves
+	--path-model  environment/$env/saves
+	--path-result environment/$env/results
+	--start-iter 100
 	${@:2}
 )
 

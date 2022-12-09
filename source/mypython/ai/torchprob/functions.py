@@ -25,6 +25,8 @@ def KLdiv(p: Distribution, q: Distribution) -> Tensor:
 
 def log(p: Distribution, x: Tensor, *cond_vars: Tensor) -> Tensor:
     """
+    log p(x | cond)
+
     Match the look of the formula
     """
     return p.cond(*cond_vars).log_p(x)

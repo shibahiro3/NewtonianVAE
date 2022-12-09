@@ -109,10 +109,10 @@ def HWC2CHW(x: _NT) -> _NT:
 
 
 def _CHW_HWC_axis(x: _NT, axes) -> _NT:
-    if type(x) == np.ndarray:
-        return x.transpose(axes)
     if type(x) == torch.Tensor:
         return x.permute(axes)
+    if type(x) == np.ndarray:
+        return x.transpose(axes)
     else:
         assert False
 
@@ -123,3 +123,10 @@ def BGR2RGB(imgs: _NT) -> _NT:
 
 def RGB2BGR(imgs: _NT) -> _NT:
     return BGR2RGB(imgs)
+
+
+def clip(x, min, max):
+    if type(x) == torch.Tensor:
+        return torch.clip(x, min=min, max=max)
+    else:
+        return np.clip(x, a_min=min, a_max=max)

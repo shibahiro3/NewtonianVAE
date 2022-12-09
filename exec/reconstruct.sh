@@ -18,7 +18,6 @@ opts=(
 	--path-result environment/$env/results
 	--episodes 10
 	# --fix-xmap-size 20
-	# --anim-mode save
 	${@:2}
 )
 

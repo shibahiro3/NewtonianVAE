@@ -136,8 +136,10 @@
 </li>
 <li><a class="reference internal" href="#models.core.NewtonianVAEV2Cell"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Cell</span></code></a><ul>
 <li><a class="reference internal" href="#models.core.NewtonianVAEV2Cell.forward"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Cell.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Cell.img_reduction"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Cell.img_reduction()</span></code></a></li>
 <li><a class="reference internal" href="#models.core.NewtonianVAEV2Cell.info"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Cell.info</span></code></a></li>
 <li><a class="reference internal" href="#models.core.NewtonianVAEV2Cell.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Cell.training</span></code></a></li>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Cell.vec_reduction"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Cell.vec_reduction()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#models.core.NewtonianVAEV2CellBase"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2CellBase</span></code></a><ul>
@@ -169,7 +171,11 @@
 </li>
 <li><a class="reference internal" href="#module-models.pcontrol">models.pcontrol module</a><ul>
 <li><a class="reference internal" href="#models.pcontrol.PControl"><code class="docutils literal notranslate"><span class="pre">PControl</span></code></a><ul>
+<li><a class="reference internal" href="#models.pcontrol.PControl.Kn"><code class="docutils literal notranslate"><span class="pre">PControl.Kn()</span></code></a></li>
+<li><a class="reference internal" href="#models.pcontrol.PControl.forward"><code class="docutils literal notranslate"><span class="pre">PControl.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.pcontrol.PControl.pi"><code class="docutils literal notranslate"><span class="pre">PControl.pi()</span></code></a></li>
 <li><a class="reference internal" href="#models.pcontrol.PControl.training"><code class="docutils literal notranslate"><span class="pre">PControl.training</span></code></a></li>
+<li><a class="reference internal" href="#models.pcontrol.PControl.x_goal_n"><code class="docutils literal notranslate"><span class="pre">PControl.x_goal_n()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#models.pcontrol.PurePControl"><code class="docutils literal notranslate"><span class="pre">PurePControl</span></code></a><ul>
@@ -451,6 +457,11 @@ where f is a neural network with linear output activation.</p>
 </section>
 <section id="module-models.core">
 <span id="models-core-module"></span><h2>models.core module<a class="headerlink" href="#module-models.core" title="Permalink to this heading"></a></h2>
+<p>x_t    == x_t
+x_tn1  == x_{t-1}
+x_tn2  == x_{t-2}
+x_tp1  == x_{t+1}
+x_tp2  == x_{t+2}</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="models.core.NewtonianVAE">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAE" title="Permalink to this definition"></a></dt>
@@ -745,7 +756,12 @@ vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
 <dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAEV2CellBase" title="models.core.NewtonianVAEV2CellBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAEV2CellBase</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="models.core.NewtonianVAEV2Cell.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">I_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_tn2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2Cell.forward" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">I_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_q_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_q_tn2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2Cell.forward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Cell.img_reduction">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">img_reduction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2Cell.img_reduction" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -758,6 +774,11 @@ vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
 <span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.core.NewtonianVAEV2Cell.training" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Cell.vec_reduction">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vec_reduction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2Cell.vec_reduction" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -766,7 +787,7 @@ vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
 <dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAECellBase" title="models.core.NewtonianVAECellBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAECellBase</span></code></a></p>
 <dl class="py class">
 <dt class="sig sig-object py" id="models.core.NewtonianVAEV2CellBase.Pack">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Pack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_ll</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_kl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_tn1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2CellBase.Pack" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Pack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_ll</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_kl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_q_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2CellBase.Pack" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 </dd></dl>
 
@@ -844,6 +865,7 @@ vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
 <dt class="sig sig-object py" id="models.core.NewtonianVAEV2DerivationCell">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEV2DerivationCell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_xhat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_pxhat_middle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pxhat_std_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2DerivationCell" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAEV2CellBase" title="models.core.NewtonianVAEV2CellBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAEV2CellBase</span></code></a></p>
+<p>Deprecated</p>
 <p>Eq (23)</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="models.core.NewtonianVAEV2DerivationCell.dim_xhat">
@@ -913,16 +935,53 @@ registered hooks while the latter silently ignores them.</p>
 <span id="models-pcontrol-module"></span><h2>models.pcontrol module<a class="headerlink" href="#module-models.pcontrol" title="Permalink to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="models.pcontrol.PControl">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.pcontrol.</span></span><span class="sig-name descname"><span class="pre">PControl</span></span><a class="headerlink" href="#models.pcontrol.PControl" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.pcontrol.</span></span><span class="sig-name descname"><span class="pre">PControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_x_goal_middle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_pi_middle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_K_middle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.pcontrol.PControl" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <p>Eq (12)</p>
 <div class="math notranslate nohighlight">
 \[\begin{array}{ll}
     P(\u_t \mid \x_t) = \displaystyle \sum_{n=1}^N \pi_n(\x_t) \mathcal{N}(K_n(\x_{goal} - \x_t), \sigma^2)
 \end{array}\]</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.pcontrol.PControl.Kn">
+<span class="sig-name descname"><span class="pre">Kn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#models.pcontrol.PControl.Kn" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(N, D)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Kn</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.pcontrol.PControl.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.pcontrol.PControl.forward" title="Permalink to this definition"></a></dt>
+<dd><p>x_t: shape (<a href="#id1"><span class="problematic" id="id2">*</span></a>, dim_x)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.pcontrol.PControl.pi">
+<span class="sig-name descname"><span class="pre">pi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#models.pcontrol.PControl.pi" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(<a href="#id3"><span class="problematic" id="id4">*</span></a>, N)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>pi</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="models.pcontrol.PControl.training">
 <span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.pcontrol.PControl.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.pcontrol.PControl.x_goal_n">
+<span class="sig-name descname"><span class="pre">x_goal_n</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#models.pcontrol.PControl.x_goal_n" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

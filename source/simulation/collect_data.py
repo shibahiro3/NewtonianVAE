@@ -13,7 +13,6 @@ import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
 from env import ControlSuiteEnvWrap, obs2img
-from mypython.plotutil import Axis_aspect_2d, cartesian_coordinate, cmap
 from mypython.terminal import Color, Prompt
 from tool import argset, checker
 from tool.util import Preferences, backup
@@ -65,7 +64,7 @@ def env_test():
 
     if args.watch is None:
         data_path = Path(args.path_data)
-        if data_path.exists():
+        if len(list(data_path.glob("episodes/*"))) > 0:
             print(f'\n"{data_path}" directory will be rewritten.')
             if input("Do you want to continue? [y/n] ") != "y":
                 print("Abort.")
@@ -74,7 +73,7 @@ def env_test():
 
         data_path.mkdir(parents=True, exist_ok=True)
         backup(args.cf_simenv, data_path, "params_env_bk.json5")
-        Preferences.put(data_path, "id", time.time())
+        Preferences.put(data_path, "id", int(time.time() * 1000))
 
     if args.watch == "plt":
 
@@ -162,33 +161,33 @@ def env_test():
                     fontname="monospace",
                 )
 
-                color_action = cmap(len(action), "prism")
+                color_action = mpu.cmap(len(action), "prism")
 
                 # ==================================================
                 ax = axes.action
                 ax.set_title(r"$\mathbf{u}_{t-1}$")
                 ax.set_ylim(-1.2, 1.2)
                 ax.bar(range(len(action)), action, color=color_action, width=0.5)
-                Axis_aspect_2d(ax, 1)
+                mpu.Axis_aspect_2d(ax, 1)
                 ax.set_xticks(range(len(action)))
                 if env.domain == "reacher":
                     ax.set_xlabel("Torque")
-                    ax.set_xticklabels([r"$\mathbf{u}[0]$ (shoulder)", r"$\mathbf{u}[1]$ (wrist)"])
+                    ax.set_xticklabels([r"$\mathbf{u}[1]$ (shoulder)", r"$\mathbf{u}[2]$ (wrist)"])
                 elif env.domain == "point_mass" and env.task == "easy":
-                    ax.set_xticklabels([r"$\mathbf{u}[0]$ (x)", r"$\mathbf{u}[1]$ (y)"])
+                    ax.set_xticklabels([r"$\mathbf{u}[1]$ (x)", r"$\mathbf{u}[2]$ (y)"])
 
                 # ==================================================
                 ax = axes.observation
                 ax.set_title("$\mathbf{I}_t$")
-                ax.imshow(mv.cnn2plt(obs2img(observation)))
+                ax.imshow(obs2img(observation))
 
                 # ==================================================
                 ax = axes.position
-                ax.set_title(r"$\mathbf{x}_t$")
+                ax.set_title("Position")
                 if env.domain == "reacher" and env.position_wrap == "None":
                     ax.set_ylim(-np.pi, np.pi)
                     ax.bar(range(len(position)), position, color=color_action, width=0.5)
-                    Axis_aspect_2d(ax, 1)
+                    mpu.Axis_aspect_2d(ax, 1)
                     ax.set_xlabel("Angle")
                     ax.set_xticks(range(len(position)))
                     ax.set_xticklabels([r"$\theta_1$ (shoulder)", r"$\theta_2$ (wrist)"])
@@ -198,7 +197,7 @@ def env_test():
                     ax.set_xlabel("x")
                     ax.set_ylabel("y")
                     ax.plot(position[0], position[1], marker="o", ms=10, color="orange")
-                    cartesian_coordinate(ax, 0.35)
+                    mpu.cartesian_coordinate(ax, 0.35)
 
             if done and not args.save_anim:
                 print(f"episode: {self.episode_cnt+1}, T = {self.t}")
@@ -215,10 +214,6 @@ def env_test():
 
     if args.watch == "plt":
         save_path = Path(args.path_data, f"data.mp4")
-
-        if args.save_anim:
-            Color.print("save to: ", save_path)
-
         mpu.anim_mode(
             "save" if args.save_anim else "anim",
             fig,

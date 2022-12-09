@@ -131,9 +131,9 @@ class Reacher(base.Task):
         # paper...?
         # Here is the initialize process. 
         # [0.0, 1.0) [rad] == [0.0, 57.29) [deg]
-        # physics.named.data.qpos["shoulder"] = 0.5 + (np.random.rand() - 0.5)
+        # physics.named.data.qpos["shoulder"] = 0.5 + (self.random.rand() - 0.5)
         # [-2.84, -2.34) [rad] == [-162.72, -134.07) [deg]
-        # physics.named.data.qpos["wrist"] = -np.pi + 0.3 + np.random.rand() * 0.5
+        # physics.named.data.qpos["wrist"] = -np.pi + 0.3 + self.random.rand() * 0.5
 
         # print(physics.named.data.qpos)
 

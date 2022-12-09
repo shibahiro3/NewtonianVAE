@@ -7,14 +7,14 @@ _*
 #######################
 venv/
 
-# binary data #
+# Binary data #
 ###############
 data*/
 save*/
 result*/
 log*/
 
-# Docs html #
+# Docs #
 #############
 docs/*
 !docs/generated
@@ -23,6 +23,10 @@ docs/*
 ##########
 qt
 !__init__.py
+
+source/control/
+source/Test/
+gmm.py
 
 
 # https://github.com/numpy/numpy/blob/main/.gitignore

@@ -47,8 +47,10 @@
 <li><a class="reference internal" href="#tool.argset.cf"><code class="docutils literal notranslate"><span class="pre">cf()</span></code></a></li>
 <li><a class="reference internal" href="#tool.argset.cf_eval"><code class="docutils literal notranslate"><span class="pre">cf_eval()</span></code></a></li>
 <li><a class="reference internal" href="#tool.argset.cf_simenv"><code class="docutils literal notranslate"><span class="pre">cf_simenv()</span></code></a></li>
+<li><a class="reference internal" href="#tool.argset.env_domain"><code class="docutils literal notranslate"><span class="pre">env_domain()</span></code></a></li>
 <li><a class="reference internal" href="#tool.argset.episodes"><code class="docutils literal notranslate"><span class="pre">episodes()</span></code></a></li>
 <li><a class="reference internal" href="#tool.argset.fix_xmap_size"><code class="docutils literal notranslate"><span class="pre">fix_xmap_size()</span></code></a></li>
+<li><a class="reference internal" href="#tool.argset.format"><code class="docutils literal notranslate"><span class="pre">format()</span></code></a></li>
 <li><a class="reference internal" href="#tool.argset.goal_img"><code class="docutils literal notranslate"><span class="pre">goal_img()</span></code></a></li>
 <li><a class="reference internal" href="#tool.argset.output"><code class="docutils literal notranslate"><span class="pre">output()</span></code></a></li>
 <li><a class="reference internal" href="#tool.argset.path_data"><code class="docutils literal notranslate"><span class="pre">path_data()</span></code></a></li>
@@ -58,6 +60,8 @@
 <li><a class="reference internal" href="#tool.argset.position_size"><code class="docutils literal notranslate"><span class="pre">position_size()</span></code></a></li>
 <li><a class="reference internal" href="#tool.argset.resume"><code class="docutils literal notranslate"><span class="pre">resume()</span></code></a></li>
 <li><a class="reference internal" href="#tool.argset.save_anim"><code class="docutils literal notranslate"><span class="pre">save_anim()</span></code></a></li>
+<li><a class="reference internal" href="#tool.argset.save_result"><code class="docutils literal notranslate"><span class="pre">save_result()</span></code></a></li>
+<li><a class="reference internal" href="#tool.argset.start_iter"><code class="docutils literal notranslate"><span class="pre">start_iter()</span></code></a></li>
 <li><a class="reference internal" href="#tool.argset.steps"><code class="docutils literal notranslate"><span class="pre">steps()</span></code></a></li>
 <li><a class="reference internal" href="#tool.argset.watch"><code class="docutils literal notranslate"><span class="pre">watch()</span></code></a></li>
 </ul>
@@ -72,15 +76,27 @@
 <li><a class="reference internal" href="#tool.dataloader.DataLoader"><code class="docutils literal notranslate"><span class="pre">DataLoader</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-tool.params">tool.params module</a><ul>
-<li><a class="reference internal" href="#tool.params.Params"><code class="docutils literal notranslate"><span class="pre">Params</span></code></a></li>
-<li><a class="reference internal" href="#tool.params.ParamsEval"><code class="docutils literal notranslate"><span class="pre">ParamsEval</span></code></a><ul>
-<li><a class="reference internal" href="#tool.params.ParamsEval.kwargs"><code class="docutils literal notranslate"><span class="pre">ParamsEval.kwargs</span></code></a></li>
+<li><a class="reference internal" href="#module-tool.paramsmanager">tool.paramsmanager module</a><ul>
+<li><a class="reference internal" href="#tool.paramsmanager.Eval"><code class="docutils literal notranslate"><span class="pre">Eval</span></code></a></li>
+<li><a class="reference internal" href="#tool.paramsmanager.Params"><code class="docutils literal notranslate"><span class="pre">Params</span></code></a><ul>
+<li><a class="reference internal" href="#tool.paramsmanager.Params.save"><code class="docutils literal notranslate"><span class="pre">Params.save()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#tool.paramsmanager.ParamsEval"><code class="docutils literal notranslate"><span class="pre">ParamsEval</span></code></a></li>
+<li><a class="reference internal" href="#tool.paramsmanager.Train"><code class="docutils literal notranslate"><span class="pre">Train</span></code></a></li>
+<li><a class="reference internal" href="#tool.paramsmanager.TrainExternal"><code class="docutils literal notranslate"><span class="pre">TrainExternal</span></code></a></li>
+<li><a class="reference internal" href="#tool.paramsmanager.default_to_json"><code class="docutils literal notranslate"><span class="pre">default_to_json()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-tool.util">tool.util module</a><ul>
+<li><a class="reference internal" href="#tool.util.Label"><code class="docutils literal notranslate"><span class="pre">Label</span></code></a><ul>
+<li><a class="reference internal" href="#tool.util.Label.set_axes_L0L1"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_L0L1()</span></code></a></li>
+<li><a class="reference internal" href="#tool.util.Label.set_axes_P0L0"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_P0L0()</span></code></a></li>
+<li><a class="reference internal" href="#tool.util.Label.set_axes_P0L1"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_P0L1()</span></code></a></li>
+<li><a class="reference internal" href="#tool.util.Label.set_axes_P1L0"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_P1L0()</span></code></a></li>
+<li><a class="reference internal" href="#tool.util.Label.set_axes_P1L1"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_P1L1()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#tool.util.Preferences"><code class="docutils literal notranslate"><span class="pre">Preferences</span></code></a><ul>
 <li><a class="reference internal" href="#tool.util.Preferences.get"><code class="docutils literal notranslate"><span class="pre">Preferences.get()</span></code></a></li>
 <li><a class="reference internal" href="#tool.util.Preferences.put"><code class="docutils literal notranslate"><span class="pre">Preferences.put()</span></code></a></li>
@@ -89,6 +105,7 @@
 <li><a class="reference internal" href="#tool.util.backup"><code class="docutils literal notranslate"><span class="pre">backup()</span></code></a></li>
 <li><a class="reference internal" href="#tool.util.delete_useless_saves"><code class="docutils literal notranslate"><span class="pre">delete_useless_saves()</span></code></a></li>
 <li><a class="reference internal" href="#tool.util.get_data_path"><code class="docutils literal notranslate"><span class="pre">get_data_path()</span></code></a></li>
+<li><a class="reference internal" href="#tool.util.save_dict"><code class="docutils literal notranslate"><span class="pre">save_dict()</span></code></a></li>
 <li><a class="reference internal" href="#tool.util.select_date"><code class="docutils literal notranslate"><span class="pre">select_date()</span></code></a></li>
 <li><a class="reference internal" href="#tool.util.select_weight"><code class="docutils literal notranslate"><span class="pre">select_weight()</span></code></a></li>
 </ul>
@@ -166,6 +183,11 @@
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="tool.argset.env_domain">
+<span class="sig-prename descclassname"><span class="pre">tool.argset.</span></span><span class="sig-name descname"><span class="pre">env_domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser:</span> <span class="pre">~argparse.ArgumentParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metavar='ENV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.argset.env_domain" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="tool.argset.episodes">
 <span class="sig-prename descclassname"><span class="pre">tool.argset.</span></span><span class="sig-name descname"><span class="pre">episodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser:</span> <span class="pre">~argparse.ArgumentParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metavar='E'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">help='Total</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">episodes'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.argset.episodes" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
@@ -173,6 +195,11 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="tool.argset.fix_xmap_size">
 <span class="sig-prename descclassname"><span class="pre">tool.argset.</span></span><span class="sig-name descname"><span class="pre">fix_xmap_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser:</span> <span class="pre">~argparse.ArgumentParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=&lt;class</span> <span class="pre">'float'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metavar='S'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">help='xmap</span> <span class="pre">size'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.argset.fix_xmap_size" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tool.argset.format">
+<span class="sig-prename descclassname"><span class="pre">tool.argset.</span></span><span class="sig-name descname"><span class="pre">format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">parser:</span> <span class="pre">~argparse.ArgumentParser,</span> <span class="pre">metavar='FORMAT',</span> <span class="pre">type=&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">nargs='*',</span> <span class="pre">default=['svg',</span> <span class="pre">'pdf'],</span> <span class="pre">**kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.argset.format" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -221,6 +248,16 @@
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="tool.argset.save_result">
+<span class="sig-prename descclassname"><span class="pre">tool.argset.</span></span><span class="sig-name descname"><span class="pre">save_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArgumentParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'store_true'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">help</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Save</span> <span class="pre">animation'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.argset.save_result" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tool.argset.start_iter">
+<span class="sig-prename descclassname"><span class="pre">tool.argset.</span></span><span class="sig-name descname"><span class="pre">start_iter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser:</span> <span class="pre">~argparse.ArgumentParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metavar='NUM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.argset.start_iter" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="tool.argset.steps">
 <span class="sig-prename descclassname"><span class="pre">tool.argset.</span></span><span class="sig-name descname"><span class="pre">steps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser:</span> <span class="pre">~argparse.ArgumentParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metavar='E'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">help='Time</span> <span class="pre">steps'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.argset.steps" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
@@ -262,28 +299,82 @@
 </dd></dl>
 
 </section>
-<section id="module-tool.params">
-<span id="tool-params-module"></span><h2>tool.params module<a class="headerlink" href="#module-tool.params" title="Permalink to this heading"></a></h2>
+<section id="module-tool.paramsmanager">
+<span id="tool-paramsmanager-module"></span><h2>tool.paramsmanager module<a class="headerlink" href="#module-tool.paramsmanager" title="Permalink to this heading"></a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="tool.params.Params">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tool.params.</span></span><span class="sig-name descname"><span class="pre">Params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.params.Params" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dt class="sig sig-object py" id="tool.paramsmanager.Eval">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tool.paramsmanager.</span></span><span class="sig-name descname"><span class="pre">Eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_stop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.paramsmanager.Eval" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_Converter</span></code></p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tool.params.ParamsEval">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tool.params.</span></span><span class="sig-name descname"><span class="pre">ParamsEval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.params.ParamsEval" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_Eval</span></code></p>
-<dl class="py property">
-<dt class="sig sig-object py" id="tool.params.ParamsEval.kwargs">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">kwargs</span></span><a class="headerlink" href="#tool.params.ParamsEval.kwargs" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="tool.paramsmanager.Params">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tool.paramsmanager.</span></span><span class="sig-name descname"><span class="pre">Params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.paramsmanager.Params" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_Converter</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tool.paramsmanager.Params.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lock</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.paramsmanager.Params.save" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="tool.paramsmanager.ParamsEval">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tool.paramsmanager.</span></span><span class="sig-name descname"><span class="pre">ParamsEval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.paramsmanager.ParamsEval" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tool.paramsmanager.Eval" title="tool.paramsmanager.Eval"><code class="xref py py-class docutils literal notranslate"><span class="pre">Eval</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tool.paramsmanager.Train">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tool.paramsmanager.</span></span><span class="sig-name descname"><span class="pre">Train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_stop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">NumberType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_per_epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad_clip_norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">NumberType</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kl_annealing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.paramsmanager.Train" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_Converter</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tool.paramsmanager.TrainExternal">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tool.paramsmanager.</span></span><span class="sig-name descname"><span class="pre">TrainExternal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resume_from</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.paramsmanager.TrainExternal" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_Converter</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tool.paramsmanager.default_to_json">
+<span class="sig-prename descclassname"><span class="pre">tool.paramsmanager.</span></span><span class="sig-name descname"><span class="pre">default_to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.paramsmanager.default_to_json" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
 <section id="module-tool.util">
 <span id="tool-util-module"></span><h2>tool.util module<a class="headerlink" href="#module-tool.util" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tool.util.Label">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tool.util.</span></span><span class="sig-name descname"><span class="pre">Label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.Label" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tool.util.Label.set_axes_L0L1">
+<span class="sig-name descname"><span class="pre">set_axes_L0L1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.Label.set_axes_L0L1" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tool.util.Label.set_axes_P0L0">
+<span class="sig-name descname"><span class="pre">set_axes_P0L0</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.Label.set_axes_P0L0" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tool.util.Label.set_axes_P0L1">
+<span class="sig-name descname"><span class="pre">set_axes_P0L1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.Label.set_axes_P0L1" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tool.util.Label.set_axes_P1L0">
+<span class="sig-name descname"><span class="pre">set_axes_P1L0</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.Label.set_axes_P1L0" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tool.util.Label.set_axes_P1L1">
+<span class="sig-name descname"><span class="pre">set_axes_P1L1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.Label.set_axes_P1L1" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="tool.util.Preferences">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tool.util.</span></span><span class="sig-name descname"><span class="pre">Preferences</span></span><a class="headerlink" href="#tool.util.Preferences" title="Permalink to this definition"></a></dt>
@@ -313,6 +404,11 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="tool.util.get_data_path">
 <span class="sig-prename descclassname"><span class="pre">tool.util.</span></span><span class="sig-name descname"><span class="pre">get_data_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_time_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.get_data_path" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tool.util.save_dict">
+<span class="sig-prename descclassname"><span class="pre">tool.util.</span></span><span class="sig-name descname"><span class="pre">save_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tool.util.save_dict" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">

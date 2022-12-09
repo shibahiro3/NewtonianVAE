@@ -28,6 +28,9 @@ class Distribution(nn.Module):
         """
         raise NotImplementedError()
 
+    def sample(self) -> Tensor:
+        raise NotImplementedError()
+
     def rsample(self) -> Tensor:
         raise NotImplementedError()
 

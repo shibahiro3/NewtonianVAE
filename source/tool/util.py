@@ -5,7 +5,10 @@ from typing import Optional
 
 import json5
 import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.ticker import FormatStrFormatter
 
+import mypython.plotutil as mpu
 from mypython.terminal import Color
 
 _weight = "weight*/*"
@@ -36,7 +39,7 @@ def select_date(model_date_path) -> Optional[Path]:
 
     for i, e in enumerate(w_dirs, 1):
         l = len(list(e.glob(_weight)))
-        print(i, ":", e.name, f"({l})", Path(e, "params_bk.json5"))
+        print(f"{i:2d}", ":", e.name, f"({l:3d})", Path(e, "params_saved.json5"))
 
     idx = _get_idx("Select date and time (or exit): ", len(w_dirs))
     if idx is None:
@@ -46,20 +49,20 @@ def select_date(model_date_path) -> Optional[Path]:
 
 
 def select_weight(path: Path) -> Optional[Path]:
-    weight_p = list(path.glob(_weight))
-    weight_p.sort(key=lambda e: int(e.stem))
-    if len(weight_p) == 0:
+    weight_path = list(path.glob(_weight))
+    weight_path.sort(key=lambda e: int(e.stem))
+    if len(weight_path) == 0:
         Color.print("Weight doesn't exist.", c=Color.orange)
         return None
 
-    for i, e in enumerate(weight_p, 1):
-        print(i, ":", e.name)
+    for i, e in enumerate(weight_path, 1):
+        print(f"{i:3d}", ":", e.name)
 
-    idx = _get_idx("Choose weight (or exit): ", len(weight_p))
+    idx = _get_idx("Choose weight (or exit): ", len(weight_path))
     if idx is None:
         return None
     else:
-        return weight_p[idx]
+        return weight_path[idx]
 
 
 def delete_useless_saves(model_date_path):
@@ -127,3 +130,105 @@ class Preferences:
             with open(p, mode="r") as f:
                 ret = json5.load(f).get("value")
         return ret
+
+
+def save_dict(path, d: dict):
+    path = Path(path)
+    with open(path, mode="w") as f:
+        json5.dump(d, f)
+    path.chmod(0o444)
+
+
+class Label:
+    def __init__(self, domain: Optional[str]) -> None:
+        self.domain = domain
+
+        self.latent_0 = r"latent element (1)"
+        self.latent_1 = r"latent element (2)"
+
+        # TODO:
+        self.latent_0_range = None
+        self.latent_1_range = None
+
+        if type(domain) == str:
+            if domain == "reacher2d":
+                self.physical_0 = r"physical angle ($\theta_1$)"
+                self.physical_1 = r"physical angle ($\theta_2$)"
+                self.physical_0_range = (-np.pi, np.pi)
+                self.physical_1_range = (-np.pi / 4, np.pi)
+
+            elif domain == "point_mass":
+                self.physical_0 = r"physical position (x)"
+                self.physical_1 = r"physical position (y)"
+                self.physical_0_range = (-0.3, 0.3)
+                self.physical_1_range = (-0.3, 0.3)
+            else:
+                assert False
+
+        # color_action = mpu.cmap(2, "prism")
+        self.color_x = ["#22ff7a", "#e7ad38"]
+        self.color_l = ["#16aa4f", "#c59330"]
+
+    def set_axes_L0L1(self, ax: Axes, lmax: Optional[float] = None):
+        if self.domain is not None:
+            ax.set_xlabel(self.latent_0, color=self.color_l[0])
+            if lmax is not None:
+                ax.set_xlim(-lmax, lmax)
+            # else:
+            #     ax.set_xlim()
+            ax.xaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
+
+            ax.set_ylabel(self.latent_1, color=self.color_l[1])
+            if lmax is not None:
+                ax.set_ylim(-lmax, lmax)
+            ax.yaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
+
+        mpu.Axis_aspect_2d(ax, 1)
+
+    def set_axes_P0L0(self, ax: Axes, lmax: Optional[float] = None):
+        if self.domain is not None:
+            ax.set_xlabel(self.physical_0, color=self.color_x[0])
+            ax.set_xlim(*self.physical_0_range)
+
+            ax.set_ylabel(self.latent_0, color=self.color_l[0])
+            if lmax is not None:
+                ax.set_ylim(-lmax, lmax)
+            ax.yaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
+
+        mpu.Axis_aspect_2d(ax, 1)
+
+    def set_axes_P1L1(self, ax: Axes, lmax: Optional[float] = None):
+        if self.domain is not None:
+            ax.set_xlabel(self.physical_1, color=self.color_x[1])
+            ax.set_xlim(*self.physical_1_range)
+
+            ax.set_ylabel(self.latent_1, color=self.color_l[1])
+            if lmax is not None:
+                ax.set_ylim(-lmax, lmax)
+            ax.yaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
+
+        mpu.Axis_aspect_2d(ax, 1)
+
+    def set_axes_P0L1(self, ax: Axes, lmax: Optional[float] = None):
+        if self.domain is not None:
+            ax.set_xlabel(self.physical_0, color=self.color_x[0])
+            ax.set_xlim(*self.physical_0_range)
+
+            ax.set_ylabel(self.latent_1, color=self.color_l[1])
+            if lmax is not None:
+                ax.set_ylim(-lmax, lmax)
+            ax.yaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
+
+        mpu.Axis_aspect_2d(ax, 1)
+
+    def set_axes_P1L0(self, ax: Axes, lmax: Optional[float] = None):
+        if self.domain is not None:
+            ax.set_xlabel(self.physical_1, color=self.color_x[1])
+            ax.set_xlim(*self.physical_1_range)
+
+            ax.set_ylabel(self.latent_0, color=self.color_l[0])
+            if lmax is not None:
+                ax.set_ylim(-lmax, lmax)
+            ax.yaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
+
+        mpu.Axis_aspect_2d(ax, 1)

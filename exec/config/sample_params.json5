@@ -1,0 +1,90 @@
+{
+  // Class name of the model to use for training
+  model: "NewtonianVAEV2",
+
+  NewtonianVAEV2: {
+    dim_x: 2,
+    transition_std: 0.01,
+    encoder_dim_middle: 1024,
+    encoder_std_function: "softplus",
+
+    // Use KL(q(x|I)‖N (0, 1))  (Optional)
+    // If not specified, it is equivalent to false.
+    // Paper: Secondly, we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
+    // regularization: true,
+
+    // Fix values for A, B, C  (Optional)
+    // Paper: Firstly, the transition matrices were set to A = 0, B = 0, C = 1.
+    fix_abc: [0, 0, 1],
+  },
+
+  NewtonianVAEDerivation: {
+    dim_x: 2,
+    transition_std: 0.25,
+    encoder_dim_middle: 1024,
+    encoder_std_function: "softplus",
+    // regularization: true,
+    fix_abc: [0, 0, 1],
+
+    dim_xhat: 32,
+    dim_pxhat_middle: 32,
+    pxhat_std_function: "softplus",
+  },
+
+  NewtonianVAEJIACell: {
+    dim_x: 2,
+    transition_std: 0.25,
+    encoder_dim_middle: 1024,
+    encoder_std_function: "softplus",
+    // regularization: true,
+    fix_abc: [0, 0, 1],
+
+    dim_px_cat_middle: 32,
+    pxm_std_function: "softplus",
+  },
+
+  train: {
+    device: "cuda", // "cpu", "cuda"
+    dtype: "float32", // "float16", "float32"
+
+    // Random seed  (Optional)
+    // If null, the seed is determined automatically and the seed used is stored in seed.txt.
+    // If not specified, it is equivalent to null.
+    seed: null, // int or null
+
+    // === Paper ===
+    /*
+      To train the models, we generate 1000 random se-
+      quences with 100 time-steps for the point mass and
+      reacher-2D systems, and 30 time-steps for the fetch-3D
+      system.
+
+      All
+      models were trained using Adam [28] with a learning
+      rate of 3 · 10−4 and batch size 1 (a single sequence per
+      batch) for 300 epochs.
+    */
+
+    // Use data as episode data: index from data_start to data_stop - 1
+    data_start: 0,
+    data_stop: 1000,
+
+    // Small batch size (like 1) makes learning very slow...
+    // If this value is large, you may get torch.cuda.OutOfMemoryError.
+    batch_size: 1,
+
+    learning_rate: 3e-4,
+    epochs: 300,
+    max_time_length: 100,
+    // =============
+
+    save_per_epoch: 20,
+
+    // (Optional)
+    grad_clip_norm: null, // Number type or null
+
+    // Use KL annealing (Optional)
+    // If not specified, it is equivalent to false.
+    // kl_annealing: true,
+  },
+}

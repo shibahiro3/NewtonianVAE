@@ -1,6 +1,6 @@
 {
   eval: {
-    device: "cpu",
+    device: "cuda",
     dtype: "float32",
     data_start: 1000,
     data_stop: 1050,

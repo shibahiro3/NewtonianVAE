@@ -104,15 +104,9 @@ def main():
             ax.bar(range(dim_a), a, color=cmap(dim_a, "prism"), width=0.5)
             ax.set_xticks(range(dim_a))
 
-            # ax.set_xticklabels(
-            #     ["$\mathbf{u}[0]$ : x (horizontal)", "$\mathbf{u}[1]$ : y (vertical)"]
-            # )
-            # ax.set_xticklabels(["$\mathbf{u}[0]$ : shoulder", "$\mathbf{u}[1]$ : wrist"])
-
             ax = axes.observation
             ax.set_title("$\mathbf{I}_t$")
-            img = mv.cnn2plt(obs2img(observation[self.t, self.episode_cnt]))
-            ax.imshow(img)
+            ax.imshow(obs2img(observation[self.t, self.episode_cnt]))
 
     p = AnimPack()
     mpu.anim_mode(

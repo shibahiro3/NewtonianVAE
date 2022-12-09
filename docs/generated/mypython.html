@@ -47,15 +47,37 @@
 <li><a class="reference internal" href="#mypython.error.check_file"><code class="docutils literal notranslate"><span class="pre">check_file()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#module-mypython.numeric">mypython.numeric module</a><ul>
+<li><a class="reference internal" href="#mypython.numeric.MovingAverage"><code class="docutils literal notranslate"><span class="pre">MovingAverage</span></code></a><ul>
+<li><a class="reference internal" href="#mypython.numeric.MovingAverage.get"><code class="docutils literal notranslate"><span class="pre">MovingAverage.get()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.numeric.MovingAverage.reset"><code class="docutils literal notranslate"><span class="pre">MovingAverage.reset()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-mypython.plotutil">mypython.plotutil module</a><ul>
 <li><a class="reference internal" href="#mypython.plotutil.Axis_aspect_2d"><code class="docutils literal notranslate"><span class="pre">Axis_aspect_2d()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.plotutil.anim_mode"><code class="docutils literal notranslate"><span class="pre">anim_mode()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.plotutil.cartesian_coordinate"><code class="docutils literal notranslate"><span class="pre">cartesian_coordinate()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.plotutil.cmap"><code class="docutils literal notranslate"><span class="pre">cmap()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.plotutil.get_figsize"><code class="docutils literal notranslate"><span class="pre">get_figsize()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.plotutil.register_save_path"><code class="docutils literal notranslate"><span class="pre">register_save_path()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-mypython.pyutil">mypython.pyutil module</a><ul>
+<li><a class="reference internal" href="#mypython.pyutil.RemainingTime"><code class="docutils literal notranslate"><span class="pre">RemainingTime</span></code></a><ul>
+<li><a class="reference internal" href="#mypython.pyutil.RemainingTime.elapsed"><code class="docutils literal notranslate"><span class="pre">RemainingTime.elapsed</span></code></a></li>
+<li><a class="reference internal" href="#mypython.pyutil.RemainingTime.eta"><code class="docutils literal notranslate"><span class="pre">RemainingTime.eta</span></code></a></li>
+<li><a class="reference internal" href="#mypython.pyutil.RemainingTime.time"><code class="docutils literal notranslate"><span class="pre">RemainingTime.time</span></code></a></li>
+<li><a class="reference internal" href="#mypython.pyutil.RemainingTime.update"><code class="docutils literal notranslate"><span class="pre">RemainingTime.update()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mypython.pyutil.Seq"><code class="docutils literal notranslate"><span class="pre">Seq</span></code></a><ul>
+<li><a class="reference internal" href="#mypython.pyutil.Seq.next"><code class="docutils literal notranslate"><span class="pre">Seq.next()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.pyutil.Seq.now"><code class="docutils literal notranslate"><span class="pre">Seq.now</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mypython.pyutil.add_version"><code class="docutils literal notranslate"><span class="pre">add_version()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.pyutil.s2dhms"><code class="docutils literal notranslate"><span class="pre">s2dhms()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.pyutil.s2dhms_str"><code class="docutils literal notranslate"><span class="pre">s2dhms_str()</span></code></a></li>
 </ul>
@@ -103,6 +125,7 @@
 <li><a class="reference internal" href="#mypython.vision.CHW2HWC"><code class="docutils literal notranslate"><span class="pre">CHW2HWC()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.vision.HWC2CHW"><code class="docutils literal notranslate"><span class="pre">HWC2CHW()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.vision.RGB2BGR"><code class="docutils literal notranslate"><span class="pre">RGB2BGR()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.vision.clip"><code class="docutils literal notranslate"><span class="pre">clip()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.vision.cnn2cv"><code class="docutils literal notranslate"><span class="pre">cnn2cv()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.vision.cnn2plt"><code class="docutils literal notranslate"><span class="pre">cnn2plt()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.vision.cv2cnn"><code class="docutils literal notranslate"><span class="pre">cv2cnn()</span></code></a></li>
@@ -190,17 +213,36 @@
 </dd></dl>
 
 </section>
+<section id="module-mypython.numeric">
+<span id="mypython-numeric-module"></span><h2>mypython.numeric module<a class="headerlink" href="#module-mypython.numeric" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="mypython.numeric.MovingAverage">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mypython.numeric.</span></span><span class="sig-name descname"><span class="pre">MovingAverage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.numeric.MovingAverage" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.numeric.MovingAverage.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mypython.numeric.MovingAverage.get" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.numeric.MovingAverage.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.numeric.MovingAverage.reset" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="module-mypython.plotutil">
 <span id="mypython-plotutil-module"></span><h2>mypython.plotutil module<a class="headerlink" href="#module-mypython.plotutil" title="Permalink to this heading"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="mypython.plotutil.Axis_aspect_2d">
-<span class="sig-prename descclassname"><span class="pre">mypython.plotutil.</span></span><span class="sig-name descname"><span class="pre">Axis_aspect_2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.plotutil.Axis_aspect_2d" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">mypython.plotutil.</span></span><span class="sig-name descname"><span class="pre">Axis_aspect_2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.plotutil.Axis_aspect_2d" title="Permalink to this definition"></a></dt>
 <dd><p>Put after ax.plot() series</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mypython.plotutil.anim_mode">
-<span class="sig-prename descclassname"><span class="pre">mypython.plotutil.</span></span><span class="sig-name descname"><span class="pre">anim_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anim_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freeze_cnt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">33</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.plotutil.anim_mode" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">mypython.plotutil.</span></span><span class="sig-name descname"><span class="pre">anim_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anim_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freeze_cnt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">33</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.plotutil.anim_mode" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -218,7 +260,7 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mypython.plotutil.cartesian_coordinate">
-<span class="sig-prename descclassname"><span class="pre">mypython.plotutil.</span></span><span class="sig-name descname"><span class="pre">cartesian_coordinate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.plotutil.cartesian_coordinate" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">mypython.plotutil.</span></span><span class="sig-name descname"><span class="pre">cartesian_coordinate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.plotutil.cartesian_coordinate" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -228,12 +270,65 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mypython.plotutil.get_figsize">
-<span class="sig-prename descclassname"><span class="pre">mypython.plotutil.</span></span><span class="sig-name descname"><span class="pre">get_figsize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.plotutil.get_figsize" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">mypython.plotutil.</span></span><span class="sig-name descname"><span class="pre">get_figsize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Figure</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.plotutil.get_figsize" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mypython.plotutil.register_save_path">
+<span class="sig-prename descclassname"><span class="pre">mypython.plotutil.</span></span><span class="sig-name descname"><span class="pre">register_save_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.plotutil.register_save_path" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </section>
 <section id="module-mypython.pyutil">
 <span id="mypython-pyutil-module"></span><h2>mypython.pyutil module<a class="headerlink" href="#module-mypython.pyutil" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="mypython.pyutil.RemainingTime">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mypython.pyutil.</span></span><span class="sig-name descname"><span class="pre">RemainingTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.pyutil.RemainingTime" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.pyutil.RemainingTime.elapsed">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">elapsed</span></span><a class="headerlink" href="#mypython.pyutil.RemainingTime.elapsed" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.pyutil.RemainingTime.eta">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">eta</span></span><a class="headerlink" href="#mypython.pyutil.RemainingTime.eta" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.pyutil.RemainingTime.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#mypython.pyutil.RemainingTime.time" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.pyutil.RemainingTime.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.pyutil.RemainingTime.update" title="Permalink to this definition"></a></dt>
+<dd><p>max: 0 is ok but only for elapsed</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mypython.pyutil.Seq">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mypython.pyutil.</span></span><span class="sig-name descname"><span class="pre">Seq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.pyutil.Seq" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.pyutil.Seq.next">
+<span class="sig-name descname"><span class="pre">next</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mypython.pyutil.Seq.next" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.pyutil.Seq.now">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">now</span></span><a class="headerlink" href="#mypython.pyutil.Seq.now" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mypython.pyutil.add_version">
+<span class="sig-prename descclassname"><span class="pre">mypython.pyutil.</span></span><span class="sig-name descname"><span class="pre">add_version</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="headerlink" href="#mypython.pyutil.add_version" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="mypython.pyutil.s2dhms">
 <span class="sig-prename descclassname"><span class="pre">mypython.pyutil.</span></span><span class="sig-name descname"><span class="pre">s2dhms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.pyutil.s2dhms" title="Permalink to this definition"></a></dt>
@@ -348,7 +443,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mypython.terminal.Color.print">
-<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\x1b[92m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.terminal.Color.print" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\x1b[92m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'</span> <span class="pre">'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.terminal.Color.print" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -444,6 +539,11 @@ cnn : (</em>, RGB, H, W) (0 to 1) (floatにしないとcnnは受け入れない)
 <dl class="py function">
 <dt class="sig sig-object py" id="mypython.vision.RGB2BGR">
 <span class="sig-prename descclassname"><span class="pre">mypython.vision.</span></span><span class="sig-name descname"><span class="pre">RGB2BGR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imgs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mypython.vision.RGB2BGR" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mypython.vision.clip">
+<span class="sig-prename descclassname"><span class="pre">mypython.vision.</span></span><span class="sig-name descname"><span class="pre">clip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.vision.clip" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">

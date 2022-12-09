@@ -29,16 +29,20 @@ python source/simulation/override.py $domain $override
 # reacher-2D systems, and 30 time-steps for the fetch-3D
 # system.
 
-path_data=environment/$env/data
+# path_data=environment/$env/data
+path_data=environment/$env/data_center
+
+mkdir -p $path_data
+cp -fr $override $path_data
+chmod 444 $path_data/override/*
+
+
 opts=(
 	--cf-simenv   exec/config/${env}_env.json5
 	--path-data   $path_data
-	--episodes 1050 # for train: 1000, for eval: 50
+	--episodes 1600 # for train: 1000, for validation: 300, for test: 300
 	# --save_anim
 	${@:2}
 )
 
 python source/simulation/collect_data.py ${opts[@]}
-
-cp -fr $override $path_data
-chmod 444 $path_data/override/*

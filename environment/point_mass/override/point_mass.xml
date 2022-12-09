@@ -25,7 +25,9 @@
       <camera name="cam0" pos="0 -0.3 0.3" xyaxes="1 0 0 0 0.7 0.7"/>
       <joint name="root_x" type="slide"  pos="0 0 0" axis="1 0 0" />
       <joint name="root_y" type="slide"  pos="0 0 0" axis="0 1 0" />
-      <geom name="pointmass" type="sphere" size=".01" material="self" mass=".3"/>
+
+      <!-- <geom name="pointmass" type="sphere" size=".01" material="self" mass=".3"/> -->
+      <geom name="pointmass" type="sphere" size=".03" material="self" mass=".3"/>
     </body>
 
     <geom name="target" pos="0 0 .01" material="target" type="sphere" size=".015"/>

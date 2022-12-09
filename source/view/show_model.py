@@ -11,7 +11,7 @@ from torchviz import make_dot
 import mypython.ai.torchprob.debug as tp_debug
 from models.core import get_NewtonianVAECell
 from tool import argset
-from tool.params import Params
+from tool.paramsmanager import Params
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.cf(parser)

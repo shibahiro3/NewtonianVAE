@@ -5,7 +5,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import json5
 import numpy as np
 import torch
 from torch import nn, optim
@@ -13,11 +12,11 @@ from torch import nn, optim
 import tool.util
 from models.core import get_NewtonianVAE
 from mypython.ai.torch_util import print_module_params, reproduce
-from mypython.pyutil import s2dhms_str
-from tool import argset, checker
+from mypython.pyutil import RemainingTime, s2dhms_str
+from mypython.terminal import Color, Prompt
+from tool import argset, checker, paramsmanager
 from tool.dataloader import DataLoader
-from tool.params import Params
-from tool.util import Preferences, backup
+from tool.util import Preferences
 from tool.visualhandlerbase import VisualHandlerBase
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -41,23 +40,21 @@ args = Args()
 def train(vh=VisualHandlerBase()):
     torch.set_grad_enabled(True)
 
-    params = Params(args.cf)
-    print("params:")
-    print(params)
+    params = paramsmanager.Params(args.cf)
 
-    vh.title = params.model
+    datetime_now = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
+
+    # vh.title = params.model
+    vh.title = datetime_now
     vh.call_end_init()
 
     if params.train.seed is None:
-        seed = np.random.randint(0, 2**16)
-    else:
-        seed = params.train.seed
+        params.train.seed = np.random.randint(0, 2**16)
+    reproduce(params.train.seed)
 
-    reproduce(seed)
-
-    weight_dir = Path(args.path_save, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), "weight")
+    d = Path(args.path_save, datetime_now)
+    weight_dir = Path(d, "weight")
     weight_dir.mkdir(parents=True, exist_ok=True)
-    backup(args.cf, weight_dir.parent, "params_bk.json5")
 
     dtype: torch.dtype = getattr(torch, params.train.dtype)
     checker.cuda(params.train.device)
@@ -77,28 +74,33 @@ def train(vh=VisualHandlerBase()):
 
     if args.resume:
         print('You chose "resume". Select a model to load.')
-        d = tool.util.select_date(args.path_save)
-        if d is None:
+        _d = tool.util.select_date(args.path_save)
+        if _d is None:
             return
-        weight_p = tool.util.select_weight(d)
-        if weight_p is None:
+        weight_path = tool.util.select_weight(_d)
+        if weight_path is None:
             return
-        model.cell.load_state_dict(torch.load(weight_p))
+        model.cell.load_state_dict(torch.load(weight_path))
 
-        weight_p_s = str(weight_p)
+        weight_path_str = str(weight_path)
     else:
-        weight_p_s = None
+        weight_path_str = None
 
     model.type(dtype)
     model.to(device)
     model.train()
 
-    optimiser = optim.Adam(model.parameters(), params.train.learning_rate)
+    optimizer = optim.Adam(model.parameters(), params.train.learning_rate)
 
-    Preferences.put(weight_dir.parent, "seed", seed)
-    Preferences.put(weight_dir.parent, "resume_from", weight_p_s)
-    Preferences.put(weight_dir.parent, "data_from", args.path_data)
-    Preferences.put(weight_dir.parent, "data_id", Preferences.get(args.path_data, "id"))
+    params.external = paramsmanager.TrainExternal(
+        data_path=args.path_data,
+        data_id=Preferences.get(args.path_data, "id"),
+        resume_from=weight_path_str,
+    )
+
+    save_param_path = Path(d, "params_saved.json5")
+    params.save(save_param_path)
+    Color.print("save params to:", save_param_path)
 
     # LOG_* is a buffer for recording the learning process.
     # It is not used for any calculations for learning.
@@ -108,24 +110,36 @@ def train(vh=VisualHandlerBase()):
     LOG_KL = []
 
     def end_process():
-        np.save(Path(weight_dir.parent, "LOG_Loss.npy"), LOG_Loss)
-        np.save(Path(weight_dir.parent, "LOG_NLL.npy"), LOG_NLL)
-        np.save(Path(weight_dir.parent, "LOG_KL.npy"), LOG_KL)
+        np.save(Path(d, "LOG_Loss.npy"), LOG_Loss)
+        np.save(Path(d, "LOG_NLL.npy"), LOG_NLL)
+        np.save(Path(d, "LOG_KL.npy"), LOG_KL)
 
         # ディレクトリを消すのは保存とかの後。
         tool.util.delete_useless_saves(args.path_save)
-        print("end of train")
+        print("\nend of train")
 
-    time_start = time.perf_counter()
     try:
+        remaining = RemainingTime(max=params.train.epochs * len(trainloader))
         for epoch in range(1, params.train.epochs + 1):
             for action, observation, delta, position in trainloader:
-                E_sum, LOG_E_ll_sum, LOG_E_kl_sum = model(
-                    action=action, observation=observation, delta=delta
-                )
 
-                L = -E_sum
-                optimiser.zero_grad()
+                if params.train.kl_annealing:
+                    # Paper:
+                    # In the point mass experiments
+                    # we found it useful to anneal the KL term in the ELBO,
+                    # starting with a value of 0.001 and increasing it linearly
+                    # to 1.0 between epochs 30 and 60.
+                    if epoch < 30:
+                        model.cell.kl_beta = 0.001
+                    elif 30 <= epoch and epoch <= 60:
+                        model.cell.kl_beta = 0.001 + (1 - 0.001) * ((epoch - 30) / (60 - 30))
+                    else:
+                        model.cell.kl_beta = 1
+
+                E, E_ll, E_kl = model(action=action, observation=observation, delta=delta)
+
+                L = -E
+                optimizer.zero_grad()
                 L.backward()
                 # print_module_params(cell, True)
 
@@ -134,29 +148,33 @@ def train(vh=VisualHandlerBase()):
                         model.parameters(), params.train.grad_clip_norm, norm_type=2
                     )
 
-                optimiser.step()
+                optimizer.step()
 
-                # === print ===
+                # === show progress ===
 
                 L = L.cpu().item()
-                LOG_E_ll_sum = -LOG_E_ll_sum.cpu().item()
-                LOG_E_kl_sum = LOG_E_kl_sum.cpu().item()
+                E_ll = -E_ll.cpu().item()
+                E_kl = E_kl.cpu().item()
 
-                print(
+                remaining.update()
+
+                Prompt.print_one_line(
                     (
                         f"Epoch: {epoch} | "
-                        f"Loss: {L:>11.4f} | "
-                        f"NLL: {LOG_E_ll_sum:>11.4f} | "
-                        f"KL: {LOG_E_kl_sum:>11.4f} | "
-                        f"Elapsed: {s2dhms_str(time.perf_counter() - time_start)}"
+                        f"Loss: {L:.4f} | "
+                        f"NLL: {E_ll:.4f} | "
+                        f"KL: {E_kl:.4f} | "
+                        f"Elapsed: {s2dhms_str(remaining.elapsed)} | "
+                        # f"Remaining: {s2dhms_str(remaining.time)} "
+                        f"ETA: {remaining.eta} "
                     )
                 )
 
                 LOG_Loss.append(L)
-                LOG_NLL.append(LOG_E_ll_sum)
-                LOG_KL.append(LOG_E_kl_sum)
+                LOG_NLL.append(E_ll)
+                LOG_KL.append(E_kl)
 
-                vh.plot(L, LOG_E_ll_sum, LOG_E_kl_sum, epoch)
+                vh.plot(L, E_ll, E_kl, epoch)
                 if not vh.is_running:
                     vh.call_end()
                     end_process()
@@ -170,13 +188,6 @@ def train(vh=VisualHandlerBase()):
         pass
 
     end_process()
-
-
-def save_to_file(path, text):
-    p = Path(path)
-    with p.open("w") as f:
-        f.write(text)
-    p.chmod(0o444)
 
 
 if __name__ == "__main__":

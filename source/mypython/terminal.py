@@ -27,7 +27,7 @@ class Color:
     cyan = "\x1b[96m"
     white = "\x1b[97m"
 
-    def print(*values, c=green, sep="", **kwargs):
+    def print(*values, c=green, sep=" ", **kwargs):
         text = ""
         for i, e in enumerate(values):
             text += str(e)

@@ -74,10 +74,18 @@ Normal01 = Normal(0, 1)
 
 
 def log_normal(x: Tensor, mu: Tensor, sigma: Tensor, eps=torch.finfo(torch.float).eps) -> Tensor:
-    """log-likelihood of a Gaussian distribution
-    log N(x; μ, σ^2)
+    r"""Log-likelihood of a Gaussian distribution
 
-    Ref:
+    .. math::
+        \begin{array}{ll} \\
+            \log \mathcal{N}(x; \mu, \sigma^2) = - \frac{1}{2} \left( \exp \left( \frac{(x - \mu)^2}{\sigma^2} \right) + 2 \ln \sigma + \ln 2\pi \right)
+        \end{array}
+
+    If the sigma is fixed at 1, This equation is equivalent to :math:`- \frac{1}{2} (x - \mu)^2 + C`.
+    This is equivalent to sum of squared errors (SSE) and is widely used as a mathematical expression for reconstruction error.
+    That is, this :math:`\mu` is the image (, etc.) that is reconstructed.
+
+    References:
         https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L185
     """
 

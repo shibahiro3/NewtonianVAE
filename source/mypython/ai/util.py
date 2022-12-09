@@ -14,7 +14,7 @@ class BatchIdx:
         self._reset()
 
     def __len__(self):
-        return np.ceil(self.N / self.BS)
+        return int(np.ceil(self.N / self.BS))
 
     def __iter__(self):
         return self

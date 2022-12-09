@@ -14,6 +14,7 @@ from dm_control import suite
 from dm_control.suite.wrappers import pixels
 from torch import Tensor
 
+import mypython.vision as mv
 from mypython.terminal import Color
 
 GYM_ENVS = [
@@ -56,7 +57,10 @@ def img2obs(x):
 
 def obs2img(x):
     """range [-0.5, 0.5] -> [0, 1]"""
-    return x + 0.5
+    x = x + 0.5
+    x = mv.clip(x, 0, 1)
+    x = mv.cnn2plt(x)
+    return x
 
 
 def preprocess_observation_(observation: Tensor, bit_depth: int) -> None:
@@ -86,7 +90,9 @@ def _images_to_observation(image: np.ndarray, bit_depth: int, size=64) -> Tensor
 
     # Resize and put channel first
     image: Tensor = torch.tensor(
-        cv2.resize(image, (size, size), interpolation=cv2.INTER_LINEAR).transpose(2, 0, 1),
+        cv2.resize(image, (size, size), interpolation=cv2.INTER_LINEAR).transpose(
+            2, 0, 1
+        ),  # change color order
         dtype=torch.float32,
     )
 
@@ -240,47 +246,8 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
         if domain == "reacher":
             if action_type == "default":
                 pass
-
-            elif action_type == "paper":
-                # deprecated
-                self.sample_random_action = lambda: torch.tensor(
-                    [0.5 + (np.random.rand() - 0.5), -np.pi + 0.3 + np.random.rand() * 0.5]
-                )
-
-            elif action_type == "equal_paper":
-                # deprecated
-                self.sample_random_action = lambda: torch.tensor([np.random.rand(), -1])
-
-            elif action_type == "handmade":
-                self.sample_random_action = lambda: torch.tensor(
-                    [np.random.uniform(-0.3, 0.7), np.random.uniform(-0.2, 0.6)]
-                )
-
-            elif action_type == "handmade2":
-                self.sample_random_action = lambda: torch.tensor(
-                    [np.random.uniform(-0.7, 1), np.random.uniform(-0.8, 1)]
-                )
-
-            elif action_type == "handmade3":
-                self.sample_random_action = lambda: torch.tensor(
-                    [np.random.uniform(-0.5, 0.7), np.random.uniform(-0.3, 0.5)]
-                )
-            elif action_type == "handmade4":
-
-                def f():
-                    a0min = np.random.uniform(-1, 1)
-                    a0max = np.random.uniform(a0min, 1)
-                    a1min = np.random.uniform(-1, 1)
-                    a1max = np.random.uniform(a1min, 1)
-                    # print("===========")
-                    # print(a0min, a0max)
-                    # print(a1min, a1max)
-                    return torch.tensor(
-                        [np.random.uniform(a0min, a0max), np.random.uniform(a1min, a1max)]
-                    )
-
-                self.sample_random_action = f
-
+            elif action_type == "forward":
+                self.sample_random_action = self.action_forward
             else:
                 assert False
 
@@ -294,19 +261,10 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
         elif domain == "point_mass":
             if action_type == "default":
                 pass
-
             elif action_type == "circle":
-
-                def f():
-                    theta = self.t / self.max_episode_length
-                    r = 0.6
-                    a = 0.5
-                    x = r * np.cos(2 * np.pi * theta) + np.random.uniform(-a, a)
-                    y = r * np.sin(2 * np.pi * theta) + np.random.uniform(-a, a)
-                    return torch.tensor([x, y])
-
-                self.sample_random_action = f
-
+                self.sample_random_action = self.action_point_mass_circle
+            elif action_type == "per_episode":
+                self.sample_random_action = self.action_per_episode
             else:
                 assert False
 
@@ -345,6 +303,23 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
     @staticmethod
     def position_wrapper(position):
         return position
+
+    def action_per_episode(self):
+        if self.t == 0:
+            self.action_mean = super().sample_random_action()
+
+        return self.action_mean
+
+    def action_point_mass_circle(self):
+        theta = self.t / self.max_episode_length
+        r = 0.6
+        a = 0.5
+        x = r * np.cos(2 * np.pi * theta) + np.random.uniform(-a, a)
+        y = r * np.sin(2 * np.pi * theta) + np.random.uniform(-a, a)
+        return torch.tensor([x, y])
+
+    def action_forward(self):
+        return torch.tensor([np.random.uniform(-0.3, 0.7), np.random.uniform(-0.2, 0.6)])
 
 
 def reacher_default2endeffectorpos(position):

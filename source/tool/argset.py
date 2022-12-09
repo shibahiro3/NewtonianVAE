@@ -12,6 +12,15 @@ def save_anim(
     parser.add_argument("--save-anim", **_kwargs(locals()), **kwargs)
 
 
+def save_result(
+    parser: argparse.ArgumentParser,
+    action="store_true",
+    help="Save animation",
+    **kwargs,
+):
+    parser.add_argument("--save-result", **_kwargs(locals()), **kwargs)
+
+
 def resume(
     parser: argparse.ArgumentParser,
     action="store_true",
@@ -31,6 +40,16 @@ def anim_mode(
     parser.add_argument("-a", "--anim-mode", **_kwargs(locals()), **kwargs)
 
 
+def start_iter(
+    parser: argparse.ArgumentParser,
+    metavar="NUM",
+    type=int,
+    default=1,
+    **kwargs,
+):
+    parser.add_argument("--start-iter", **_kwargs(locals()), **kwargs)
+
+
 def output(
     parser: argparse.ArgumentParser,
     metavar="PATH",
@@ -38,6 +57,27 @@ def output(
     **kwargs,
 ):
     parser.add_argument("-o", "--output", **_kwargs(locals()), **kwargs)
+
+
+def format(
+    parser: argparse.ArgumentParser,
+    metavar="FORMAT",
+    type=str,
+    nargs="*",
+    default=["svg", "pdf"],
+    **kwargs,
+):
+    parser.add_argument("--format", **_kwargs(locals()), **kwargs)
+
+
+def env_domain(
+    parser: argparse.ArgumentParser,
+    metavar="ENV",
+    type=str,
+    required=False,
+    **kwargs,
+):
+    parser.add_argument("--env-domain", **_kwargs(locals()), **kwargs)
 
 
 def cf(

@@ -20,13 +20,13 @@ from models.core import (
     as_save,
     get_NewtonianVAECell,
 )
-from mypython.plotutil import Axis_aspect_2d, cmap
+from mypython.pyutil import add_version
 from mypython.terminal import Color, Prompt
 from newtonianvae.load import get_path_data, load
 from simulation.env import obs2img
 from tool import argset, checker
 from tool.dataloader import DataLoader
-from tool.params import Params, ParamsEval
+from tool.paramsmanager import Params, ParamsEval
 from tool.util import Preferences
 
 try:
@@ -39,38 +39,36 @@ except:
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.episodes(parser)
-argset.anim_mode(parser)
 argset.cf_eval(parser)
 argset.path_model(parser)
 argset.path_data(parser, required=False)
 argset.path_result(parser)
+argset.save_anim(parser)
 argset.fix_xmap_size(parser, required=False)
 _args = parser.parse_args()
 
 
 class Args:
     episodes = _args.episodes
-    anim_mode = _args.anim_mode
     cf_eval = _args.cf_eval
     path_model = _args.path_model
     path_data = _args.path_data
     path_result = _args.path_result
     fix_xmap_size = _args.fix_xmap_size
+    save_anim = _args.save_anim
 
 
 args = Args()
 
 
 def reconstruction():
-    if args.anim_mode == "save":
+    if args.save_anim == "save":
         checker.large_episodes(args.episodes)
 
     torch.set_grad_enabled(False)
 
-    model, d, weight_p, params, params_eval, dtype, device = load(args.path_model, args.cf_eval)
-    data_path = get_path_data(args.path_data, d)
-
-    Path(args.path_result).mkdir(parents=True, exist_ok=True)
+    model, d, weight_path, params, params_eval, dtype, device = load(args.path_model, args.cf_eval)
+    data_path = get_path_data(args.path_data, params)
 
     all_steps = params.train.max_time_length * args.episodes
 
@@ -175,7 +173,7 @@ def reconstruction():
 
             # ======================================================
             self.t += 1
-            color_action = cmap(model.cell.dim_x, "prism")
+            color_action = mpu.cmap(model.cell.dim_x, "prism")
 
             if frame_cnt == -1:
                 self.episode_cnt = np.random.randint(0, args.episodes)
@@ -207,18 +205,18 @@ def reconstruction():
                 width=0.5,
             )
             ax.tick_params(bottom=False, labelbottom=False)
-            Axis_aspect_2d(ax, 1)
+            mpu.Axis_aspect_2d(ax, 1)
 
             # ===============================================================
             ax = axes.observation
             ax.set_title(r"$\mathbf{I}_t$ (Original)")
-            ax.imshow(mv.cnn2plt(obs2img(as_save(self.observation[self.t]))))
+            ax.imshow(obs2img(as_save(self.observation[self.t])))
             ax.set_axis_off()
 
             # ===============================================================
             ax = axes.reconstructed
             ax.set_title(r"$\mathbf{I}_t$ (Reconstructed)")
-            ax.imshow(mv.cnn2plt(obs2img(self.model.LOG_I_dec[self.t])))
+            ax.imshow(obs2img(self.model.LOG_I_dec[self.t]))
             ax.set_axis_off()
 
             # ===============================================================
@@ -249,7 +247,7 @@ def reconstruction():
                 color=[color_map(1 - i / N) for i in range(N)],
             )
             ax.tick_params(bottom=False, labelbottom=False)
-            Axis_aspect_2d(ax, 1)
+            mpu.Axis_aspect_2d(ax, 1)
 
             # ===============================================================
             ax = axes.x_map
@@ -303,7 +301,7 @@ def reconstruction():
                 color=[color_map(1 - i / N) for i in range(N)],
             )
             ax.tick_params(bottom=False, labelbottom=False)
-            Axis_aspect_2d(ax, 1)
+            mpu.Axis_aspect_2d(ax, 1)
 
             if "xhat" in model.cell.info:
                 # ===============================================================
@@ -333,7 +331,7 @@ def reconstruction():
                     color=[color_map(1 - i / N) for i in range(N)],
                 )
                 ax.tick_params(bottom=False, labelbottom=False)
-                Axis_aspect_2d(ax, 1)
+                mpu.Axis_aspect_2d(ax, 1)
 
                 # ===============================================================
                 ax = axes.xhat_std
@@ -362,29 +360,20 @@ def reconstruction():
                     color=[color_map(1 - i / N) for i in range(N)],
                 )
                 ax.tick_params(bottom=False, labelbottom=False)
-                Axis_aspect_2d(ax, 1)
+                mpu.Axis_aspect_2d(ax, 1)
 
     p = AnimPack()
 
-    version = 1
-    while True:
-        save_fname = f"reconstructed_{weight_p.parent.parent.stem}_W{weight_p.stem}_V{version}.mp4"
-        s = Path(args.path_result, save_fname)
-        version += 1
-        if not s.exists():
-            break
-
-    if args.anim_mode == "save":
-        print(f"save to: {s}")
-
+    save_path = Path(args.path_result, f"{d.stem}_W{weight_path.stem}_reconstructed.mp4")
+    save_path = add_version(save_path)
     mpu.anim_mode(
-        args.anim_mode,
+        "save" if args.save_anim else "anim",
         fig,
         p.anim_func,
         all_steps,
         interval=40,
         freeze_cnt=-1,
-        save_path=s,
+        save_path=save_path,
     )
 
     print()

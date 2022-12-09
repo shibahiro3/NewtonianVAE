@@ -60,8 +60,15 @@ class Physics(mujoco.Physics):
 
   def mass_to_target(self):
     """Returns the vector from mass to target in global coordinate."""
-    return (self.named.data.geom_xpos['target'] -
-            self.named.data.geom_xpos['pointmass'])
+
+    # Changed/added by Sugar
+    # Guarantee that the task will not be terminated
+    # True is original implementation
+    if False:
+        return (self.named.data.geom_xpos['target'] -
+                self.named.data.geom_xpos['pointmass'])
+    else:
+        return (np.array([0, 0.2]))
 
   def mass_to_target_dist(self):
     """Returns the distance from mass to the target."""
@@ -93,12 +100,16 @@ class PointMass(base.Task):
     Args:
       physics: An instance of `mujoco.Physics`.
     """
-    
+
+    # Changed/added by Sugar
     # Fix init position
-    randomizers.randomize_limited_and_rotational_joints(physics, self.random)
-    # physics.named.data.qpos["root_x"] = np.array(0.1)
-    # physics.named.data.qpos["root_y"] = np.array(0.2)
-    # print(physics.named.data.qpos)
+    if False:
+        randomizers.randomize_limited_and_rotational_joints(physics, self.random)
+    else:
+        pos = self.random.uniform(-0.15, 0.15, size=2)
+        physics.named.data.qpos["root_x"] = pos[0]
+        physics.named.data.qpos["root_y"] = pos[1]
+        # print(physics.named.data.qpos)
     
 
     if self._randomize_gains:

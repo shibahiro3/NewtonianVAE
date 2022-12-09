@@ -1,12 +1,3 @@
-r"""
-.. TODO:
-    Paper:
-    In the point mass experiments
-    we found it useful to anneal the KL term in the ELBO,
-    starting with a value of 0.001 and increasing it linearly
-    to 1.0 between epochs 30 and 60.
-"""
-
 """
 x_t    == x_t
 x_tn1  == x_{t-1}
@@ -50,7 +41,9 @@ class NewtonianVAECellBase(nn.Module):
     ):
         super().__init__()
 
-        self._dim_x = dim_x
+        self.regularization = regularization
+        self.kl_beta = 1
+        self.force_training = False  # for add_graph of tensorboard
 
         # v_t = v_{t-1} + Δt・(Ax_{t-1} + Bv_{t-1} + Cu_{t-1})
         self.f_velocity = Velocity(dim_x, fix_abc)
@@ -64,9 +57,7 @@ class NewtonianVAECellBase(nn.Module):
             dim_x, dim_middle=encoder_dim_middle, std_function=encoder_std_function
         )
 
-        self.regularization = regularization
-
-        self.force_training = False  # for add_graph of tensorboard
+        self._dim_x = dim_x
 
     @property
     def dim_x(self):
@@ -108,7 +99,7 @@ class NewtonianVAECell(NewtonianVAECellBase):
             # *_t について、各次元(ピクセル)についてはsum, batch size については mean
             E_ll = tp.log(self.p_decoder, I_t, x_t).sum(dim=(1, 2, 3)).mean(dim=0)
             E_kl = tp.KLdiv(self.q_encoder.cond(I_t), self.p_transition).sum(dim=1).mean(dim=0)
-            E = E_ll - E_kl
+            E = E_ll - self.kl_beta * E_kl
 
             if self.regularization:
                 E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
@@ -163,7 +154,7 @@ class NewtonianVAEDerivationCell(NewtonianVAECellBase):
                 .sum(dim=1)
                 .mean(dim=0)
             )
-            E = E_ll - E_kl
+            E = E_ll - self.kl_beta * E_kl
 
             if self.regularization:
                 E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
@@ -261,8 +252,8 @@ class NewtonianVAEBase(nn.Module):
         self._init_LOG(T=T, dtype=action.dtype)
 
         E_sum: Tensor = 0  # = Nagative ELBO
-        LOG_E_ll_sum: Tensor = 0
-        LOG_E_kl_sum: Tensor = 0
+        E_ll_sum: Tensor = 0  # Not use for training
+        E_kl_sum: Tensor = 0  # Not use for training
 
         for t in range(T):
             u_tn1, I_t = action[t], observation[t]
@@ -278,8 +269,8 @@ class NewtonianVAEBase(nn.Module):
                 output = self.cell(I_t=I_t, x_tn1=x_tn1, u_tn1=u_tn1, v_tn1=v_tn1, dt=delta[t])
 
                 E_sum += output.E
-                LOG_E_ll_sum += output.E_ll
-                LOG_E_kl_sum += output.E_kl
+                E_ll_sum += output.E_ll
+                E_kl_sum += output.E_kl
 
                 if self.is_save:
                     self.LOG_I_dec[t] = as_save(self.cell.p_decoder.decode())
@@ -299,11 +290,11 @@ class NewtonianVAEBase(nn.Module):
                 self.LOG_v[t] = as_save(v_t)
                 self.LOG_x_mean[t] = as_save(self.cell.q_encoder.loc)
 
-        E_sum /= T
-        LOG_E_ll_sum /= T
-        LOG_E_kl_sum /= T
+        E = E_sum / T
+        E_ll = E_ll_sum / T
+        E_kl = E_kl_sum / T
 
-        return E_sum, LOG_E_ll_sum, LOG_E_kl_sum
+        return E, E_ll, E_kl
 
     def __call__(self, *args, **kwargs) -> Tuple[Tensor, Tensor, Tensor]:
         return super().__call__(*args, **kwargs)
@@ -447,14 +438,11 @@ class NewtonianVAEV2CellBase(NewtonianVAECellBase):
         super().__init__(dim_x=dim_x, *args, **kwargs)
 
     class Pack:
-        def __init__(
-            self, E: Tensor, E_ll: Tensor, E_kl: Tensor, x_tn1: Tensor, x_t: Tensor, v_t: Tensor
-        ):
+        def __init__(self, E: Tensor, E_ll: Tensor, E_kl: Tensor, x_q_t: Tensor, v_t: Tensor):
             self.E = E  # Use for training
             self.E_ll = E_ll
             self.E_kl = E_kl
-            self.x_tn1 = x_tn1  # Use for training
-            self.x_t = x_t
+            self.x_q_t = x_q_t  # Use for training
             self.v_t = v_t
 
     def __call__(self, *args, **kwargs) -> Pack:
@@ -468,30 +456,35 @@ class NewtonianVAEV2Cell(NewtonianVAEV2CellBase):
         # p(I_t | x_t)
         self.p_decoder = Decoder(dim_x=dim_x)
 
-    def forward(self, I_tn1: Tensor, I_t: Tensor, x_tn2: Tensor, u_tn1: Tensor, dt: Tensor):
+    def forward(self, I_t: Tensor, x_q_tn1: Tensor, x_q_tn2: Tensor, u_tn1: Tensor, dt: Tensor):
         """"""
-
-        x_tn1 = self.q_encoder.cond(I_tn1).rsample()
-        v_tn1 = (x_tn1 - x_tn2) / dt
-        v_t: Tensor = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)
-        x_t = self.p_transition.cond(x_tn1, v_t, dt).rsample()
-        E_ll = tp.log(self.p_decoder, I_t, x_t).sum(dim=(1, 2, 3)).mean(dim=0)
-        E_kl = tp.KLdiv(self.q_encoder.cond(I_t), self.p_transition).sum(dim=1).mean(dim=0)
-        E = E_ll - E_kl
+        v_tn1 = (x_q_tn1 - x_q_tn2) / dt
+        v_t = self.f_velocity(x_q_tn1, u_tn1, v_tn1, dt)
+        x_p_t = self.p_transition.cond(x_q_tn1, v_t, dt).rsample()
+        E_ll = self.img_reduction(tp.log(self.p_decoder, I_t, x_p_t))
+        E_kl = self.vec_reduction(tp.KLdiv(self.q_encoder.cond(I_t), self.p_transition))
+        E = E_ll - self.kl_beta * E_kl
 
         if self.regularization:
-            E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
+            E -= self.vec_reduction(tp.KLdiv(self.q_encoder, tp.Normal01))
 
-        x_t_ = self.q_encoder.rsample()
+        x_q_t = self.q_encoder.rsample()
 
         return super().Pack(
             E=E,
+            x_q_t=x_q_t,
             E_ll=E_ll.detach(),
             E_kl=E_kl.detach(),
-            x_tn1=x_tn1,
-            x_t=x_t_.detach(),
             v_t=v_t.detach(),
         )
+
+    @staticmethod
+    def img_reduction(x: Tensor):
+        return x.sum(dim=(1, 2, 3)).mean(dim=0)
+
+    @staticmethod
+    def vec_reduction(x: Tensor):
+        return x.sum(dim=1).mean(dim=0)
 
     @property
     def info(self) -> str:
@@ -500,6 +493,8 @@ class NewtonianVAEV2Cell(NewtonianVAEV2CellBase):
 
 class NewtonianVAEV2DerivationCell(NewtonianVAEV2CellBase):
     """
+    Deprecated
+
     Eq (23)
     """
 
@@ -534,7 +529,7 @@ class NewtonianVAEV2DerivationCell(NewtonianVAEV2CellBase):
             .sum(dim=1)
             .mean(dim=0)
         )
-        E = E_ll - E_kl
+        E = E_ll - self.kl_beta * E_kl
 
         if self.regularization:
             E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
@@ -546,7 +541,7 @@ class NewtonianVAEV2DerivationCell(NewtonianVAEV2CellBase):
             E_ll=E_ll.detach(),
             E_kl=E_kl.detach(),
             x_tn1=x_tn1,
-            x_t=x_t.detach(),
+            x_q_t=x_t,
             v_t=v_t.detach(),
         )
 
@@ -574,53 +569,64 @@ class NewtonianVAEV2Base(nn.Module):
         self._init_LOG(T=T, dtype=action.dtype)
 
         E_sum: Tensor = 0  # = Nagative ELBO
-        LOG_E_ll_sum: Tensor = 0
-        LOG_E_kl_sum: Tensor = 0
+        E_ll_sum: Tensor = 0
+        E_kl_sum: Tensor = 0
 
         for t in range(T):
             u_tn1, I_t = action[t], observation[t]
 
             if t == 0:
                 BS, D = action.shape[1], action.shape[-1]
-                v_t = torch.zeros(size=(BS, D), device=action.device, dtype=action.dtype)
-                x_t = self.cell.q_encoder.cond(I_t).rsample()
 
-                x_tn2 = x_t
+                x_q_t = self.cell.q_encoder.cond(I_t).rsample()
+                v_t = torch.zeros(size=(BS, D), device=action.device, dtype=action.dtype)
+                I_dec = self.cell.p_decoder.cond(x_q_t).decode()
+
+                x_q_tn1 = x_q_t
+
+            elif t == 1:
+                BS, D = action.shape[1], action.shape[-1]
+
+                x_q_t = self.cell.q_encoder.cond(I_t).rsample()
+                v_t = (x_q_t - x_q_tn1) / delta[t]
+                I_dec = self.cell.p_decoder.cond(x_q_t).decode()
 
             else:
-                I_tn1 = observation[t - 1]
-                output = self.cell(I_tn1=I_tn1, I_t=I_t, x_tn2=x_tn2, u_tn1=u_tn1, dt=delta[t])
+                output = self.cell(
+                    I_t=I_t, x_q_tn1=x_q_tn1, x_q_tn2=x_q_tn2, u_tn1=u_tn1, dt=delta[t]
+                )
 
                 E_sum += output.E
-                LOG_E_ll_sum += output.E_ll
-                LOG_E_kl_sum += output.E_kl
+                E_ll_sum += output.E_ll
+                E_kl_sum += output.E_kl
+
+                x_q_t = output.x_q_t
+                v_t = output.v_t
+                I_dec = self.cell.p_decoder.decode()
 
                 if self.is_save:
-                    self.LOG_I_dec[t] = as_save(self.cell.p_decoder.decode())
                     if "xhat" in self.cell.info:
                         self.LOG_xhat_std[t] = as_save(self.cell.p_xhat.scale)
                         self.LOG_xhat_mean[t] = as_save(self.cell.p_xhat.loc)
 
-                x_tn2 = output.x_tn1
+            x_q_tn2 = x_q_tn1
+            x_q_tn1 = x_q_t
 
-                # only for save
-                x_t = output.x_t
-                v_t = output.v_t
-
-            # ### DEBUG:
+            # ###### DEBUG:
             # print(f"time: {t}")
             # tp_debug.check_dist_model(self.cell)
 
             if self.is_save:
-                self.LOG_x[t] = as_save(x_t)
+                self.LOG_x[t] = as_save(x_q_t)
                 self.LOG_v[t] = as_save(v_t)
+                self.LOG_I_dec[t] = as_save(I_dec)
                 self.LOG_x_mean[t] = as_save(self.cell.q_encoder.loc)
 
-        E_sum /= T
-        LOG_E_ll_sum /= T
-        LOG_E_kl_sum /= T
+        E = E_sum / T
+        E_ll = E_ll_sum / T
+        E_kl = E_kl_sum / T
 
-        return E_sum, LOG_E_ll_sum, LOG_E_kl_sum
+        return E, E_ll, E_kl
 
     def __call__(self, *args, **kwargs) -> Tuple[Tensor, Tensor, Tensor]:
         return super().__call__(*args, **kwargs)
@@ -824,9 +830,7 @@ class Stepper:
             self.v_ = v_t
 
         else:
-            output: NewtonianVAECellBase.Pack = self.cell(
-                I_t=I_t, x_tn1=self.x_, u_tn1=u_tn1, v_tn1=self.v_, dt=dt
-            )
+            output = self.cell(I_t=I_t, x_tn1=self.x_, u_tn1=u_tn1, v_tn1=self.v_, dt=dt)
             self.x_ = output.x_t
             self.v_ = output.v_t
 
@@ -847,9 +851,7 @@ class Stepper:
             self.x_tn2 = x_t
 
         else:
-            output: NewtonianVAEV2CellBase.Pack = self.cell(
-                I_tn1=self.I_tn1, I_t=I_t, x_tn2=self.x_tn2, u_tn1=u_tn1, dt=dt
-            )
+            output = self.cell(I_tn1=self.I_tn1, I_t=I_t, x_tn2=self.x_tn2, u_tn1=u_tn1, dt=dt)
 
             self.x_tn2 = output.x_tn1
 
@@ -865,7 +867,7 @@ def as_save(x: Tensor):
 
 def get_NewtonianVAECell(name: str, *args, **kwargs) -> NewtonianVAECellFamily:
     for T in _NewtonianVAECellFamily:
-        if name == T.__name__ or name == T.__name__[:-4]:
+        if name == T.__name__ or name == T.__name__[:-4]:  # 4 : "Cell"
             return T(*args, **kwargs)
     assert False
 

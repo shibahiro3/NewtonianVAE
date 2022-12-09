@@ -1,31 +1,28 @@
 {
-  model: "NewtonianVAEDerivationCell",
+  model: "NewtonianVAEV2",
 
-  NewtonianVAECell: {
+  NewtonianVAEV2: {
     dim_x: 2,
-    transition_std: 0.25,
-    regularization: false,
-  },
-
-  NewtonianVAEDerivationCell: {
-    dim_x: 2,
-    transition_std: 0.25,
-    regularization: false,
-    dim_xhat: 32,
-    dim_pxhat_middle: 32,
+    transition_std: 0.001,
+    encoder_dim_middle: 1024,
+    encoder_std_function: "softplus",
+    // regularization: true,
+    fix_abc: [0, 0, 1],
   },
 
   train: {
-    device: "cuda",
-    dtype: "float32",
-    seed: 1,
     data_start: 0,
     data_stop: 1000,
-    batch_size: 50,
-    grad_clip_norm: null,
-    learning_rate: 3e-4,
+    batch_size: 8,
     epochs: 300,
-    save_per_epoch: 50,
+    learning_rate: 3e-4,
     max_time_length: 100,
+    device: "cuda",
+    dtype: "float32",
+
+    // Use KL annealing (Optional)
+    kl_annealing: true,
+
+    save_per_epoch: 20,
   },
 }

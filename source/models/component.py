@@ -59,7 +59,20 @@ class ABCf(nn.Module):
     ) -> None:
         super().__init__()
 
-        self.f = nn.Linear(3 * dim_x, 3 * dim_x)
+        dim_IO = 3 * dim_x
+
+        self.f = nn.Linear(dim_IO, dim_IO)
+
+        # self.f = nn.Sequential(
+        #     nn.Linear(dim_IO, 2),
+        #     nn.ReLU(),
+        #     nn.Linear(2, 2),
+        #     nn.ReLU(),
+        #     nn.Linear(2, 2),
+        #     nn.ReLU(),
+        #     nn.Linear(2, dim_IO),
+        #     nn.ReLU(),
+        # )
 
     def forward(self, x_tn1: Tensor, v_tn1: Tensor, u_tn1: Tensor):
         """"""
@@ -118,6 +131,9 @@ class Velocity(nn.Module):
         v_t = v_tn1 + dt * (diagA * x_tn1 + diagB * v_tn1 + diagC * u_tn1)
         return v_t
 
+    def __call__(self, *args, **kwargs) -> Tensor:
+        return super().__call__(*args, **kwargs)
+
 
 class Transition(tp.Normal):
     r"""Transition prior. Eq (9).
@@ -134,8 +150,8 @@ class Transition(tp.Normal):
         self.std = torch.tensor(std)
 
     def forward(self, x_tn1: Tensor, v_t: Tensor, dt: float):
-        mu = x_tn1 + dt * v_t
-        return mu, self.std
+        x_t = x_tn1 + dt * v_t
+        return x_t, self.std
 
 
 class Encoder(tp.Normal):

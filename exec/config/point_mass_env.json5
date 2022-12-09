@@ -2,10 +2,10 @@
   ControlSuiteEnvWrap: {
     // hard はactionの座標系にアフィン変換が適用されてる
     env: "point_mass-easy",
-    seed: 2,
+    seed: 1,
     max_episode_length: 100,
     action_repeat: 1,
     bit_depth: 8,
-    // action_type: "default", // "default", "circle"
+    action_type: "per_episode",
   },
 }

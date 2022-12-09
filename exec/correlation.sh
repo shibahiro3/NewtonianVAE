@@ -17,6 +17,8 @@ opts=(
 	--path-model  environment/$env/saves
 	--path-result environment/$env/results
 	--episodes 50
+	# --fix-xmap-size 20
+	--env-domain $env
 	${@:2}
 )
 
