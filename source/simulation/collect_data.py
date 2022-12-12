@@ -14,8 +14,8 @@ import mypython.vision as mv
 import tool.util
 from env import ControlSuiteEnvWrap, obs2img
 from mypython.terminal import Color, Prompt
-from tool import argset, checker
-from tool.util import Preferences, backup
+from tool import argset, checker, paramsmanager
+from tool.util import Preferences
 
 try:
     import tool._plot_config
@@ -26,10 +26,10 @@ except:
 
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
+argset.cf(parser)
 argset.watch(parser)
 argset.episodes(parser)
 argset.save_anim(parser)
-argset.cf_simenv(parser)
 argset.path_data(parser)
 _args = parser.parse_args()
 
@@ -38,7 +38,7 @@ class Args:
     watch = _args.watch
     episodes = _args.episodes
     save_anim = _args.save_anim
-    cf_simenv = _args.cf_simenv
+    cf = _args.cf
     path_data = _args.path_data
 
 
@@ -54,7 +54,9 @@ def env_test():
     if args.save_anim and args.watch == "plt":
         checker.large_episodes(args.episodes)
 
-    env = ControlSuiteEnvWrap(**json5.load(open(args.cf_simenv))["ControlSuiteEnvWrap"])
+    params = paramsmanager.Params(args.cf)
+
+    env = ControlSuiteEnvWrap(**json5.load(open(args.cf))["ControlSuiteEnvWrap"])
     T = env.max_episode_length // env.action_repeat
     all_steps = T * args.episodes
 
@@ -72,7 +74,7 @@ def env_test():
             shutil.rmtree(data_path)
 
         data_path.mkdir(parents=True, exist_ok=True)
-        backup(args.cf_simenv, data_path, "params_env_bk.json5")
+        params.save_simenv(Path(data_path, "params_env_bk.json5"))
         Preferences.put(data_path, "id", int(time.time() * 1000))
 
     if args.watch == "plt":

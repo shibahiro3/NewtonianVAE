@@ -31,18 +31,6 @@
     pxhat_std_function: "softplus",
   },
 
-  NewtonianVAEJIACell: {
-    dim_x: 2,
-    transition_std: 0.25,
-    encoder_dim_middle: 1024,
-    encoder_std_function: "softplus",
-    // regularization: true,
-    fix_abc: [0, 0, 1],
-
-    dim_px_cat_middle: 32,
-    pxm_std_function: "softplus",
-  },
-
   train: {
     device: "cuda", // "cpu", "cuda"
     dtype: "float32", // "float16", "float32"

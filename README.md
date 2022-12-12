@@ -1,5 +1,9 @@
 # Scratch of NewtonianVAE
 
+This is NOT an official implementation.
+
+Still under development. Destructive changes may be made. But at this time, Reacher2D shows a high correlation (2022/12/13).
+
 Paper:
 * Original: https://arxiv.org/abs/2006.01959
 * TS-NVAE: https://arxiv.org/abs/2203.05955
@@ -33,8 +37,10 @@ To see what kind of data you can get before saving an episode
 ```bash
 ./collect.sh [environment (directory name)] --watch plt (or render)
 ```
-By default, parameters can be adjusted by ``**/params_env.json5``.
-
+Example:
+```bash
+./collect.sh reacher2d --watch plt
+```
 If you want to save the data, please remove the --watch option.
 ```bash
 ./collect.sh [environment (directory name)]
@@ -43,10 +49,13 @@ If you want to save the data, please remove the --watch option.
 
 ### Train
 ```bash
-python train.py
+./train.sh [environment (directory name)] train
+```
+If [visdom](https://github.com/fossasia/visdom) is used:
+```bash
+./train.sh [environment (directory name)] train_visdom
 ```
 Model weights are saved per ``save_per_epoch``.
-The reconstruction.py, described below, for example, requires a trained model to be loaded via ``--path-model [Directory path for models managed by date and time]``. 
 
 
 ### Reconstruction
@@ -56,8 +65,8 @@ Sequentially feed the trained model with $\mathbf{u}_{t-1}$ and $\mathbf{I}_t$ o
 ```
 
 
-### Control
+### Control in simulation
 You can give the target image in the source code and see how it behaves.
 ```bash
-./control_*.sh
+./control_sim.sh [environment (directory name)]
 ```

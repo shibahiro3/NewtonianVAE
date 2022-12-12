@@ -2,7 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 from pprint import pprint
-from typing import Dict
+from typing import Dict, Union
 
 import json5
 import matplotlib.pyplot as plt
@@ -11,21 +11,16 @@ import torch
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
 
+import models.core
 import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
-from models.core import (
-    NewtonianVAECell,
-    NewtonianVAEDerivationCell,
-    NewtonianVAEV2Cell,
-    get_NewtonianVAECell,
-)
+from models.core import NewtonianVAE, NewtonianVAEV2, NewtonianVAEV2Cell
 from models.pcontrol import PurePControl
 from mypython.pyutil import Seq, add_version
 from mypython.terminal import Color, Prompt
-from newtonianvae.load import load
 from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img
-from tool import argset, checker
+from tool import argset, checker, paramsmanager
 from view.label import Label
 
 try:
@@ -37,13 +32,11 @@ except:
 
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
+argset.cf(parser)
 argset.episodes(parser)
-# argset.anim_mode(parser)
 argset.save_anim(parser)
-argset.cf_simenv(parser)
-argset.cf_eval(parser)
-argset.path_model(parser)
-argset.path_result(parser)
+argset.path_model(parser, required=False)
+argset.path_result(parser, required=False)
 argset.goal_img(parser)
 argset.fix_xmap_size(parser)
 argset.alpha(parser)
@@ -55,8 +48,7 @@ _args = parser.parse_args()
 class Args:
     episodes = _args.episodes
     save_anim = _args.save_anim
-    cf_simenv = _args.cf_simenv
-    cf_eval = _args.cf_eval
+    cf = _args.cf
     path_model = _args.path_model
     path_result = _args.path_result
     goal_img = _args.goal_img
@@ -108,9 +100,25 @@ def main():
     if args.save_anim:
         checker.large_episodes(args.episodes)
 
-    model, d, weight_path, params, params_eval, dtype, device = load(args.path_model, args.cf_eval)
-    if weight_path is None:
-        return
+    _params = paramsmanager.Params(args.cf)
+    params_eval = _params.eval
+    path_model = tool.util.priority(args.path_model, _params.external.save_path)
+    del _params
+    path_result = tool.util.priority(args.path_result, params_eval.result_path)
+
+    dtype, device = tool.util.dtype_device(
+        dtype=params_eval.dtype,
+        device=params_eval.device,
+    )
+
+    model, manage_dir, weight_path, params = tool.util.load(
+        root=path_model, model_place=models.core
+    )
+
+    model: Union[NewtonianVAE, NewtonianVAEV2]
+    model.type(dtype)
+    model.to(device)
+    model.train(params_eval.training)
 
     assert type(model.cell) == NewtonianVAEV2Cell
 
@@ -121,7 +129,7 @@ def main():
 
     all_steps = max_time_length * args.episodes
 
-    env = ControlSuiteEnvWrap(**json5.load(open(args.cf_simenv))["ControlSuiteEnvWrap"])
+    env = ControlSuiteEnvWrap(**json5.load(open(args.cf))["ControlSuiteEnvWrap"])
 
     Igoal = mv.cv2cnn(np.load(args.goal_img)).unsqueeze_(0).to(device)
 
@@ -323,7 +331,7 @@ def main():
 
     p = AnimPack()
 
-    save_path = Path(args.path_result, f"{d.stem}_W{weight_path.stem}_control.mp4")
+    save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_control.mp4")
     save_path = add_version(save_path)
     mpu.anim_mode(
         "save" if args.save_anim else "anim",

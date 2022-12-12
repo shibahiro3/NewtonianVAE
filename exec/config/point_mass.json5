@@ -13,16 +13,37 @@
   train: {
     data_start: 0,
     data_stop: 1000,
-    batch_size: 8,
+    batch_size: 20,
     epochs: 300,
     learning_rate: 3e-4,
     max_time_length: 100,
     device: "cuda",
     dtype: "float32",
-
-    // Use KL annealing (Optional)
     kl_annealing: true,
-
     save_per_epoch: 20,
+  },
+
+  external: {
+    data_path: "environment/point_mass/data_center",
+    save_path: "environment/point_mass/saves",
+  },
+
+  eval: {
+    device: "cuda",
+    dtype: "float32",
+    data_start: 1000,
+    data_stop: 1050,
+    training: false,
+    result_path: "environment/point_mass/results",
+  },
+
+  ControlSuiteEnvWrap: {
+    // hard はactionの座標系にアフィン変換が適用されてる
+    env: "point_mass-easy",
+    seed: 1,
+    max_episode_length: 100,
+    action_repeat: 1,
+    bit_depth: 8,
+    action_type: "per_episode",
   },
 }

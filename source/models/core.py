@@ -806,17 +806,3 @@ class Stepper:
 def as_save(x: Tensor):
     assert x.shape[0] == 1  # N (BS)
     return x.detach().squeeze(0).cpu().numpy()
-
-
-def get_NewtonianVAECell(name: str, *args, **kwargs) -> NewtonianVAECellFamily:
-    for T in _NewtonianVAECellFamily:
-        if name == T.__name__ or name == T.__name__[:-4]:  # 4 : "Cell"
-            return T(*args, **kwargs)
-    assert False
-
-
-def get_NewtonianVAE(name: str, *args, **kwargs) -> NewtonianVAEFamily:
-    for T in _NewtonianVAEFamily:
-        if name == T.__name__ or name == T.__name__ + "Cell":
-            return T(*args, **kwargs)
-    assert False

@@ -5,6 +5,7 @@ from typing import Optional, Union
 import json5
 from torch import NumberType
 
+from mypython.pyutil import is_number_type
 from mypython.terminal import Color
 
 
@@ -24,6 +25,16 @@ class _Converter:
     def to_json(self):
         # Color.print(self.__class__, "to_json")
         return self._contents
+
+    def save(self, path, lock=True):
+        path = Path(path)
+        assert path.suffix == ".json5"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, mode="w") as f:
+            f.write(_dumps(self._contents))
+        if lock:
+            path.chmod(0o444)
+        Color.print("saved params:", path)
 
 
 class Train(_Converter):
@@ -63,7 +74,13 @@ class Train(_Converter):
 
 class Eval(_Converter):
     def __init__(
-        self, device: str, dtype: str, data_start: int, data_stop: int, training: bool
+        self,
+        device: str,
+        dtype: str,
+        data_start: int,
+        data_stop: int,
+        result_path: str,
+        training: bool = False,
     ) -> None:
         assert device in ("cpu", "cuda")
         assert dtype in ("float16", "float32")
@@ -73,17 +90,20 @@ class Eval(_Converter):
         self.data_start = data_start
         self.data_stop = data_stop
         self.training = training
+        self.result_path = result_path
 
 
 class TrainExternal(_Converter):
     def __init__(
         self,
         data_path: str,
+        save_path: str,
         data_id: Optional[int] = None,
         resume_from: Optional[str] = None,
     ) -> None:
 
         self.data_path = data_path
+        self.save_path = save_path
         self.data_id = data_id
         self.resume_from = resume_from
 
@@ -94,8 +114,12 @@ class Params(_Converter):
 
         self.model: str = self.raw_["model"]
         self.train = Train(**self.raw_["train"])
-        external = self.raw_.get("external")
+
+        external = self.raw_.get("external", None)
         self.external = TrainExternal(**external) if external is not None else None
+
+        eval = self.raw_.get("eval", None)
+        self.eval = Eval(**eval) if eval is not None else None
 
     @property
     def _contents(self):
@@ -105,16 +129,23 @@ class Params(_Converter):
         model_params = {self.model: self.raw_[self.model]}
         # contents = ChainMap(model_params, ret)
         contents = dict(model_params, **tmp)
+
+        save_keys = ["model", self.model, "train", "external"]
+        delete_keys = contents.keys() ^ save_keys
+        for k in delete_keys:
+            contents.pop(k)
+
         return contents
 
-    def save(self, path, lock=True):
+    def save_simenv(self, path, lock=True):
         path = Path(path)
         assert path.suffix == ".json5"
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, mode="w") as f:
-            f.write(_dumps(self._contents))
+            f.write(_dumps({"ControlSuiteEnvWrap": self.raw_["ControlSuiteEnvWrap"]}))
         if lock:
             path.chmod(0o444)
+        Color.print("saved simenv params:", path)
 
 
 class ParamsEval(Eval):

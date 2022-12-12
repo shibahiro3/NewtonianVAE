@@ -204,8 +204,6 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="models.html#models.core.as_save"><code class="docutils literal notranslate"><span class="pre">as_save()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="models.html#models.core.get_NewtonianVAE"><code class="docutils literal notranslate"><span class="pre">get_NewtonianVAE()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="models.html#models.core.get_NewtonianVAECell"><code class="docutils literal notranslate"><span class="pre">get_NewtonianVAECell()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="models.html#module-models.pcontrol">models.pcontrol module</a><ul>
@@ -276,6 +274,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.pyutil.add_version"><code class="docutils literal notranslate"><span class="pre">add_version()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.pyutil.is_number_type"><code class="docutils literal notranslate"><span class="pre">is_number_type()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.pyutil.s2dhms"><code class="docutils literal notranslate"><span class="pre">s2dhms()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.pyutil.s2dhms_str"><code class="docutils literal notranslate"><span class="pre">s2dhms_str()</span></code></a></li>
 </ul>
@@ -337,12 +336,6 @@
 <li class="toctree-l1"><a class="reference internal" href="newtonianvae.html">newtonianvae package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="newtonianvae.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="newtonianvae.html#newtonianvae-correlation-module">newtonianvae.correlation module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="newtonianvae.html#newtonianvae-correlation2-module">newtonianvae.correlation2 module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="newtonianvae.html#module-newtonianvae.load">newtonianvae.load module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="newtonianvae.html#newtonianvae.load.get_path_data"><code class="docutils literal notranslate"><span class="pre">get_path_data()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="newtonianvae.html#newtonianvae.load.load"><code class="docutils literal notranslate"><span class="pre">load()</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l2"><a class="reference internal" href="newtonianvae.html#newtonianvae-reconstruct-module">newtonianvae.reconstruct module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="newtonianvae.html#newtonianvae-show-loss-module">newtonianvae.show_loss module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="newtonianvae.html#newtonianvae-train-module">newtonianvae.train module</a></li>
@@ -395,8 +388,6 @@
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.argset.alpha"><code class="docutils literal notranslate"><span class="pre">alpha()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.argset.anim_mode"><code class="docutils literal notranslate"><span class="pre">anim_mode()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.argset.cf"><code class="docutils literal notranslate"><span class="pre">cf()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.argset.cf_eval"><code class="docutils literal notranslate"><span class="pre">cf_eval()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.argset.cf_simenv"><code class="docutils literal notranslate"><span class="pre">cf_simenv()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.argset.env_domain"><code class="docutils literal notranslate"><span class="pre">env_domain()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.argset.episodes"><code class="docutils literal notranslate"><span class="pre">episodes()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.argset.fix_xmap_size"><code class="docutils literal notranslate"><span class="pre">fix_xmap_size()</span></code></a></li>
@@ -429,7 +420,7 @@
 <li class="toctree-l2"><a class="reference internal" href="tool.html#module-tool.paramsmanager">tool.paramsmanager module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.paramsmanager.Eval"><code class="docutils literal notranslate"><span class="pre">Eval</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.paramsmanager.Params"><code class="docutils literal notranslate"><span class="pre">Params</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Params.save"><code class="docutils literal notranslate"><span class="pre">Params.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Params.save_simenv"><code class="docutils literal notranslate"><span class="pre">Params.save_simenv()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.paramsmanager.ParamsEval"><code class="docutils literal notranslate"><span class="pre">ParamsEval</span></code></a></li>
@@ -439,23 +430,19 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tool.html#module-tool.util">tool.util module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.Label"><code class="docutils literal notranslate"><span class="pre">Label</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.Label.set_axes_L0L1"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_L0L1()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.Label.set_axes_P0L0"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_P0L0()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.Label.set_axes_P0L1"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_P0L1()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.Label.set_axes_P1L0"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_P1L0()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.Label.set_axes_P1L1"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_P1L1()</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.Preferences"><code class="docutils literal notranslate"><span class="pre">Preferences</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.Preferences.get"><code class="docutils literal notranslate"><span class="pre">Preferences.get()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.Preferences.put"><code class="docutils literal notranslate"><span class="pre">Preferences.put()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.Preferences.remove"><code class="docutils literal notranslate"><span class="pre">Preferences.remove()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.backup"><code class="docutils literal notranslate"><span class="pre">backup()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.creator"><code class="docutils literal notranslate"><span class="pre">creator()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.delete_useless_saves"><code class="docutils literal notranslate"><span class="pre">delete_useless_saves()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.dtype_device"><code class="docutils literal notranslate"><span class="pre">dtype_device()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.get_data_path"><code class="docutils literal notranslate"><span class="pre">get_data_path()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.save_dict"><code class="docutils literal notranslate"><span class="pre">save_dict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.load"><code class="docutils literal notranslate"><span class="pre">load()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.priority"><code class="docutils literal notranslate"><span class="pre">priority()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.select_date"><code class="docutils literal notranslate"><span class="pre">select_date()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.select_weight"><code class="docutils literal notranslate"><span class="pre">select_weight()</span></code></a></li>
 </ul>
@@ -476,6 +463,17 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="view.html">view package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="view.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="view.html#module-view.label">view.label module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="view.html#view.label.Label"><code class="docutils literal notranslate"><span class="pre">Label</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="view.html#view.label.Label.set_axes_L0L1"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_L0L1()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="view.html#view.label.Label.set_axes_P0L0"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_P0L0()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="view.html#view.label.Label.set_axes_P0L1"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_P0L1()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="view.html#view.label.Label.set_axes_P1L0"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_P1L0()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="view.html#view.label.Label.set_axes_P1L1"><code class="docutils literal notranslate"><span class="pre">Label.set_axes_P1L1()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="view.html#view-show-data-module">view.show_data module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="view.html#view-show-model-module">view.show_model module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="view.html#view-train-tensorboard-module">view.train_tensorboard module</a></li>

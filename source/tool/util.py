@@ -22,6 +22,7 @@ import mypython.plotutil as mpu
 import tool.util
 from mypython.terminal import Color
 from tool import checker
+from tool.paramsmanager import Params, ParamsEval
 
 _weight = "weight*/*"
 
@@ -153,13 +154,6 @@ class Preferences:
             p.unlink()
 
 
-def save_dict(path, d: dict):
-    path = Path(path)
-    with open(path, mode="w") as f:
-        json5.dump(d, f)
-    path.chmod(0o444)
-
-
 def dtype_device(dtype, device):
     dtype: torch.dtype = getattr(torch, dtype)
     checker.cuda(device)
@@ -195,3 +189,31 @@ def creator(
         resume_weight_path = None
 
     return model, managed_dir, weight_dir, resume_weight_path
+
+
+def load(root: str, model_place):
+    manage_dir = tool.util.select_date(root)
+    if manage_dir is None:
+        sys.exit()
+    weight_path = tool.util.select_weight(manage_dir)
+    if weight_path is None:
+        sys.exit()
+
+    params_path = Path(manage_dir, "params_saved.json5")
+    params = Params(params_path)
+    Color.print("params path:", params_path)
+
+    ModelType = getattr(model_place, params.model)
+    model: nn.Module = ModelType(**params.raw_[params.model])
+    model.load_state_dict(torch.load(weight_path))
+
+    return model, manage_dir, weight_path, params
+
+
+def priority(x1, x2, default=None):
+    if x1 is not None:
+        return x1
+    elif x2 is not None:
+        return x2
+    else:
+        return default

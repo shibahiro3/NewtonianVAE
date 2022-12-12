@@ -26,6 +26,11 @@ from typing import Optional
 from mypython.numeric import MovingAverage
 
 
+def is_number_type(x):
+    _tx = type(x)
+    return _tx == int or _tx == float
+
+
 def s2dhms(sec):
     sec = math.floor(sec)
     d = math.floor(sec / 86400)
@@ -116,6 +121,7 @@ class RemainingTime:
 
     @property
     def time(self):
+        """Returns: [seconds]"""
         return self._time
 
     @property
@@ -124,4 +130,5 @@ class RemainingTime:
 
     @property
     def elapsed(self):
+        """Returns: [seconds]"""
         return self._time_now - self._time_start

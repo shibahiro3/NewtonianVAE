@@ -1,7 +1,7 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
 import json5
 import matplotlib.cm as cm
@@ -11,23 +11,19 @@ import torch
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
 
+import models.core
 import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
-from models.core import (
-    NewtonianVAECell,
-    NewtonianVAEDerivationCell,
-    as_save,
-    get_NewtonianVAECell,
-)
-from mypython.pyutil import add_version
+from models.core import NewtonianVAE, NewtonianVAEV2, as_save
+from mypython.pyutil import Seq, add_version
 from mypython.terminal import Color, Prompt
-from newtonianvae.load import get_path_data, load
 from simulation.env import obs2img
-from tool import argset, checker
+from tool import argset, checker, paramsmanager
 from tool.dataloader import DataLoader
 from tool.paramsmanager import Params, ParamsEval
 from tool.util import Preferences
+from view.label import Label
 
 try:
     import tool._plot_config
@@ -39,10 +35,10 @@ except:
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.episodes(parser)
-argset.cf_eval(parser)
-argset.path_model(parser)
+argset.cf(parser)
 argset.path_data(parser, required=False)
-argset.path_result(parser)
+argset.path_model(parser, required=False)
+argset.path_result(parser, required=False)
 argset.save_anim(parser)
 argset.fix_xmap_size(parser, required=False)
 _args = parser.parse_args()
@@ -50,7 +46,7 @@ _args = parser.parse_args()
 
 class Args:
     episodes = _args.episodes
-    cf_eval = _args.cf_eval
+    cf = _args.cf
     path_model = _args.path_model
     path_data = _args.path_data
     path_result = _args.path_result
@@ -62,27 +58,7 @@ args = Args()
 
 
 def reconstruction():
-    if args.save_anim == "save":
-        checker.large_episodes(args.episodes)
-
-    torch.set_grad_enabled(False)
-
-    model, d, weight_path, params, params_eval, dtype, device = load(args.path_model, args.cf_eval)
-    data_path = get_path_data(args.path_data, params)
-
-    all_steps = params.train.max_time_length * args.episodes
-
-    testloader = DataLoader(
-        root=Path(data_path, "episodes"),
-        start=params_eval.data_start,
-        stop=params_eval.data_stop,
-        batch_size=args.episodes,
-        dtype=dtype,
-        device=device,
-    )
-    action, observation, delta, position = next(testloader)
-
-    # =======
+    # ============================================================
     fig = plt.figure(figsize=figsize)
     fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.9)
     mpu.get_figsize(fig)
@@ -114,6 +90,47 @@ def reconstruction():
                 ax.clear()
 
     axes = Ax()
+    # ============================================================
+
+    if args.save_anim == "save":
+        checker.large_episodes(args.episodes)
+
+    torch.set_grad_enabled(False)
+
+    _params = paramsmanager.Params(args.cf)
+    params_eval = _params.eval
+    path_model = tool.util.priority(args.path_model, _params.external.save_path)
+    path_data = tool.util.priority(args.path_data, _params.external.data_path)
+    # data_path = get_path_data(args.path_data, params)
+    del _params
+    path_result = tool.util.priority(args.path_result, params_eval.result_path)
+
+    dtype, device = tool.util.dtype_device(
+        dtype=params_eval.dtype,
+        device=params_eval.device,
+    )
+
+    testloader = DataLoader(
+        root=Path(path_data, "episodes"),
+        start=params_eval.data_start,
+        stop=params_eval.data_stop,
+        batch_size=args.episodes,
+        dtype=dtype,
+        device=device,
+    )
+    action, observation, delta, position = next(testloader)
+
+    model, manage_dir, weight_path, params = tool.util.load(
+        root=path_model, model_place=models.core
+    )
+
+    model: Union[NewtonianVAE, NewtonianVAEV2]
+    model.type(dtype)
+    model.to(device)
+    model.train(params_eval.training)
+    model.is_save = True
+
+    all_steps = params.train.max_time_length * args.episodes
 
     class AnimPack:
         def __init__(self) -> None:
@@ -364,7 +381,7 @@ def reconstruction():
 
     p = AnimPack()
 
-    save_path = Path(args.path_result, f"{d.stem}_W{weight_path.stem}_reconstructed.mp4")
+    save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_reconstructed.mp4")
     save_path = add_version(save_path)
     mpu.anim_mode(
         "save" if args.save_anim else "anim",

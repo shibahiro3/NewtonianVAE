@@ -91,26 +91,26 @@ def cf(
     parser.add_argument("--cf", **_kwargs(locals()), **kwargs)
 
 
-def cf_eval(
-    parser: argparse.ArgumentParser,
-    required=True,
-    type=str,
-    metavar="FILE",
-    help="Configuration file of evaluation",
-    **kwargs,
-):
-    parser.add_argument("--cf-eval", **_kwargs(locals()), **kwargs)
+# def cf_eval(
+#     parser: argparse.ArgumentParser,
+#     required=True,
+#     type=str,
+#     metavar="FILE",
+#     help="Configuration file of evaluation",
+#     **kwargs,
+# ):
+#     parser.add_argument("--cf-eval", **_kwargs(locals()), **kwargs)
 
 
-def cf_simenv(
-    parser: argparse.ArgumentParser,
-    required=True,
-    type=str,
-    metavar="FILE",
-    help="Configuration file of simulation environment",
-    **kwargs,
-):
-    parser.add_argument("--cf-simenv", **_kwargs(locals()), **kwargs)
+# def cf_simenv(
+#     parser: argparse.ArgumentParser,
+#     required=True,
+#     type=str,
+#     metavar="FILE",
+#     help="Configuration file of simulation environment",
+#     **kwargs,
+# ):
+#     parser.add_argument("--cf-simenv", **_kwargs(locals()), **kwargs)
 
 
 def episodes(

@@ -1,7 +1,7 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
 import json5
 import matplotlib.cm as cm
@@ -11,13 +11,14 @@ import torch
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
 
+import models.core
 import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
-from mypython.pyutil import Seq, add_version
-from mypython.terminal import Color, Prompt
-from newtonianvae.load import get_path_data, load
-from tool import argset, checker
+from models.core import NewtonianVAE, NewtonianVAEV2
+from mypython.pyutil import Seq
+from mypython.terminal import Color
+from tool import argset, paramsmanager
 from tool.dataloader import DataLoader
 from view.label import Label
 
@@ -31,10 +32,10 @@ except:
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.episodes(parser)
-argset.cf_eval(parser)
-argset.path_model(parser)
+argset.cf(parser)
 argset.path_data(parser, required=False)
-argset.path_result(parser)
+argset.path_model(parser, required=False)
+argset.path_result(parser, required=False)
 argset.fix_xmap_size(parser, required=False)
 argset.env_domain(parser)
 argset.format(parser)
@@ -43,8 +44,8 @@ _args = parser.parse_args()
 
 
 class Args:
+    cf = _args.cf
     episodes = _args.episodes
-    cf_eval = _args.cf_eval
     path_model = _args.path_model
     path_data = _args.path_data
     path_result = _args.path_result
@@ -91,11 +92,21 @@ def correlation():
     # if args.anim_mode == "save":
     #     checker.large_episodes(args.episodes)
 
-    model, d, weight_path, params, params_eval, dtype, device = load(args.path_model, args.cf_eval)
-    data_path = get_path_data(args.path_data, params)
+    _params = paramsmanager.Params(args.cf)
+    params_eval = _params.eval
+    path_model = tool.util.priority(args.path_model, _params.external.save_path)
+    path_data = tool.util.priority(args.path_data, _params.external.data_path)
+    # data_path = get_path_data(args.path_data, params)
+    del _params
+    path_result = tool.util.priority(args.path_result, params_eval.result_path)
+
+    dtype, device = tool.util.dtype_device(
+        dtype=params_eval.dtype,
+        device=params_eval.device,
+    )
 
     testloader = DataLoader(
-        root=Path(data_path, "episodes"),
+        root=Path(path_data, "episodes"),
         start=params_eval.data_start,
         stop=params_eval.data_stop,
         batch_size=args.episodes,
@@ -105,6 +116,14 @@ def correlation():
     action, observation, delta, position = next(testloader)
     position = position.detach().cpu()
 
+    model, manage_dir, weight_path, params = tool.util.load(
+        root=path_model, model_place=models.core
+    )
+
+    model: Union[NewtonianVAE, NewtonianVAEV2]
+    model.type(dtype)
+    model.to(device)
+    model.train(params_eval.training)
     model.is_save = True
 
     latent_map = []
@@ -215,7 +234,7 @@ def correlation():
     label.set_axes_P1L0(ax, lmax)
 
     # ============================================================
-    save_path = Path(args.path_result, f"{d.stem}_W{weight_path.stem}_correlation.pdf")
+    save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_correlation.pdf")
     # save_path = add_version(save_path)
     mpu.register_save_path(fig, save_path, args.format)
 

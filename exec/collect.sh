@@ -30,7 +30,7 @@ python source/simulation/override.py $domain $override
 # system.
 
 # path_data=environment/$env/data
-path_data=environment/$env/data_center
+path_data=environment/$env/data_center2
 
 mkdir -p $path_data
 cp -fr $override $path_data
@@ -38,9 +38,9 @@ chmod 444 $path_data/override/*
 
 
 opts=(
-	--cf-simenv   exec/config/${env}_env.json5
-	--path-data   $path_data
-	--episodes 1600 # for train: 1000, for validation: 300, for test: 300
+	--cf exec/config/$env.json5
+	--path-data $path_data
+	--episodes 1400 # for train: 1000, for validation: 200, for test: 200
 	# --save_anim
 	${@:2}
 )

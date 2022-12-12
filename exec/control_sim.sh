@@ -24,16 +24,16 @@ python source/simulation/override.py $domain $override
 
 
 opts=(
-	--cf-eval     exec/config/${env}_eval.json5
-	--cf-simenv   exec/config/${env}_env.json5
-	--path-model  environment/$env/saves
-	--path-result environment/$env/results
-	# --goal-img    environment/$env/observation_imgs/obs_red.npy
-	--goal-img    environment/$env/observation_imgs/obs_green.npy
+	--cf exec/config/$env.json5
+	# --path-model  environment/$env/saves
+	# --path-result environment/$env/results
+
+	--goal-img    environment/$env/observation_imgs/obs_red.npy
+	# --goal-img    environment/$env/observation_imgs/obs_green.npy
 	# --goal-img    environment/$env/observation_imgs/obs_yellow.npy
+
 	--episodes 10
-	# --fix-xmap-size 20
-	--fix-xmap-size 4
+	--fix-xmap-size 2
 	--env-domain $env
 	--alpha 0.5
 	${@:2}

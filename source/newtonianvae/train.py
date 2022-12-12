@@ -12,27 +12,23 @@ from torch import nn, optim
 
 import models.core
 import tool.util
-from models.core import NewtonianVAE, NewtonianVAEV2, get_NewtonianVAE
+from models.core import NewtonianVAE, NewtonianVAEV2
 from mypython.ai.torch_util import print_module_params, reproduce
 from mypython.pyutil import RemainingTime, s2dhms_str
 from mypython.terminal import Color, Prompt
-from tool import argset, checker, paramsmanager
+from tool import argset, paramsmanager
 from tool.dataloader import DataLoader
 from tool.util import Preferences, creator, dtype_device
 from tool.visualhandlerbase import VisualHandlerBase
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 argset.cf(parser)
-argset.path_data(parser)
-argset.path_save(parser)
 argset.resume(parser)
 _args = parser.parse_args()
 
 
 class Args:
     cf = _args.cf
-    path_data = _args.path_data
-    path_save = _args.path_save
     resume = _args.resume
 
 
@@ -54,7 +50,7 @@ def train(vh=VisualHandlerBase()):
     )
 
     trainloader = DataLoader(
-        root=Path(args.path_data, "episodes"),
+        root=Path(params.external.data_path, "episodes"),
         start=params.train.data_start,
         stop=params.train.data_stop,
         batch_size=params.train.batch_size,
@@ -63,7 +59,7 @@ def train(vh=VisualHandlerBase()):
     )
 
     model, managed_dir, weight_dir, resume_weight_path = creator(
-        root=args.path_save,
+        root=params.external.save_path,
         model_place=models.core,
         model_name=params.model,
         model_params=params.raw_[params.model],
@@ -73,17 +69,15 @@ def train(vh=VisualHandlerBase()):
     model.type(dtype)
     model.to(device)
     model.train()
+    # print_module_params(model)
     optimizer = optim.Adam(model.parameters(), params.train.learning_rate)
 
-    params.external = paramsmanager.TrainExternal(
-        data_path=args.path_data,
-        data_id=Preferences.get(args.path_data, "id"),
-        resume_from=str(resume_weight_path),
+    params.external.data_id = Preferences.get(params.external.data_path, "id")
+    params.external.resume_from = (
+        str(resume_weight_path) if (resume_weight_path is not None) else None
     )
 
-    save_param_path = Path(managed_dir, "params_saved.json5")
-    params.save(save_param_path)
-    Color.print("save params to:", save_param_path)
+    params.save(Path(managed_dir, "params_saved.json5"))
 
     vh.title = managed_dir.stem
     vh.call_end_init()
@@ -97,7 +91,7 @@ def train(vh=VisualHandlerBase()):
         np.save(Path(managed_dir, "LOG_NLL.npy"), record_NLL)
         np.save(Path(managed_dir, "LOG_KL.npy"), record_KL)
 
-        tool.util.delete_useless_saves(args.path_save)
+        tool.util.delete_useless_saves(params.external.save_path)
         Preferences.remove(managed_dir, "running")
         Color.print("\nEnd of train")
 
@@ -126,7 +120,7 @@ def train(vh=VisualHandlerBase()):
                 L = -E
                 optimizer.zero_grad()
                 L.backward()
-                # print_module_params(cell, True)
+                # print_module_params(model, True)
 
                 if params.train.grad_clip_norm is not None:
                     nn.utils.clip_grad_norm_(
@@ -150,7 +144,7 @@ def train(vh=VisualHandlerBase()):
                         f"NLL: {E_ll:.4f} | "
                         f"KL: {E_kl:.4f} | "
                         f"Elapsed: {s2dhms_str(remaining.elapsed)} | "
-                        # f"Remaining: {s2dhms_str(remaining.time)} "
+                        f"Remaining: {s2dhms_str(remaining.time)} | "
                         f"ETA: {remaining.eta} "
                     )
                 )
@@ -166,7 +160,7 @@ def train(vh=VisualHandlerBase()):
                     return
 
             if epoch % params.train.save_per_epoch == 0:
-                torch.save(model.cell.state_dict(), Path(weight_dir, f"{epoch}.pth"))
+                torch.save(model.state_dict(), Path(weight_dir, f"{epoch}.pth"))
                 print("saved")
 
     except KeyboardInterrupt:

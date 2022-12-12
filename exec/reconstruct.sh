@@ -13,9 +13,10 @@ export PYTHONPATH="$workspaceFolder/source"
 
 
 opts=(
-	--cf-eval     exec/config/${env}_eval.json5
-	--path-model  environment/$env/saves
-	--path-result environment/$env/results
+	--cf exec/config/$env.json5
+	# --path-model  environment/$env/saves
+	# --path-result environment/$env/results
+	
 	--episodes 10
 	# --fix-xmap-size 20
 	${@:2}
