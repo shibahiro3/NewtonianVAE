@@ -25,7 +25,7 @@ def print_module_params(module: nn.Module, grad=False):
                 print(f"grad: {param.grad}")  # None
 
 
-def _find_function(function_name: str):
+def find_function(function_name: str):
     try:
         return getattr(torch, function_name)
     except:

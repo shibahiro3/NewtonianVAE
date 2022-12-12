@@ -6,15 +6,16 @@ src_paths = [
 
     "source/simulation",
     "source/tool",
+    "source/view",
 
     "source/mypython",
 ]
 skip_glob = [
     "*override",
 ]
-known_first_party = [
-    "source/mypython"
-]
+# known_first_party = [
+#     "source/mypython"
+# ]
 
 [tool.black]
 line-length = 100

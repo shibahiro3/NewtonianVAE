@@ -19,6 +19,7 @@ from mypython.terminal import Color, Prompt
 from newtonianvae.load import get_path_data, load
 from tool import argset, checker
 from tool.dataloader import DataLoader
+from view.label import Label
 
 try:
     import tool._plot_config
@@ -83,7 +84,7 @@ def correlation():
             self.p1l0 = fig.add_subplot(gs[1, 2])
 
     axes = Ax()
-    label = tool.util.Label(args.env_domain)
+    label = Label(args.env_domain)
     # ============================================================
 
     torch.set_grad_enabled(False)

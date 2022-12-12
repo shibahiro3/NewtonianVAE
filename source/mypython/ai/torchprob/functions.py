@@ -6,7 +6,7 @@ from scipy import special as sp
 from torch import Tensor
 from torch.distributions import kl
 
-from .distributions.base import Distribution
+from .distributions.base import Distribution, _eps
 from .distributions.normal import Normal
 
 # from torch.distributions import kl_divergence
@@ -37,7 +37,6 @@ def KL_normal_normal(
     sigma_1: Tensor,
     mu_2: Tensor,
     sigma_2: Tensor,
-    eps=torch.finfo(torch.float).eps,
 ) -> Tensor:
     """
     Ref:
@@ -48,8 +47,8 @@ def KL_normal_normal(
 
     kld_element = (
         ((mu_1 - mu_2).pow(2) + sigma_1.pow(2)) / sigma_2.pow(2)
-        + 2 * torch.log(sigma_2 + eps)
-        - 2 * torch.log(sigma_1 + eps)
+        + 2 * torch.log(sigma_2 + _eps)
+        - 2 * torch.log(sigma_1 + _eps)
         - 1
     )
     return 0.5 * kld_element

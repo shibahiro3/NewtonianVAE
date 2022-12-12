@@ -15,7 +15,7 @@ from torch import NumberType, Tensor, nn
 
 import mypython.ai.torchprob as tp
 import mypython.ai.torchprob.debug as tp_debug
-from mypython.ai.torch_util import _find_function
+from mypython.ai.torch_util import find_function
 from mypython.terminal import Color
 
 from .component import Decoder, Encoder, Pxhat, PXmiddleCat, Transition, Velocity
@@ -52,7 +52,7 @@ class NewtonianVAECellBase(nn.Module):
         self.p_transition = Transition(transition_std)
 
         # q(x_t | I_t) (posterior)
-        encoder_std_function = _find_function(encoder_std_function)
+        encoder_std_function = find_function(encoder_std_function)
         self.q_encoder = Encoder(
             dim_x, dim_middle=encoder_dim_middle, std_function=encoder_std_function
         )
@@ -139,7 +139,7 @@ class NewtonianVAEDerivationCell(NewtonianVAECellBase):
         self.p_decoder = Decoder(dim_x=dim_xhat)
 
         # p(xhat_t | x_{t-1}, u_{t-1})
-        pxhat_std_function = _find_function(pxhat_std_function)
+        pxhat_std_function = find_function(pxhat_std_function)
         self.p_xhat = Pxhat(dim_x, dim_xhat, dim_pxhat_middle, std_function=pxhat_std_function)
 
     def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: Tensor):
@@ -178,63 +178,6 @@ class NewtonianVAEDerivationCell(NewtonianVAECellBase):
     @property
     def info(self) -> str:
         return {"V1", "xhat"}
-
-
-# class NewtonianVAEJIACell(NewtonianVAECellBase):
-#     """
-#     Suggester: https://github.com/ada526
-#     Implementor: https://github.com/SatohKazuto
-#     """
-
-#     def __init__(
-#         self, dim_x: int, dim_px_cat_middle: int, pxm_std_function: str, *args, **kwargs
-#     ) -> None:
-#         super().__init__(dim_x=dim_x, *args, **kwargs)
-
-#         # p(x_t | x_m1_t, x_m2_t)
-#         pxm_std_function = _find_function(pxm_std_function)
-#         self.p_cat = PXmiddleCat(dim_x, dim_px_cat_middle, pxm_std_function)
-
-#         # p(I_t | x_t)
-#         self.p_decoder = Decoder(dim_x)
-
-#     def forward(self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
-
-#         if self.training or self.force_training:
-#             v_t = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)
-#             x_m1_t = self.q_encoder.cond(I_t).rsample()
-#             x_m2_t = self.p_transition.cond(x_tn1, v_t, dt).rsample()
-#             x_t = self.p_cat.cond(x_m1_t, x_m2_t).rsample()
-
-#             E_ll = tp.log(self.p_decoder, I_t, x_t).sum(dim=(1, 2, 3)).mean(dim=0)
-#             E_kl = tp.KLdiv(self.q_encoder, self.p_cat).sum(dim=1).mean(dim=0)
-#             E = E_ll - E_kl
-
-#             if self.regularization:
-#                 E -= tp.KLdiv(self.q_encoder, tp.Normal01).sum(dim=1).mean(dim=0)
-
-#             return E, E_ll.detach(), E_kl.detach(), x_t, v_t
-
-#         else:
-#             I_t_dec, x_t, v_t_ = self.decode(I_t, x_tn1, u_tn1, v_tn1, dt)
-#             v_t = (x_t - x_tn1) / dt
-#             return {
-#                 "E": 0,
-#                 "E_ll": 0,
-#                 "E_kl": 0,
-#                 "x_t": x_t,
-#                 "v_t": v_t,
-#             }
-
-#     def decode(
-#         self, I_t: Tensor, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float
-#     ) -> Tuple[Tensor, Tensor]:
-#         v_t = self.f_velocity(x_tn1, u_tn1, v_tn1, dt)  # ???
-#         x_m1_t = self.q_encoder.cond(I_t).rsample()
-#         x_m2_t = self.p_transition.cond(x_tn1, v_t, dt).rsample()
-#         x_t = self.p_cat.cond(x_m1_t, x_m2_t).rsample()
-#         I_t_dec = self.p_decoder.cond(x_t).decode()
-#         return I_t_dec, x_t, v_t
 
 
 class NewtonianVAEBase(nn.Module):
@@ -515,7 +458,7 @@ class NewtonianVAEV2DerivationCell(NewtonianVAEV2CellBase):
         self.p_decoder = Decoder(dim_x=dim_xhat)
 
         # p(xhat_t | x_{t-1}, u_{t-1})
-        pxhat_std_function = _find_function(pxhat_std_function)
+        pxhat_std_function = find_function(pxhat_std_function)
         self.p_xhat = Pxhat(dim_x, dim_xhat, dim_pxhat_middle, std_function=pxhat_std_function)
 
     def forward(self, I_tn1: Tensor, I_t: Tensor, x_tn2: Tensor, u_tn1: Tensor, dt: Tensor):

@@ -6,7 +6,7 @@ from typing_extensions import Self
 
 from mypython.terminal import Color
 
-from .base import Distribution, _to_optional_tensor
+from .base import Distribution, _eps, _to_optional_tensor
 
 
 class Normal(Distribution):
@@ -73,7 +73,7 @@ class Normal(Distribution):
 Normal01 = Normal(0, 1)
 
 
-def log_normal(x: Tensor, mu: Tensor, sigma: Tensor, eps=torch.finfo(torch.float).eps) -> Tensor:
+def log_normal(x: Tensor, mu: Tensor, sigma: Tensor) -> Tensor:
     r"""Log-likelihood of a Gaussian distribution
 
     .. math::
@@ -92,7 +92,7 @@ def log_normal(x: Tensor, mu: Tensor, sigma: Tensor, eps=torch.finfo(torch.float
     log_2pi = 0.79817986835  # log(2π)
     log_2pi_half = 0.39908993417  # log(2π)/2
     # sigma_p2 = sigma.pow(2)
-    return -0.5 * (((x - mu) / sigma).pow(2) + 2 * torch.log(sigma + eps) + log_2pi)
+    return -0.5 * (((x - mu) / sigma).pow(2) + 2 * torch.log(sigma + _eps) + log_2pi)
 
 
 def normal_sample(mu: Tensor, sigma: Tensor) -> Tensor:

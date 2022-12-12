@@ -16,6 +16,8 @@ from torch import NumberType, Tensor, nn
 import mypython.ai.torchprob as tp
 from mypython.terminal import Color
 
+min_eps_std = torch.finfo(torch.float).eps
+
 
 class ABCf(nn.Module):
     r"""
@@ -180,7 +182,7 @@ class Encoder(tp.Normal):
         mu = self.mean(middle)
         sigma = self.std_function(self.std(middle))
         # std = self.std
-        return mu, sigma
+        return mu, sigma + min_eps_std
 
 
 class Decoder(tp.Normal):
@@ -202,7 +204,7 @@ class Decoder(tp.Normal):
 
     def forward(self, x_t: Tensor):
         """"""
-        return self.dec(x_t), self.std
+        return self.dec(x_t), self.std + min_eps_std
 
 
 class Pxhat(tp.Normal):
@@ -230,7 +232,7 @@ class Pxhat(tp.Normal):
         middle = self.fc(middle)
         mu = self.mean(middle)
         sigma = self.std_function(self.std(middle))
-        return mu, sigma
+        return mu, sigma + min_eps_std
 
 
 class VisualEncoder64(nn.Module):
@@ -322,4 +324,4 @@ class PXmiddleCat(tp.Normal):
         mu = self.mean(middle)
         sigma = self.std_function(self.std(middle))
         # print(sigma)
-        return mu, sigma
+        return mu, sigma + min_eps_std

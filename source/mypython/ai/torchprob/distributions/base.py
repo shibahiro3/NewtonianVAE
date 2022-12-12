@@ -58,3 +58,7 @@ def _to_optional_tensor(x: Union[None, NumberType, Tensor]) -> Union[None, Tenso
     else:
         assert _type == Tensor
     return x
+
+
+# _eps = torch.finfo(torch.float).eps
+_eps = 0

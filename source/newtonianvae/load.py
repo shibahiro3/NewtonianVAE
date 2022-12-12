@@ -1,16 +1,48 @@
+import argparse
+import shutil
 import sys
+import time
+from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import torch
+from torch import nn
 
 import tool.util
 from models.core import get_NewtonianVAE
 from mypython.terminal import Color
 from simulation.env import obs2img
-from tool import argset, checker
+from tool import checker
 from tool.paramsmanager import Params, ParamsEval
 from tool.util import Preferences
+
+
+def creator(
+    root: str,
+    model_place,
+    model_name: str,
+    model_params: dict,
+    resume: bool = False,
+):
+    datetime_now = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
+    managed_dir = Path(root, datetime_now)
+    weight_dir = Path(managed_dir, "weight")
+    weight_dir.mkdir(parents=True, exist_ok=True)
+
+    ModelType = getattr(model_place, model_name)
+    model: nn.Module = ModelType(**model_params)
+
+    if resume:
+        print('You chose "resume". Select a model to load.')
+        resume_manage_dir = tool.util.select_date(root)
+        resume_weight_path = tool.util.select_weight(resume_manage_dir)
+        model.load_state_dict(torch.load(resume_weight_path))
+    else:
+        resume_weight_path = None
+
+    return model, managed_dir, weight_dir, resume_weight_path
 
 
 def load(path_model, cf_eval):

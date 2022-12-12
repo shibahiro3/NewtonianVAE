@@ -26,6 +26,7 @@ from mypython.terminal import Color, Prompt
 from newtonianvae.load import load
 from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img
 from tool import argset, checker
+from view.label import Label
 
 try:
     import tool._plot_config
@@ -100,7 +101,7 @@ def main():
                 ax.clear()
 
     axes = Ax()
-    label = tool.util.Label(args.env_domain)
+    label = Label(args.env_domain)
     # =====================================================
 
     torch.set_grad_enabled(False)

@@ -6,7 +6,7 @@ from typing_extensions import Self
 
 from mypython.terminal import Color
 
-from .base import Distribution, _to_optional_tensor
+from .base import Distribution, _eps, _to_optional_tensor
 
 
 class Bernoulli(Distribution):
@@ -56,11 +56,11 @@ class Bernoulli(Distribution):
         return torch.sqrt(self._mu * (1 - self._mu))
 
 
-def log_bernoulli(x: Tensor, mu: Tensor, eps=torch.finfo(torch.float).eps) -> Tensor:
+def log_bernoulli(x: Tensor, mu: Tensor) -> Tensor:
     """
     Ref:
         https://docs.chainer.org/en/stable/reference/generated/chainer.functions.bernoulli_nll.html
         https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L181
     """
 
-    return x * torch.log(mu + eps) + (1 - x) * torch.log(1 - mu - eps)
+    return x * torch.log(mu + _eps) + (1 - x) * torch.log(1 - mu - _eps)

@@ -1,28 +1,40 @@
+"""
+Do not import NewtonianVAE series
+"""
+
+import argparse
 import builtins
 import shutil
+import sys
+import time
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 import json5
 import numpy as np
+import torch
 from matplotlib.axes import Axes
 from matplotlib.ticker import FormatStrFormatter
+from torch import nn
 
 import mypython.plotutil as mpu
+import tool.util
 from mypython.terminal import Color
+from tool import checker
 
 _weight = "weight*/*"
 
 
-def select_date(model_date_path) -> Optional[Path]:
-    if not Path(model_date_path).exists():
-        Color.print(f"'{model_date_path}' doesn't exist.", c=Color.red)
+def select_date(root) -> Optional[Path]:
+    if not Path(root).exists():
+        Color.print(f"'{root}' doesn't exist.", c=Color.red)
         return None
-    if not Path(model_date_path).is_dir():
-        Color.print(f"'{model_date_path}' is not a directory.", c=Color.red)
+    if not Path(root).is_dir():
+        Color.print(f"'{root}' is not a directory.", c=Color.red)
         return None
 
-    w_dirs = [d for d in Path(model_date_path).glob("*") if d.is_dir()]
+    w_dirs = [d for d in Path(root).glob("*") if d.is_dir()]
     w_dirs.sort()
 
     # _weight の無いディレクトリを除去
@@ -31,15 +43,16 @@ def select_date(model_date_path) -> Optional[Path]:
             w_dirs.remove(w)
 
     if len(w_dirs) == 0:
-        Color.print(
-            f'"Date and time directory" doesn\'t exist in "{model_date_path}" directory.',
-            c=Color.orange,
-        )
+        Color.print(f'"Date and time directory" doesn\'t exist in "{root}" directory.', c=Color.red)
         return None
 
     for i, e in enumerate(w_dirs, 1):
         l = len(list(e.glob(_weight)))
-        print(f"{i:2d}", ":", e.name, f"({l:3d})", Path(e, "params_saved.json5"))
+        _s = (f"{i:2d}", ":", e.name, f"({l:3d})", Path(e, "params_saved.json5"))
+        if Preferences.get(root, "running") is None:
+            print(*_s)
+        else:
+            print(*_s, Color.coral + "Running" + Color.reset)
 
     idx = _get_idx("Select date and time (or exit): ", len(w_dirs))
     if idx is None:
@@ -117,6 +130,8 @@ def get_data_path(arg_data, trained_time_dir):
 class Preferences:
     @staticmethod
     def put(dir, name, value):
+        dir = Path(dir)
+        dir.mkdir(parents=True, exist_ok=True)
         p = Path(dir, f"{name}.json5")
         with open(p, mode="w") as f:
             json5.dump({"value": value}, f)
@@ -131,6 +146,12 @@ class Preferences:
                 ret = json5.load(f).get("value")
         return ret
 
+    @staticmethod
+    def remove(dir, name):
+        p = Path(dir, f"{name}.json5")
+        if p.exists():
+            p.unlink()
+
 
 def save_dict(path, d: dict):
     path = Path(path)
@@ -139,96 +160,38 @@ def save_dict(path, d: dict):
     path.chmod(0o444)
 
 
-class Label:
-    def __init__(self, domain: Optional[str]) -> None:
-        self.domain = domain
+def dtype_device(dtype, device):
+    dtype: torch.dtype = getattr(torch, dtype)
+    checker.cuda(device)
+    device = torch.device(device if torch.cuda.is_available() else "cpu")
+    return dtype, device
 
-        self.latent_0 = r"latent element (1)"
-        self.latent_1 = r"latent element (2)"
 
-        # TODO:
-        self.latent_0_range = None
-        self.latent_1_range = None
+def creator(
+    root: str,
+    model_place,
+    model_name: str,
+    model_params: dict,
+    resume: bool = False,
+):
+    datetime_now = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
+    managed_dir = Path(root, datetime_now)
+    weight_dir = Path(managed_dir, "weight")
+    weight_dir.mkdir(parents=True, exist_ok=True)
 
-        if type(domain) == str:
-            if domain == "reacher2d":
-                self.physical_0 = r"physical angle ($\theta_1$)"
-                self.physical_1 = r"physical angle ($\theta_2$)"
-                self.physical_0_range = (-np.pi, np.pi)
-                self.physical_1_range = (-np.pi / 4, np.pi)
+    ModelType = getattr(model_place, model_name)
+    model: nn.Module = ModelType(**model_params)
 
-            elif domain == "point_mass":
-                self.physical_0 = r"physical position (x)"
-                self.physical_1 = r"physical position (y)"
-                self.physical_0_range = (-0.3, 0.3)
-                self.physical_1_range = (-0.3, 0.3)
-            else:
-                assert False
+    if resume:
+        print('You chose "resume". Select a model to load.')
+        resume_manage_dir = tool.util.select_date(root)
+        if resume_manage_dir is None:
+            sys.exit()
+        resume_weight_path = tool.util.select_weight(resume_manage_dir)
+        if resume_weight_path is None:
+            sys.exit()
+        model.load_state_dict(torch.load(resume_weight_path))
+    else:
+        resume_weight_path = None
 
-        # color_action = mpu.cmap(2, "prism")
-        self.color_x = ["#22ff7a", "#e7ad38"]
-        self.color_l = ["#16aa4f", "#c59330"]
-
-    def set_axes_L0L1(self, ax: Axes, lmax: Optional[float] = None):
-        if self.domain is not None:
-            ax.set_xlabel(self.latent_0, color=self.color_l[0])
-            if lmax is not None:
-                ax.set_xlim(-lmax, lmax)
-            # else:
-            #     ax.set_xlim()
-            ax.xaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
-
-            ax.set_ylabel(self.latent_1, color=self.color_l[1])
-            if lmax is not None:
-                ax.set_ylim(-lmax, lmax)
-            ax.yaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
-
-        mpu.Axis_aspect_2d(ax, 1)
-
-    def set_axes_P0L0(self, ax: Axes, lmax: Optional[float] = None):
-        if self.domain is not None:
-            ax.set_xlabel(self.physical_0, color=self.color_x[0])
-            ax.set_xlim(*self.physical_0_range)
-
-            ax.set_ylabel(self.latent_0, color=self.color_l[0])
-            if lmax is not None:
-                ax.set_ylim(-lmax, lmax)
-            ax.yaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
-
-        mpu.Axis_aspect_2d(ax, 1)
-
-    def set_axes_P1L1(self, ax: Axes, lmax: Optional[float] = None):
-        if self.domain is not None:
-            ax.set_xlabel(self.physical_1, color=self.color_x[1])
-            ax.set_xlim(*self.physical_1_range)
-
-            ax.set_ylabel(self.latent_1, color=self.color_l[1])
-            if lmax is not None:
-                ax.set_ylim(-lmax, lmax)
-            ax.yaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
-
-        mpu.Axis_aspect_2d(ax, 1)
-
-    def set_axes_P0L1(self, ax: Axes, lmax: Optional[float] = None):
-        if self.domain is not None:
-            ax.set_xlabel(self.physical_0, color=self.color_x[0])
-            ax.set_xlim(*self.physical_0_range)
-
-            ax.set_ylabel(self.latent_1, color=self.color_l[1])
-            if lmax is not None:
-                ax.set_ylim(-lmax, lmax)
-            ax.yaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
-
-        mpu.Axis_aspect_2d(ax, 1)
-
-    def set_axes_P1L0(self, ax: Axes, lmax: Optional[float] = None):
-        if self.domain is not None:
-            ax.set_xlabel(self.physical_1, color=self.color_x[1])
-            ax.set_xlim(*self.physical_1_range)
-
-            ax.set_ylabel(self.latent_0, color=self.color_l[0])
-            if lmax is not None:
-                ax.set_ylim(-lmax, lmax)
-            ax.yaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
-
-        mpu.Axis_aspect_2d(ax, 1)
+    return model, managed_dir, weight_dir, resume_weight_path
