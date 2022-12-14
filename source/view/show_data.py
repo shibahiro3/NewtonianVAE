@@ -11,10 +11,10 @@ from matplotlib.gridspec import GridSpec
 import mypython.error as merror
 import mypython.plotutil as mpu
 import mypython.vision as mv
+from mypython.ai.util import SequenceDataLoader
 from mypython.plotutil import cmap
 from simulation.env import obs2img
 from tool import argset
-from tool.dataloader import DataLoader
 
 try:
     import tool._plot_config
@@ -49,8 +49,9 @@ def main():
     merror.check_dir(args.path_data)
     max_episode = len([p for p in Path(args.path_data).glob("*") if p.is_dir()])
 
-    dataloader = DataLoader(
+    dataloader = SequenceDataLoader(
         root=args.path_data,
+        names=["action", "observation"],
         start=0,
         stop=max_episode,
         batch_size=args.episodes,

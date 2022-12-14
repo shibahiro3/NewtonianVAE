@@ -130,6 +130,7 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#models.core.NewtonianVAEV2Base"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Base</span></code></a><ul>
+<li><a class="reference internal" href="#models.core.NewtonianVAEV2Base.LOG2numpy"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Base.LOG2numpy()</span></code></a></li>
 <li><a class="reference internal" href="#models.core.NewtonianVAEV2Base.forward"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Base.forward()</span></code></a></li>
 <li><a class="reference internal" href="#models.core.NewtonianVAEV2Base.training"><code class="docutils literal notranslate"><span class="pre">NewtonianVAEV2Base.training</span></code></a></li>
 </ul>
@@ -761,6 +762,17 @@ vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEV2Base</span></span><a class="headerlink" href="#models.core.NewtonianVAEV2Base" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <dl class="py method">
+<dt class="sig sig-object py" id="models.core.NewtonianVAEV2Base.LOG2numpy">
+<span class="sig-name descname"><span class="pre">LOG2numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_first</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeezeN1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2Base.LOG2numpy" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>if batch_first is True:</dt><dd><p>(N, T, <a href="#id1"><span class="problematic" id="id2">*</span></a>)</p>
+</dd>
+<dt>else:</dt><dd><p>(T, N, <a href="#id3"><span class="problematic" id="id4">*</span></a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="models.core.NewtonianVAEV2Base.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2Base.forward" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
@@ -970,7 +982,7 @@ registered hooks while the latter silently ignores them.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="models.pcontrol.PControl.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.pcontrol.PControl.forward" title="Permalink to this definition"></a></dt>
-<dd><p>x_t: shape (<a href="#id1"><span class="problematic" id="id2">*</span></a>, dim_x)</p>
+<dd><p>x_t: shape (<a href="#id5"><span class="problematic" id="id6">*</span></a>, dim_x)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -978,7 +990,7 @@ registered hooks while the latter silently ignores them.</p>
 <span class="sig-name descname"><span class="pre">pi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#models.pcontrol.PControl.pi" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>(<a href="#id3"><span class="problematic" id="id4">*</span></a>, N)</p>
+<dd class="field-odd"><p>(<a href="#id7"><span class="problematic" id="id8">*</span></a>, N)</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>pi</p>

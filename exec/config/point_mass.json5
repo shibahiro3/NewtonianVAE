@@ -7,14 +7,14 @@
     encoder_dim_middle: 1024,
     encoder_std_function: "softplus",
     // regularization: true,
-    // fix_abc: [0, 0, 1],
+    fix_abc: [0, 0, 1],
     decoder_type: "SpatialBroadcastDecoder64",
   },
 
   train: {
     data_start: 0,
     data_stop: 1000,
-    batch_size: 10,
+    batch_size: 20,
     epochs: 300,
     learning_rate: 3e-4,
     max_time_length: 100,

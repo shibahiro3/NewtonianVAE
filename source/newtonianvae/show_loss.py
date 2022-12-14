@@ -61,13 +61,13 @@ def main():
     axes = Ax()
     # ============================================================
 
-    d = tool.util.select_date(args.path_model)
-    if d is None:
+    manage_dir = tool.util.select_date(args.path_model)
+    if manage_dir is None:
         return
 
-    loss = np.load(Path(d, "LOG_Loss.npy"))
-    nll = np.load(Path(d, "LOG_NLL.npy"))
-    kl = np.load(Path(d, "LOG_KL.npy"))
+    loss = np.load(Path(manage_dir, "LOG_Loss.npy"))
+    nll = np.load(Path(manage_dir, "LOG_NLL.npy"))
+    kl = np.load(Path(manage_dir, "LOG_KL.npy"))
 
     print("loss len:", len(loss))
     start_idx = args.start_iter
@@ -112,7 +112,7 @@ def main():
     # fig.tight_layout()
 
     if args.path_result is not None:
-        save_path = Path(args.path_result, f"{d.stem}_loss.hoge")
+        save_path = Path(args.path_result, f"{manage_dir.stem}_loss.hoge")
         mpu.register_save_path(fig, save_path, args.format)
 
     plt.show()

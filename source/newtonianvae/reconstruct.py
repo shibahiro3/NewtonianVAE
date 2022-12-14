@@ -16,11 +16,11 @@ import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
 from models.core import NewtonianVAE, NewtonianVAEV2
+from mypython.ai.util import SequenceDataLoader
 from mypython.pyutil import Seq, add_version
 from mypython.terminal import Color, Prompt
 from simulation.env import obs2img
 from tool import argset, checker, paramsmanager
-from tool.dataloader import DataLoader
 from tool.paramsmanager import Params, ParamsEval
 from tool.util import Preferences
 from view.label import Label
@@ -110,15 +110,17 @@ def reconstruction():
         device=params_eval.device,
     )
 
-    testloader = DataLoader(
+    testloader = SequenceDataLoader(
         root=Path(path_data, "episodes"),
+        names=["action", "observation", "delta"],
         start=params_eval.data_start,
         stop=params_eval.data_stop,
         batch_size=args.episodes,
         dtype=dtype,
         device=device,
     )
-    action, observation, delta, position = next(testloader)
+    action, observation, delta = next(testloader)
+    delta.unsqueeze_(-1)
 
     model, manage_dir, weight_path, params = tool.util.load(
         root=path_model, model_place=models.core

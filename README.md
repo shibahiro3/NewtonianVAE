@@ -9,7 +9,6 @@ But I'm still working on fixing some details. Destructive changes may be made (2
 
 You can view this document from [index.html](docs/generated/index.html).
 
-
 Paper
 
 - Original: https://arxiv.org/abs/2006.01959
@@ -42,7 +41,7 @@ And install PyTorch manually by referring to the [official site](https://pytorch
 
 ### Tips
 
-If you build the environment directly into your environment, it may not work properly. So I recommend using a virtual environment like [venv](https://docs.python.org/3/library/venv.html).
+The installation of matplotlib, opencv, and their associated Qt is likely to be environmentally dependent.
 
 ## Run
 

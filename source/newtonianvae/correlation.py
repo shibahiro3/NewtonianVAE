@@ -16,11 +16,10 @@ import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
 from models.core import NewtonianVAE, NewtonianVAEV2
-from mypython.ai.torch_util import swap01
+from mypython.ai.util import SequenceDataLoader, swap01
 from mypython.pyutil import Seq
 from mypython.terminal import Color
 from tool import argset, paramsmanager
-from tool.dataloader import DataLoader
 from view.label import Label
 
 try:
@@ -106,8 +105,9 @@ def correlation():
         device=params_eval.device,
     )
 
-    testloader = DataLoader(
+    testloader = SequenceDataLoader(
         root=Path(path_data, "episodes"),
+        names=["action", "observation", "delta", "position"],
         start=params_eval.data_start,
         stop=params_eval.data_stop,
         batch_size=args.episodes,
@@ -115,6 +115,7 @@ def correlation():
         device=device,
     )
     action, observation, delta, position = next(testloader)
+    delta.unsqueeze_(-1)
     position = position.detach().cpu()
 
     model, manage_dir, weight_path, params = tool.util.load(

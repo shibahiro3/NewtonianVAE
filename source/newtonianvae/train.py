@@ -13,11 +13,10 @@ from torch import nn, optim
 import models.core
 import tool.util
 from models.core import NewtonianVAE, NewtonianVAEV2
-from mypython.ai.torch_util import print_module_params, reproduce
+from mypython.ai.util import SequenceDataLoader, print_module_params, reproduce
 from mypython.pyutil import RemainingTime, s2dhms_str
 from mypython.terminal import Color, Prompt
 from tool import argset, paramsmanager
-from tool.dataloader import DataLoader
 from tool.util import Preferences, creator, dtype_device
 from tool.visualhandlerbase import VisualHandlerBase
 
@@ -49,8 +48,9 @@ def train(vh=VisualHandlerBase()):
         device=params.train.device,
     )
 
-    trainloader = DataLoader(
+    trainloader = SequenceDataLoader(
         root=Path(params.external.data_path, "episodes"),
+        names=["action", "observation", "delta"],
         start=params.train.data_start,
         stop=params.train.data_stop,
         batch_size=params.train.batch_size,
@@ -114,7 +114,11 @@ def train(vh=VisualHandlerBase()):
                 else:
                     model.cell.kl_beta = 1
 
-            for action, observation, delta, position in trainloader:
+            for action, observation, delta in trainloader:
+                delta.unsqueeze_(-1)
+                # print(action.shape)
+                # print(observation.shape)
+                # print(delta.shape)
 
                 E, E_ll, E_kl = model(action=action, observation=observation, delta=delta)
 

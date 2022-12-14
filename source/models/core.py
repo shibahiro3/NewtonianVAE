@@ -15,7 +15,7 @@ from torch import NumberType, Tensor, nn
 
 import mypython.ai.torchprob as tp
 import mypython.ai.torchprob.debug as tp_debug
-from mypython.ai.torch_util import find_function, swap01
+from mypython.ai.util import find_function, swap01
 from mypython.terminal import Color
 
 from .component import Decoder, Encoder, Pxhat, Transition, Velocity
