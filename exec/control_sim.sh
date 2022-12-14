@@ -12,15 +12,15 @@ workspaceFolder=$(pwd)
 export PYTHONPATH="$workspaceFolder/source"
 
 
-if [ "$env" == "reacher2d" ]; then
-	domain="reacher"
-else
-	domain=$env
-fi
+# if [ "$env" == "reacher2d" ]; then
+# 	domain="reacher"
+# else
+# 	domain=$env
+# fi
 
-override=$workspaceFolder/environment/$env/override
+# override=$workspaceFolder/environment/$env/override
 
-python source/simulation/override.py $domain $override
+# python source/simulation/override.py $domain $override
 
 
 opts=(

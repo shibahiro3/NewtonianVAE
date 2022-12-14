@@ -40,6 +40,7 @@
               <!-- Local TOC -->
               <div class="local-toc"><ul>
 <li><a class="reference internal" href="#">simulation package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#simulation-collect-data-module">simulation.collect_data module</a></li>
 <li><a class="reference internal" href="#simulation-control-module">simulation.control module</a></li>
@@ -76,7 +77,6 @@
 <li><a class="reference internal" href="#simulation.env.roll_2d"><code class="docutils literal notranslate"><span class="pre">roll_2d()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#simulation-override-module">simulation.override module</a></li>
 <li><a class="reference internal" href="#module-simulation">Module contents</a></li>
 </ul>
 </li>
@@ -108,6 +108,56 @@
              
   <section id="simulation-package">
 <h1>simulation package<a class="headerlink" href="#simulation-package" title="Permalink to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="simulation.suite.html">simulation.suite package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="simulation.suite.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.suite.html#module-simulation.suite.point_mass">simulation.suite.point_mass module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="simulation.suite.html#simulation.suite.point_mass.Physics"><code class="docutils literal notranslate"><span class="pre">Physics</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="simulation.suite.html#simulation.suite.point_mass.Physics.mass_to_target"><code class="docutils literal notranslate"><span class="pre">Physics.mass_to_target()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.suite.html#simulation.suite.point_mass.Physics.mass_to_target_dist"><code class="docutils literal notranslate"><span class="pre">Physics.mass_to_target_dist()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.suite.html#simulation.suite.point_mass.PointMass"><code class="docutils literal notranslate"><span class="pre">PointMass</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="simulation.suite.html#simulation.suite.point_mass.PointMass.get_observation"><code class="docutils literal notranslate"><span class="pre">PointMass.get_observation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.suite.html#simulation.suite.point_mass.PointMass.get_reward"><code class="docutils literal notranslate"><span class="pre">PointMass.get_reward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.suite.html#simulation.suite.point_mass.PointMass.initialize_episode"><code class="docutils literal notranslate"><span class="pre">PointMass.initialize_episode()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.suite.html#simulation.suite.point_mass.easy"><code class="docutils literal notranslate"><span class="pre">easy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.suite.html#simulation.suite.point_mass.get_model_and_assets"><code class="docutils literal notranslate"><span class="pre">get_model_and_assets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.suite.html#simulation.suite.point_mass.hard"><code class="docutils literal notranslate"><span class="pre">hard()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.suite.html#module-simulation.suite.reacher2d">simulation.suite.reacher2d module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="simulation.suite.html#simulation.suite.reacher2d.Physics"><code class="docutils literal notranslate"><span class="pre">Physics</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="simulation.suite.html#simulation.suite.reacher2d.Physics.finger_to_target"><code class="docutils literal notranslate"><span class="pre">Physics.finger_to_target()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.suite.html#simulation.suite.reacher2d.Physics.finger_to_target_dist"><code class="docutils literal notranslate"><span class="pre">Physics.finger_to_target_dist()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.suite.html#simulation.suite.reacher2d.Reacher"><code class="docutils literal notranslate"><span class="pre">Reacher</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="simulation.suite.html#simulation.suite.reacher2d.Reacher.get_observation"><code class="docutils literal notranslate"><span class="pre">Reacher.get_observation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.suite.html#simulation.suite.reacher2d.Reacher.get_reward"><code class="docutils literal notranslate"><span class="pre">Reacher.get_reward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.suite.html#simulation.suite.reacher2d.Reacher.initialize_episode"><code class="docutils literal notranslate"><span class="pre">Reacher.initialize_episode()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.suite.html#simulation.suite.reacher2d.easy"><code class="docutils literal notranslate"><span class="pre">easy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.suite.html#simulation.suite.reacher2d.get_model_and_assets"><code class="docutils literal notranslate"><span class="pre">get_model_and_assets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.suite.html#simulation.suite.reacher2d.hard"><code class="docutils literal notranslate"><span class="pre">hard()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.suite.html#module-simulation.suite">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="simulation.suite.html#simulation.suite.build_environment"><code class="docutils literal notranslate"><span class="pre">build_environment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.suite.html#simulation.suite.load"><code class="docutils literal notranslate"><span class="pre">load()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
 </section>
@@ -277,9 +327,6 @@
 <span class="sig-prename descclassname"><span class="pre">simulation.env.</span></span><span class="sig-name descname"><span class="pre">roll_2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.env.roll_2d" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
-</section>
-<section id="simulation-override-module">
-<h2>simulation.override module<a class="headerlink" href="#simulation-override-module" title="Permalink to this heading"></a></h2>
 </section>
 <section id="module-simulation">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-simulation" title="Permalink to this heading"></a></h2>

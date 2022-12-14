@@ -26,13 +26,16 @@ from dm_control.utils import containers
 from dm_control.utils import rewards
 import numpy as np
 
+from dm_control.utils import io as resources
+
 _DEFAULT_TIME_LIMIT = 20
 SUITE = containers.TaggedTasks()
 
 
 def get_model_and_assets():
   """Returns a tuple containing the model XML string and a dict of assets."""
-  return common.read_model('point_mass.xml'), common.ASSETS
+#   return common.read_model('point_mass.xml'), common.ASSETS
+  return resources.GetResource("source/simulation/suite/point_mass.xml"), common.ASSETS
 
 
 @SUITE.add('benchmarking', 'easy')

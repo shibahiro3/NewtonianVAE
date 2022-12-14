@@ -35,48 +35,48 @@ def select_date(root) -> Optional[Path]:
         Color.print(f"'{root}' is not a directory.", c=Color.red)
         return None
 
-    w_dirs = [d for d in Path(root).glob("*") if d.is_dir()]
-    w_dirs.sort()
+    dates = [d for d in Path(root).glob("*") if d.is_dir()]
+    dates.sort()
 
     # _weight の無いディレクトリを除去
-    for w in reversed(w_dirs):
+    for w in reversed(dates):
         if len(list(w.glob(_weight))) == 0:
-            w_dirs.remove(w)
+            dates.remove(w)
 
-    if len(w_dirs) == 0:
+    if len(dates) == 0:
         Color.print(f'"Date and time directory" doesn\'t exist in "{root}" directory.', c=Color.red)
         return None
 
-    for i, e in enumerate(w_dirs, 1):
-        l = len(list(e.glob(_weight)))
-        _s = (f"{i:2d}", ":", e.name, f"({l:3d})", Path(e, "params_saved.json5"))
-        if Preferences.get(root, "running") is None:
+    for i, date in enumerate(dates, 1):
+        l = len(list(date.glob(_weight)))
+        _s = (f"{i:2d}", ":", date.name, f"({l:3d})", Path(date, "params_saved.json5"))
+        if Preferences.get(date, "running") is None:
             print(*_s)
         else:
             print(*_s, Color.coral + "Running" + Color.reset)
 
-    idx = _get_idx("Select date and time (or exit): ", len(w_dirs))
+    idx = _get_idx("Select date and time (or exit): ", len(dates))
     if idx is None:
         return None
     else:
-        return w_dirs[idx]
+        return dates[idx]
 
 
 def select_weight(path: Path) -> Optional[Path]:
-    weight_path = list(path.glob(_weight))
-    weight_path.sort(key=lambda e: int(e.stem))
-    if len(weight_path) == 0:
+    weight_paths = list(path.glob(_weight))
+    weight_paths.sort(key=lambda e: int(e.stem))
+    if len(weight_paths) == 0:
         Color.print("Weight doesn't exist.", c=Color.orange)
         return None
 
-    for i, e in enumerate(weight_path, 1):
-        print(f"{i:3d}", ":", e.name)
+    for i, weight_p in enumerate(weight_paths, 1):
+        print(f"{i:3d}", ":", weight_p.name)
 
-    idx = _get_idx("Choose weight (or exit): ", len(weight_path))
+    idx = _get_idx("Choose weight (or exit): ", len(weight_paths))
     if idx is None:
         return None
     else:
-        return weight_path[idx]
+        return weight_paths[idx]
 
 
 def delete_useless_saves(model_date_path):

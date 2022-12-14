@@ -10,12 +10,14 @@ from typing import Tuple, Union
 import cv2
 import numpy as np
 import torch
-from dm_control import suite
 from dm_control.suite.wrappers import pixels
 from torch import Tensor
 
 import mypython.vision as mv
 from mypython.terminal import Color
+
+# from dm_control import suite
+from simulation import suite
 
 GYM_ENVS = [
     "Pendulum-v0",

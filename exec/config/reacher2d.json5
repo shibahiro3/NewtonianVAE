@@ -38,7 +38,7 @@
   },
 
   ControlSuiteEnvWrap: {
-    env: "reacher-hard",
+    env: "reacher2d-hard",
     seed: 1,
     max_episode_length: 100,
     action_repeat: 1,

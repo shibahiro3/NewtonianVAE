@@ -53,7 +53,6 @@ class Train(_Converter):
         seed: Optional[int] = None,
         kl_annealing=False,
     ) -> None:
-        assert device in ("cpu", "cuda")
         assert dtype in ("float16", "float32")
 
         self.data_start = data_start
@@ -82,7 +81,6 @@ class Eval(_Converter):
         result_path: str,
         training: bool = False,
     ) -> None:
-        assert device in ("cpu", "cuda")
         assert dtype in ("float16", "float32")
 
         self.device = device

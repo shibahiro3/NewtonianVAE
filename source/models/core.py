@@ -509,7 +509,7 @@ class NewtonianVAEV2Base(nn.Module):
 
         T = len(action)
 
-        self._init_LOG()
+        self.init_LOG()
 
         E_sum: Tensor = 0  # = Nagative ELBO
         E_ll_sum: Tensor = 0
@@ -569,7 +569,7 @@ class NewtonianVAEV2Base(nn.Module):
     def __call__(self, *args, **kwargs) -> Tuple[Tensor, Tensor, Tensor]:
         return super().__call__(*args, **kwargs)
 
-    def _init_LOG(self):
+    def init_LOG(self):
         # (T, BS, D)
 
         self.LOG_x = []

@@ -26,6 +26,8 @@ from dm_control.utils import containers
 from dm_control.utils import rewards
 import numpy as np
 
+from dm_control.utils import io as resources
+
 SUITE = containers.TaggedTasks()
 _DEFAULT_TIME_LIMIT = 20
 _BIG_TARGET = .05
@@ -37,7 +39,8 @@ _SMALL_TARGET = .02
 
 def get_model_and_assets():
   """Returns a tuple containing the model XML string and a dict of assets."""
-  return common.read_model('reacher.xml'), common.ASSETS
+#   return common.read_model('reacher.xml'), common.ASSETS
+  return resources.GetResource("source/simulation/suite/reacher2d.xml"), common.ASSETS
 
 
 @SUITE.add('benchmarking', 'easy')

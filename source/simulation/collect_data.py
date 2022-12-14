@@ -62,8 +62,8 @@ def env_test():
     print("action size:", env.action_size)
     print("action range:", env.action_range)
 
+    data_path = Path(params.external.data_path)
     if args.watch is None:
-        data_path = Path(params.external.data_path)
         if len(list(data_path.glob("episodes/*"))) > 0:
             print(f'\n"{data_path}" directory will be rewritten.')
             if input("Do you want to continue? [y/n] ") != "y":
@@ -170,7 +170,7 @@ def env_test():
                 ax.bar(range(len(action)), action, color=color_action, width=0.5)
                 mpu.Axis_aspect_2d(ax, 1)
                 ax.set_xticks(range(len(action)))
-                if env.domain == "reacher":
+                if env.domain == "reacher" or env.domain == "reacher2d":
                     ax.set_xlabel("Torque")
                     ax.set_xticklabels([r"$\mathbf{u}[1]$ (shoulder)", r"$\mathbf{u}[2]$ (wrist)"])
                 elif env.domain == "point_mass" and env.task == "easy":
@@ -184,7 +184,9 @@ def env_test():
                 # ==================================================
                 ax = axes.position
                 ax.set_title("Position")
-                if env.domain == "reacher" and env.position_wrap == "None":
+                if (
+                    env.domain == "reacher" or env.domain == "reacher2d"
+                ) and env.position_wrap == "None":
                     ax.set_ylim(-np.pi, np.pi)
                     ax.bar(range(len(position)), position, color=color_action, width=0.5)
                     mpu.Axis_aspect_2d(ax, 1)
@@ -192,7 +194,8 @@ def env_test():
                     ax.set_xticks(range(len(position)))
                     ax.set_xticklabels([r"$\theta_1$ (shoulder)", r"$\theta_2$ (wrist)"])
                 elif (
-                    env.domain == "reacher" and env.position_wrap == "endeffector"
+                    (env.domain == "reacher" or env.domain == "reacher2d")
+                    and env.position_wrap == "endeffector"
                 ) or env.domain == "point_mass":
                     ax.set_xlabel("x")
                     ax.set_ylabel("y")

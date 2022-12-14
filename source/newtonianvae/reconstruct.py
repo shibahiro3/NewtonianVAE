@@ -163,6 +163,7 @@ def reconstruction():
                 delta[:, [self.episode_cnt]],
             )
 
+            self.model.init_LOG()
             self.model(action=self.action, observation=self.observation, delta=self.delta)
             self.model.LOG2numpy(squeezeN1=True)
 
