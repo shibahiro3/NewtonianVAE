@@ -11,7 +11,7 @@ class VisualHandler(VisualHandlerBase):
 
         self.step = 0
 
-    def plot(self, L, LOG_E_ll_sum, LOG_E_kl_sum, epoch):
+    def plot(self, L, E_ll, E_kl, epoch):
         self.vis.line(
             np.array([L]),
             X=np.array([self.step]),
@@ -20,14 +20,14 @@ class VisualHandler(VisualHandlerBase):
             opts={"title": "Loss"},
         )
         self.vis.line(
-            np.array([LOG_E_ll_sum]),
+            np.array([E_ll]),
             X=np.array([self.step]),
             update="append",
             win="NLL",
             opts={"title": "NLL"},
         )
         self.vis.line(
-            np.array([LOG_E_kl_sum]),
+            np.array([E_kl]),
             X=np.array([self.step]),
             update="append",
             win="KL",

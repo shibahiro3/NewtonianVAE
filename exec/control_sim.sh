@@ -28,14 +28,17 @@ opts=(
 	# --path-model  environment/$env/saves
 	# --path-result environment/$env/results
 
-	--goal-img    environment/$env/observation_imgs/obs_red.npy
+	# --goal-img    environment/$env/observation_imgs/obs_red.npy
 	# --goal-img    environment/$env/observation_imgs/obs_green.npy
-	# --goal-img    environment/$env/observation_imgs/obs_yellow.npy
+	--goal-img    environment/$env/observation_imgs/obs_yellow.npy
 
 	--episodes 10
 	--fix-xmap-size 2
 	--env-domain $env
-	--alpha 0.5
+	
+	--alpha 0.3
+	--steps 200
+	
 	${@:2}
 )
 

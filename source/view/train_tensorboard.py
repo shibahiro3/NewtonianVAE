@@ -10,10 +10,10 @@ class VisualHandler(VisualHandlerBase):
 
         self.step = 0
 
-    def plot(self, L, LOG_E_ll_sum, LOG_E_kl_sum, epoch):
+    def plot(self, L, E_ll, E_kl, epoch):
         self.writer.add_scalar("Loss", L, self.step)
-        self.writer.add_scalar("NLL", LOG_E_ll_sum, self.step)
-        self.writer.add_scalar("KL", LOG_E_kl_sum, self.step)
+        self.writer.add_scalar("NLL", E_ll, self.step)
+        self.writer.add_scalar("KL", E_kl, self.step)
         self.writer.flush()  # flush* is not working...
         self.step += 1
 

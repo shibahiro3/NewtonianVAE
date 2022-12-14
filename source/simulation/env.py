@@ -265,6 +265,8 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
                 self.sample_random_action = self.action_point_mass_circle
             elif action_type == "per_episode":
                 self.sample_random_action = self.action_per_episode
+            elif action_type == "random_walk":
+                self.sample_random_action = self.action_random_walk
             else:
                 assert False
 
@@ -309,6 +311,15 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
             self.action_mean = super().sample_random_action()
 
         return self.action_mean
+
+    def action_random_walk(self):
+        c = 0.3
+        _uniform = torch.distributions.Uniform(-c, c)
+        if self.t == 0:
+            self.action = _uniform.sample((2,))
+        else:
+            self.action += _uniform.sample((2,))
+        return torch.clip(self.action, -1, 1)
 
     def action_point_mass_circle(self):
         theta = self.t / self.max_episode_length

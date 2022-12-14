@@ -58,7 +58,7 @@ def cnn2plt(imgs: _NT) -> np.ndarray:
     imgs = imgs * 255
     imgs = CHW2HWC(imgs)
     if type(imgs) == torch.Tensor:
-        imgs = imgs.cpu().type(torch.uint8).numpy()
+        imgs = imgs.detach().cpu().type(torch.uint8).numpy()
     elif type(imgs) == np.ndarray:
         imgs = imgs.astype(np.uint8)
     else:

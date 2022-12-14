@@ -1,9 +1,12 @@
 import random
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch import nn, optim
+from torch import Tensor, nn, optim
+
+_NT = Union[np.ndarray, torch.Tensor]
 
 
 def reproduce(seed: int = 1234):
@@ -30,3 +33,14 @@ def find_function(function_name: str):
         return getattr(torch, function_name)
     except:
         return getattr(F, function_name)
+
+
+def swap01(x: _NT):
+    assert x.ndim >= 3
+    axis = (1, 0) + tuple(range(2, x.ndim))
+    if type(x) == np.ndarray:
+        return x.transpose(axis)
+    elif type(x) == Tensor:
+        return x.permute(axis)
+    else:
+        assert False

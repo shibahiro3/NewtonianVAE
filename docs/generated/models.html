@@ -58,14 +58,14 @@
 <li><a class="reference internal" href="#models.component.Encoder.training"><code class="docutils literal notranslate"><span class="pre">Encoder.training</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#models.component.PXmiddleCat"><code class="docutils literal notranslate"><span class="pre">PXmiddleCat</span></code></a><ul>
-<li><a class="reference internal" href="#models.component.PXmiddleCat.forward"><code class="docutils literal notranslate"><span class="pre">PXmiddleCat.forward()</span></code></a></li>
-<li><a class="reference internal" href="#models.component.PXmiddleCat.training"><code class="docutils literal notranslate"><span class="pre">PXmiddleCat.training</span></code></a></li>
-</ul>
-</li>
 <li><a class="reference internal" href="#models.component.Pxhat"><code class="docutils literal notranslate"><span class="pre">Pxhat</span></code></a><ul>
 <li><a class="reference internal" href="#models.component.Pxhat.forward"><code class="docutils literal notranslate"><span class="pre">Pxhat.forward()</span></code></a></li>
 <li><a class="reference internal" href="#models.component.Pxhat.training"><code class="docutils literal notranslate"><span class="pre">Pxhat.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models.component.SpatialBroadcastDecoder64"><code class="docutils literal notranslate"><span class="pre">SpatialBroadcastDecoder64</span></code></a><ul>
+<li><a class="reference internal" href="#models.component.SpatialBroadcastDecoder64.forward"><code class="docutils literal notranslate"><span class="pre">SpatialBroadcastDecoder64.forward()</span></code></a></li>
+<li><a class="reference internal" href="#models.component.SpatialBroadcastDecoder64.training"><code class="docutils literal notranslate"><span class="pre">SpatialBroadcastDecoder64.training</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#models.component.Transition"><code class="docutils literal notranslate"><span class="pre">Transition</span></code></a><ul>
@@ -270,7 +270,7 @@ where f is a neural network with linear output activation.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="models.component.Decoder">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">Decoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Decoder" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">Decoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decoder_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'VisualDecoder64'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Decoder" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal" title="mypython.ai.torchprob.distributions.normal.Normal"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normal</span></code></a></p>
 <div class="math notranslate nohighlight">
 \[\begin{array}{ll}
@@ -317,22 +317,6 @@ where f is a neural network with linear output activation.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="models.component.PXmiddleCat">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">PXmiddleCat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_middle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.PXmiddleCat" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal" title="mypython.ai.torchprob.distributions.normal.Normal"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normal</span></code></a></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="models.component.PXmiddleCat.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_m1_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_m2_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.PXmiddleCat.forward" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="models.component.PXmiddleCat.training">
-<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.component.PXmiddleCat.training" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="models.component.Pxhat">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">Pxhat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_xhat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_middle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.Pxhat" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal" title="mypython.ai.torchprob.distributions.normal.Normal"><code class="xref py py-class docutils literal notranslate"><span class="pre">Normal</span></code></a></p>
@@ -350,6 +334,45 @@ where f is a neural network with linear output activation.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="models.component.Pxhat.training">
 <span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.component.Pxhat.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="models.component.SpatialBroadcastDecoder64">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">SpatialBroadcastDecoder64</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.SpatialBroadcastDecoder64" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<dl class="simple">
+<dt>Inputs: z</dt><dd><ul class="simple">
+<li><p><strong>x</strong>: tensor of shape <span class="math notranslate nohighlight">\((N, \mathrm{dim\_input})\)</span></p></li>
+</ul>
+</dd>
+<dt>Outputs: y</dt><dd><ul class="simple">
+<li><p><strong>y</strong>: tensor of shape <span class="math notranslate nohighlight">\((N, 3, 64, 64)\)</span></p></li>
+</ul>
+</dd>
+<dt>Reference:</dt><dd><p>Spatial Broadcast Decoder <a class="reference external" href="https://arxiv.org/abs/1901.07017">https://arxiv.org/abs/1901.07017</a></p>
+</dd>
+<dt>Reference for implementation:</dt><dd><p><a class="reference external" href="https://github.com/dfdazac/vaesbd/blob/master/model.py#L6">https://github.com/dfdazac/vaesbd/blob/master/model.py#L6</a></p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="models.component.SpatialBroadcastDecoder64.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.SpatialBroadcastDecoder64.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="models.component.SpatialBroadcastDecoder64.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#models.component.SpatialBroadcastDecoder64.training" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -401,7 +424,7 @@ where f is a neural network with linear output activation.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.component.</span></span><span class="sig-name descname"><span class="pre">VisualDecoder64</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_input:</span> <span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_middle:</span> <span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation=&lt;built-in</span> <span class="pre">method</span> <span class="pre">relu</span> <span class="pre">of</span> <span class="pre">type</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.VisualDecoder64" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <dl class="simple">
-<dt>Inputs: x</dt><dd><ul class="simple">
+<dt>Inputs: z</dt><dd><ul class="simple">
 <li><p><strong>x</strong>: tensor of shape <span class="math notranslate nohighlight">\((*, \mathrm{dim\_input})\)</span></p></li>
 </ul>
 </dd>
@@ -409,12 +432,12 @@ where f is a neural network with linear output activation.</p>
 <li><p><strong>y</strong>: tensor of shape <span class="math notranslate nohighlight">\((*, 3, 64, 64)\)</span></p></li>
 </ul>
 </dd>
-<dt>Ref impl:</dt><dd><p><a class="reference external" href="https://github.com/ctallec/world-models/blob/master/models/vae.py#L10">https://github.com/ctallec/world-models/blob/master/models/vae.py#L10</a></p>
+<dt>Reference for implementation:</dt><dd><p><a class="reference external" href="https://github.com/ctallec/world-models/blob/master/models/vae.py#L10">https://github.com/ctallec/world-models/blob/master/models/vae.py#L10</a></p>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="models.component.VisualDecoder64.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.VisualDecoder64.forward" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.component.VisualDecoder64.forward" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -437,7 +460,7 @@ where f is a neural network with linear output activation.</p>
 <li><p><strong>y</strong>: tensor of shape <span class="math notranslate nohighlight">\((*, \mathrm{dim\_output})\)</span></p></li>
 </ul>
 </dd>
-<dt>Ref impl:</dt><dd><p><a class="reference external" href="https://github.com/ctallec/world-models/blob/master/models/vae.py#L32">https://github.com/ctallec/world-models/blob/master/models/vae.py#L32</a></p>
+<dt>Reference for implementation:</dt><dd><p><a class="reference external" href="https://github.com/ctallec/world-models/blob/master/models/vae.py#L32">https://github.com/ctallec/world-models/blob/master/models/vae.py#L32</a></p>
 </dd>
 </dl>
 <dl class="py method">
@@ -678,7 +701,6 @@ vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAEV2Base" title="models.core.NewtonianVAEV2Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAEV2Base</span></code></a></p>
 <p>Computes ELBO based on formula (11).</p>
-<p>This implementation was based on Mr. <a class="reference external" href="https://github.com/ItoMasaki">Ito</a>’s opinion.</p>
 <p>Computes according to the following formula:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{array}{ll} \\
@@ -724,6 +746,8 @@ vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
 <li><p>we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))</p></li>
 </ul>
 </dd>
+<dt>Acknowledgements:</dt><dd><p><a class="reference external" href="https://github.com/ItoMasaki">Ito</a> helped me understand the detailed formulas.</p>
+</dd>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="models.core.NewtonianVAEV2.training">
@@ -750,7 +774,7 @@ vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
 
 <dl class="py class">
 <dt class="sig sig-object py" id="models.core.NewtonianVAEV2Cell">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEV2Cell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2Cell" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.core.</span></span><span class="sig-name descname"><span class="pre">NewtonianVAEV2Cell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decoder_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'VisualDecoder64'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.core.NewtonianVAEV2Cell" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#models.core.NewtonianVAEV2CellBase" title="models.core.NewtonianVAEV2CellBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NewtonianVAEV2CellBase</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="models.core.NewtonianVAEV2Cell.forward">

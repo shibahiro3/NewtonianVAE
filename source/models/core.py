@@ -15,10 +15,10 @@ from torch import NumberType, Tensor, nn
 
 import mypython.ai.torchprob as tp
 import mypython.ai.torchprob.debug as tp_debug
-from mypython.ai.torch_util import find_function
+from mypython.ai.torch_util import find_function, swap01
 from mypython.terminal import Color
 
-from .component import Decoder, Encoder, Pxhat, PXmiddleCat, Transition, Velocity
+from .component import Decoder, Encoder, Pxhat, Transition, Velocity
 
 
 class NewtonianVAECellBase(nn.Module):
@@ -393,11 +393,11 @@ class NewtonianVAEV2CellBase(NewtonianVAECellBase):
 
 
 class NewtonianVAEV2Cell(NewtonianVAEV2CellBase):
-    def __init__(self, dim_x, *args, **kwargs) -> None:
+    def __init__(self, dim_x, decoder_type="VisualDecoder64", *args, **kwargs) -> None:
         super().__init__(dim_x=dim_x, *args, **kwargs)
 
         # p(I_t | x_t)
-        self.p_decoder = Decoder(dim_x=dim_x)
+        self.p_decoder = Decoder(dim_x=dim_x, decoder_type=decoder_type)
 
     def forward(self, I_t: Tensor, x_q_tn1: Tensor, x_q_tn2: Tensor, u_tn1: Tensor, dt: Tensor):
         """"""
@@ -509,7 +509,7 @@ class NewtonianVAEV2Base(nn.Module):
 
         T = len(action)
 
-        self._init_LOG(T=T, dtype=action.dtype)
+        self._init_LOG()
 
         E_sum: Tensor = 0  # = Nagative ELBO
         E_ll_sum: Tensor = 0
@@ -547,11 +547,6 @@ class NewtonianVAEV2Base(nn.Module):
                 v_t = output.v_t
                 I_dec = self.cell.p_decoder.decode()
 
-                if self.is_save:
-                    if "xhat" in self.cell.info:
-                        self.LOG_xhat_std[t] = as_save(self.cell.p_xhat.scale)
-                        self.LOG_xhat_mean[t] = as_save(self.cell.p_xhat.loc)
-
             x_q_tn2 = x_q_tn1
             x_q_tn1 = x_q_t
 
@@ -560,10 +555,10 @@ class NewtonianVAEV2Base(nn.Module):
             # tp_debug.check_dist_model(self.cell)
 
             if self.is_save:
-                self.LOG_x[t] = as_save(x_q_t)
-                self.LOG_v[t] = as_save(v_t)
-                self.LOG_I_dec[t] = as_save(I_dec)
-                self.LOG_x_mean[t] = as_save(self.cell.q_encoder.loc)
+                self.LOG_x.append(x_q_t.detach().cpu().numpy())
+                self.LOG_v.append(v_t.detach().cpu().numpy())
+                self.LOG_I_dec.append(I_dec.detach().cpu().numpy())
+                self.LOG_x_mean.append(self.cell.q_encoder.loc.detach().cpu().numpy())
 
         E = E_sum / T
         E_ll = E_ll_sum / T
@@ -574,24 +569,46 @@ class NewtonianVAEV2Base(nn.Module):
     def __call__(self, *args, **kwargs) -> Tuple[Tensor, Tensor, Tensor]:
         return super().__call__(*args, **kwargs)
 
-    def _init_LOG(self, T: int, dtype: torch.dtype):
-        xp = np
-        dtype = torch.empty((), dtype=dtype).numpy().dtype
+    def _init_LOG(self):
+        # (T, BS, D)
 
-        self.LOG_x = xp.full((T, self.cell.dim_x), xp.nan, dtype=dtype)
-        self.LOG_x_mean = xp.full((T, self.cell.dim_x), xp.nan, dtype=dtype)
-        self.LOG_v = xp.full((T, self.cell.dim_x), xp.nan, dtype=dtype)
-        self.LOG_I_dec = xp.full((T, 3, 64, 64), xp.nan, dtype=dtype)
+        self.LOG_x = []
+        self.LOG_x_mean = []
+        self.LOG_v = []
+        self.LOG_I_dec = []
 
-        if "xhat" in self.cell.info:
-            self.LOG_xhat_mean = xp.full((T, self.cell.dim_xhat), xp.nan, dtype=dtype)
-            self.LOG_xhat_std = xp.full((T, self.cell.dim_xhat), xp.nan, dtype=dtype)
+    def LOG2numpy(self, batch_first=False, squeezeN1=False):
+        """
+        if batch_first is True:
+            (N, T, *)
+        else:
+            (T, N, *)
+        """
+
+        self.LOG_x = np.array(self.LOG_x)
+        self.LOG_x_mean = np.array(self.LOG_x_mean)
+        self.LOG_v = np.array(self.LOG_v)
+        self.LOG_I_dec = np.array(self.LOG_I_dec)
+
+        if squeezeN1:
+            self.LOG_x = self.LOG_x.squeeze(1)
+            self.LOG_x_mean = self.LOG_x_mean.squeeze(1)
+            self.LOG_v = self.LOG_v.squeeze(1)
+            self.LOG_I_dec = self.LOG_I_dec.squeeze(1)
+        elif batch_first:
+            self.LOG_x = swap01(self.LOG_x)
+            self.LOG_x_mean = swap01(self.LOG_x_mean)
+            self.LOG_v = swap01(self.LOG_v)
+            self.LOG_I_dec = swap01(self.LOG_I_dec)
+
+        # Color.print(self.LOG_x.shape)
+        # Color.print(self.LOG_x_mean.shape)
+        # Color.print(self.LOG_v.shape)
+        # Color.print(self.LOG_I_dec.shape)
 
 
 class NewtonianVAEV2(NewtonianVAEV2Base):
     r"""Computes ELBO based on formula (11).
-
-    This implementation was based on Mr. `Ito <https://github.com/ItoMasaki>`_'s opinion.
 
     Computes according to the following formula:
 
@@ -643,6 +660,9 @@ class NewtonianVAEV2(NewtonianVAEV2Base):
         * During inference, vt is computed as 
           vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
         * we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
+
+    Acknowledgements:
+        `Ito <https://github.com/ItoMasaki>`_ helped me understand the detailed formulas.
     """
 
     def __init__(self, *args, **kwargs) -> None:
@@ -804,5 +824,4 @@ class Stepper:
 
 
 def as_save(x: Tensor):
-    assert x.shape[0] == 1  # N (BS)
     return x.detach().squeeze(0).cpu().numpy()

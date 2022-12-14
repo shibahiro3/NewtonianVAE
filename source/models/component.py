@@ -10,13 +10,12 @@ r"""
 
 from typing import Callable, Optional, Tuple, Union
 
+import numpy as np
 import torch
 from torch import NumberType, Tensor, nn
 
 import mypython.ai.torchprob as tp
 from mypython.terminal import Color
-
-min_eps_std = torch.finfo(torch.float).eps
 
 
 class ABCf(nn.Module):
@@ -63,24 +62,17 @@ class ABCf(nn.Module):
 
         dim_IO = 3 * dim_x
 
-        self.f = nn.Linear(dim_IO, dim_IO)
-
-        # self.f = nn.Sequential(
-        #     nn.Linear(dim_IO, 2),
-        #     nn.ReLU(),
-        #     nn.Linear(2, 2),
-        #     nn.ReLU(),
-        #     nn.Linear(2, 2),
-        #     nn.ReLU(),
-        #     nn.Linear(2, dim_IO),
-        #     nn.ReLU(),
-        # )
+        self.func = nn.Sequential(
+            nn.Linear(dim_IO, dim_IO),
+            nn.Softplus(),
+            nn.Linear(dim_IO, dim_IO),
+        )
 
     def forward(self, x_tn1: Tensor, v_tn1: Tensor, u_tn1: Tensor):
         """"""
-        abc = self.f(torch.cat([x_tn1, v_tn1, u_tn1], dim=-1))
-        diagA, log_diagnB, log_diagC = torch.chunk(abc, 3, dim=-1)
-        return diagA, -log_diagnB.exp(), log_diagC.exp()
+        abc = self.func(torch.cat([x_tn1, v_tn1, u_tn1], dim=-1))
+        diagA, n_log_diagB, log_diagC = torch.chunk(abc, 3, dim=-1)
+        return diagA, -n_log_diagB.exp(), log_diagC.exp()
 
 
 class Velocity(nn.Module):
@@ -98,13 +90,12 @@ class Velocity(nn.Module):
     ) -> None:
         super().__init__()
 
-        if fix_abc is not None:
+        if fix_abc is None:
+            self.func_abc = ABCf(dim_x)
+        else:
             assert len(fix_abc) == 3
-            self.diagA = torch.tensor(fix_abc[0])
-            self.diagB = torch.tensor(fix_abc[1])
-            self.diagC = torch.tensor(fix_abc[2])
+            self.func_abc = None
 
-        self.f_abc = ABCf(dim_x)
         self.fix_abc = fix_abc
 
     def forward(self, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
@@ -116,15 +107,13 @@ class Velocity(nn.Module):
         """
 
         if self.fix_abc is None:
-            diagA, diagB, diagC = self.f_abc(x_tn1, u_tn1, v_tn1)
+            diagA, diagB, diagC = self.func_abc(x_tn1, u_tn1, v_tn1)
             # diagA, diagB が 1、すなわちxとvにかかっていたら、簡単にnanになる
         else:
             # Paper:
             #   unbounded and full rank
             #   Firstly, the transition matrices were set to A = 0, B = 0, C = 1.
-            diagA = self.diagA
-            diagB = self.diagB
-            diagC = self.diagC
+            diagA, diagB, diagC = self.fix_abc
 
         # Color.print(diagA)
         # Color.print(diagB, c=Color.red)
@@ -182,7 +171,7 @@ class Encoder(tp.Normal):
         mu = self.mean(middle)
         sigma = self.std_function(self.std(middle))
         # std = self.std
-        return mu, sigma + min_eps_std
+        return mu, sigma + torch.finfo(sigma.dtype).eps
 
 
 class Decoder(tp.Normal):
@@ -196,15 +185,21 @@ class Decoder(tp.Normal):
         We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.
     """
 
-    def __init__(self, dim_x: int, std=1.0) -> None:
+    def __init__(self, dim_x: int, std=1.0, decoder_type="VisualDecoder64") -> None:
         super().__init__()
 
-        self.dec = VisualDecoder64(dim_x, 1024)
+        if decoder_type == "VisualDecoder64":
+            self.dec = VisualDecoder64(dim_x, 1024)
+        elif decoder_type == "SpatialBroadcastDecoder64":
+            self.dec = SpatialBroadcastDecoder64(dim_x)
+        else:
+            assert False
+
         self.std = torch.tensor(std)
 
     def forward(self, x_t: Tensor):
         """"""
-        return self.dec(x_t), self.std + min_eps_std
+        return self.dec(x_t), self.std + torch.finfo(self.std.dtype).eps
 
 
 class Pxhat(tp.Normal):
@@ -220,7 +215,6 @@ class Pxhat(tp.Normal):
     def __init__(self, dim_x: int, dim_xhat: int, dim_middle: int, std_function: Callable) -> None:
         super().__init__()
 
-        # Color.print(dim_x)
         self.fc = nn.Linear(2 * dim_x, dim_middle)
         self.mean = nn.Linear(dim_middle, dim_xhat)
         self.std = nn.Linear(dim_middle, dim_xhat)
@@ -228,11 +222,10 @@ class Pxhat(tp.Normal):
 
     def forward(self, x_tn1: Tensor, u_tn1: Tensor):
         middle = torch.cat([x_tn1, u_tn1], dim=-1)
-        # Color.print(middle.shape)
         middle = self.fc(middle)
         mu = self.mean(middle)
         sigma = self.std_function(self.std(middle))
-        return mu, sigma + min_eps_std
+        return mu, sigma + torch.finfo(sigma.dtype).eps
 
 
 class VisualEncoder64(nn.Module):
@@ -243,7 +236,7 @@ class VisualEncoder64(nn.Module):
     Outputs: y
         * **y**: tensor of shape :math:`(*, \mathrm{dim\_output})`
 
-    Ref impl:
+    Reference for implementation:
         https://github.com/ctallec/world-models/blob/master/models/vae.py#L32
     """
 
@@ -267,19 +260,19 @@ class VisualEncoder64(nn.Module):
         x = self.activation(self.conv4(x))
         x = x.reshape(-1, 1024)
         # Identity if embedding size is 1024 else linear projection
-        x = self.fc(x)
-        return x
+        y = self.fc(x)
+        return y
 
 
 class VisualDecoder64(nn.Module):
     r"""
-    Inputs: x
+    Inputs: z
         * **x**: tensor of shape :math:`(*, \mathrm{dim\_input})`
 
     Outputs: y
         * **y**: tensor of shape :math:`(*, 3, 64, 64)`
 
-    Ref impl:
+    Reference for implementation:
         https://github.com/ctallec/world-models/blob/master/models/vae.py#L10
     """
 
@@ -295,33 +288,71 @@ class VisualDecoder64(nn.Module):
         self.conv3 = nn.ConvTranspose2d(64, 32, 6, stride=2)
         self.conv4 = nn.ConvTranspose2d(32, 3, 6, stride=2)
 
-    def forward(self, x: Tensor):
+    def forward(self, z: Tensor):
         """"""
-        x = self.fc1(x)
-        x = x.reshape(-1, self.dim_middle, 1, 1)
-        x = self.activation(self.conv1(x))
-        x = self.activation(self.conv2(x))
-        x = self.activation(self.conv3(x))
-        x = self.conv4(x)
-        return x
+        z = self.fc1(z)
+        z = z.reshape(-1, self.dim_middle, 1, 1)
+        z = self.activation(self.conv1(z))
+        z = self.activation(self.conv2(z))
+        z = self.activation(self.conv3(z))
+        y = self.conv4(z)
+        return y
 
 
-class PXmiddleCat(tp.Normal):
-    def __init__(self, dim_x: int, dim_middle: int, std_function: Callable) -> None:
+class SpatialBroadcastDecoder64(nn.Module):
+    """
+    Inputs: z
+        * **x**: tensor of shape :math:`(N, \mathrm{dim\_input})`
+
+    Outputs: y
+        * **y**: tensor of shape :math:`(N, 3, 64, 64)`
+
+    Reference:
+        Spatial Broadcast Decoder https://arxiv.org/abs/1901.07017
+
+    Reference for implementation:
+        https://github.com/dfdazac/vaesbd/blob/master/model.py#L6
+    """
+
+    def __init__(self, dim_input: int) -> None:
         super().__init__()
 
-        # Color.print(dim_x)
-        self.fc = nn.Linear(2 * dim_x, dim_middle)
-        self.mean = nn.Linear(dim_middle, dim_x)
-        self.std = nn.Linear(dim_middle, dim_x)
-        self.std_function = std_function
+        a = np.linspace(-1, 1, 64)
+        b = np.linspace(-1, 1, 64)
+        x_grid, y_grid = np.meshgrid(a, b)
+        x_grid = torch.from_numpy(x_grid)
+        y_grid = torch.from_numpy(y_grid)
+        # Add as constant, with extra dims for N and C
+        self.register_buffer("x_grid", x_grid.reshape((1, 1) + x_grid.shape))
+        self.register_buffer("y_grid", y_grid.reshape((1, 1) + y_grid.shape))
+        self.x_grid: Tensor
+        self.y_grid: Tensor
 
-    def forward(self, x_m1_t: Tensor, x_m2_t: Tensor):
-        """"""
-        middle = torch.cat([x_m1_t, x_m2_t], dim=-1)
-        # Color.print(middle.shape)
-        middle = self.fc(middle)
-        mu = self.mean(middle)
-        sigma = self.std_function(self.std(middle))
-        # print(sigma)
-        return mu, sigma + min_eps_std
+        self.dec_convs = nn.Sequential(
+            nn.Conv2d(dim_input + 2, 64, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 3, 3, padding=1),
+        )
+
+    def forward(self, z: Tensor):
+        N = z.size(0)
+        # View z as 4D tensor to be tiled across new H and W dimensions
+        z = z.reshape(z.shape + (1, 1))  # (N, D, 1, 1)
+
+        # Tile across to match image size
+        z = z.expand(-1, -1, 64, 64)  # (N, D, 64, 64)
+
+        # Expand grids to batches and concatenate on the channel dimension
+        z = torch.cat(
+            [
+                self.x_grid.expand(N, -1, -1, -1),
+                self.y_grid.expand(N, -1, -1, -1),
+                z,
+            ],
+            dim=1,
+        )  # (N, D+2, 64, 64)
+
+        y = self.dec_convs(z)
+        return y

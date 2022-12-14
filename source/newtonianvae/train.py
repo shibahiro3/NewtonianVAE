@@ -100,20 +100,21 @@ def train(vh=VisualHandlerBase()):
     try:
         remaining = RemainingTime(max=params.train.epochs * len(trainloader))
         for epoch in range(1, params.train.epochs + 1):
-            for action, observation, delta, position in trainloader:
 
-                if params.train.kl_annealing:
-                    # Paper:
-                    # In the point mass experiments
-                    # we found it useful to anneal the KL term in the ELBO,
-                    # starting with a value of 0.001 and increasing it linearly
-                    # to 1.0 between epochs 30 and 60.
-                    if epoch < 30:
-                        model.cell.kl_beta = 0.001
-                    elif 30 <= epoch and epoch <= 60:
-                        model.cell.kl_beta = 0.001 + (1 - 0.001) * ((epoch - 30) / (60 - 30))
-                    else:
-                        model.cell.kl_beta = 1
+            if params.train.kl_annealing:
+                # Paper:
+                # In the point mass experiments
+                # we found it useful to anneal the KL term in the ELBO,
+                # starting with a value of 0.001 and increasing it linearly
+                # to 1.0 between epochs 30 and 60.
+                if epoch < 30:
+                    model.cell.kl_beta = 0.001
+                elif 30 <= epoch and epoch <= 60:
+                    model.cell.kl_beta = 0.001 + (1 - 0.001) * ((epoch - 30) / (60 - 30))
+                else:
+                    model.cell.kl_beta = 1
+
+            for action, observation, delta, position in trainloader:
 
                 E, E_ll, E_kl = model(action=action, observation=observation, delta=delta)
 

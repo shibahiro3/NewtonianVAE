@@ -15,7 +15,7 @@ import models.core
 import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
-from models.core import NewtonianVAE, NewtonianVAEV2, as_save
+from models.core import NewtonianVAE, NewtonianVAEV2
 from mypython.pyutil import Seq, add_version
 from mypython.terminal import Color, Prompt
 from simulation.env import obs2img
@@ -137,6 +137,9 @@ def reconstruction():
 
             self.t = -1
 
+            self.model = model
+            self.model.is_save = True
+
         def _attach_nan(self, x, i: int):
             xp = np
             return xp.concatenate(
@@ -151,15 +154,19 @@ def reconstruction():
             )
 
         def init(self):
-            self.model = model
-            self.model.is_save = True
 
             self.action, self.observation, self.delta = (
                 action[:, [self.episode_cnt]],
                 observation[:, [self.episode_cnt]],
                 delta[:, [self.episode_cnt]],
             )
+
             self.model(action=self.action, observation=self.observation, delta=self.delta)
+            self.model.LOG2numpy(squeezeN1=True)
+
+            # Color.print(self.action.shape)
+            # Color.print(self.observation.shape)
+            # Color.print(self.delta.shape)
 
             # ----------------
             self.min_x_mean, self.max_x_mean = _min_max(self.model.LOG_x_mean)
@@ -217,7 +224,7 @@ def reconstruction():
             # ax.arrow(0, 0, action[t, 0], action[t, 1], head_width=0.05)
             ax.bar(
                 range(model.cell.dim_x),
-                as_save(self.action[self.t]),
+                self.action[self.t].squeeze(0).cpu().numpy(),
                 color=color_action,
                 width=0.5,
             )
@@ -227,7 +234,7 @@ def reconstruction():
             # ===============================================================
             ax = axes.observation
             ax.set_title(r"$\mathbf{I}_t$ (Original)")
-            ax.imshow(obs2img(as_save(self.observation[self.t])))
+            ax.imshow(obs2img(self.observation[self.t].squeeze(0)))
             ax.set_axis_off()
 
             # ===============================================================

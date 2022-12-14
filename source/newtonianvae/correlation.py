@@ -16,6 +16,7 @@ import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
 from models.core import NewtonianVAE, NewtonianVAEV2
+from mypython.ai.torch_util import swap01
 from mypython.pyutil import Seq
 from mypython.terminal import Color
 from tool import argset, paramsmanager
@@ -126,46 +127,25 @@ def correlation():
     model.train(params_eval.training)
     model.is_save = True
 
-    latent_map = []
-    physical = []
+    model(action=action, observation=observation, delta=delta)
+    model.LOG2numpy()
 
-    for episode in range(args.episodes):
-        model(
-            action=action[:, [episode]],
-            observation=observation[:, [episode]],
-            delta=delta[:, [episode]],
-        )
-        latent_map_ = model.LOG_x  # (T, dim(u))
-        physical_ = position[:, episode]  # (T, dim(u))
-        # physical_ = reacher_default2endeffectorpos(physical_)
-        # physical_ = reacher_fix_arg_range(physical_)
-        corr_p0l0 = np.corrcoef(physical_[:, 0], latent_map_[:, 0])[0, 1]
-        corr_p1l1 = np.corrcoef(physical_[:, 1], latent_map_[:, 1])[0, 1]
-        print(corr_p0l0, corr_p1l1)
-        latent_map.append(latent_map_)
-        physical.append(physical_)
+    # (BS, T, D)
+    latent_map = swap01(model.LOG_x)
+    physical = swap01(position)
 
-    print("=== whole ===")
-    latent_map = np.stack(latent_map)
-    physical = np.stack(physical)
-
-    BS, T, D = latent_map.shape
-
-    corr_p0l0 = np.corrcoef(physical.reshape((-1, D))[:, 0], latent_map.reshape((-1, D))[:, 0])[
-        0, 1
-    ]
-    corr_p1l1 = np.corrcoef(physical.reshape((-1, D))[:, 1], latent_map.reshape((-1, D))[:, 1])[
-        0, 1
-    ]
-    print(corr_p0l0, corr_p1l1)
-
-    corr_p0l1 = np.corrcoef(physical.reshape((-1, D))[:, 0], latent_map.reshape((-1, D))[:, 1])[
-        0, 1
-    ]
-    corr_p1l0 = np.corrcoef(physical.reshape((-1, D))[:, 1], latent_map.reshape((-1, D))[:, 0])[
-        0, 1
-    ]
-    print(corr_p0l1, corr_p1l0)
+    corr_p0l0 = np.corrcoef(
+        physical.reshape(-1, model.cell.dim_x)[:, 0], latent_map.reshape(-1, model.cell.dim_x)[:, 0]
+    )[0, 1]
+    corr_p1l1 = np.corrcoef(
+        physical.reshape(-1, model.cell.dim_x)[:, 1], latent_map.reshape(-1, model.cell.dim_x)[:, 1]
+    )[0, 1]
+    corr_p0l1 = np.corrcoef(
+        physical.reshape(-1, model.cell.dim_x)[:, 0], latent_map.reshape(-1, model.cell.dim_x)[:, 1]
+    )[0, 1]
+    corr_p1l0 = np.corrcoef(
+        physical.reshape(-1, model.cell.dim_x)[:, 1], latent_map.reshape(-1, model.cell.dim_x)[:, 0]
+    )[0, 1]
 
     # ============================================================
 

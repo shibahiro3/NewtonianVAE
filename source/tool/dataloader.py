@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
+from mypython.ai.torch_util import swap01
 from mypython.ai.util import BatchIdx
 
 
@@ -103,16 +104,11 @@ def _load(root, indexes, dtype, batch_first=False, device=torch.device("cpu")):
     data_position = torch.stack(data_position)
 
     if not batch_first:
-        data_observation = _swap01(data_observation)
-        data_action = _swap01(data_action)
-        data_dt = _swap01(data_dt)
-        data_position = _swap01(data_position)
+        data_observation = swap01(data_observation)
+        data_action = swap01(data_action)
+        data_dt = swap01(data_dt)
+        data_position = swap01(data_position)
 
     return Pack(
         action=data_action, observation=data_observation, delta=data_dt, position=data_position
     )
-
-
-def _swap01(x: Tensor):
-    assert x.ndim >= 3
-    return x.permute((1, 0) + tuple(range(2, x.ndim)))

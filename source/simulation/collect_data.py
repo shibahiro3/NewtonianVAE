@@ -30,7 +30,6 @@ argset.cf(parser)
 argset.watch(parser)
 argset.episodes(parser)
 argset.save_anim(parser)
-argset.path_data(parser)
 _args = parser.parse_args()
 
 
@@ -39,7 +38,6 @@ class Args:
     episodes = _args.episodes
     save_anim = _args.save_anim
     cf = _args.cf
-    path_data = _args.path_data
 
 
 args = Args()
@@ -65,7 +63,7 @@ def env_test():
     print("action range:", env.action_range)
 
     if args.watch is None:
-        data_path = Path(args.path_data)
+        data_path = Path(params.external.data_path)
         if len(list(data_path.glob("episodes/*"))) > 0:
             print(f'\n"{data_path}" directory will be rewritten.')
             if input("Do you want to continue? [y/n] ") != "y":
@@ -205,7 +203,7 @@ def env_test():
                 print(f"episode: {self.episode_cnt+1}, T = {self.t}")
 
                 if args.watch is None:
-                    episode_dir = Path(args.path_data, "episodes", f"{self.episode_cnt}")
+                    episode_dir = Path(data_path, "episodes", f"{self.episode_cnt}")
                     episode_dir.mkdir(parents=True, exist_ok=True)
                     self.save_LOG(episode_dir)
                     Color.print("saved", c=Color.green)
@@ -215,7 +213,7 @@ def env_test():
     p = AnimPack()
 
     if args.watch == "plt":
-        save_path = Path(args.path_data, f"data.mp4")
+        save_path = Path(data_path, f"data.mp4")
         mpu.anim_mode(
             "save" if args.save_anim else "anim",
             fig,
