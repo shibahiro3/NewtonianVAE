@@ -14,7 +14,7 @@
   train: {
     data_start: 0,
     data_stop: 1000,
-    batch_size: 20,
+    batch_size: 10,
     epochs: 300,
     learning_rate: 3e-4,
     max_time_length: 100,

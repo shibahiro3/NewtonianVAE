@@ -79,15 +79,13 @@ def select_weight(path: Path) -> Optional[Path]:
         return weight_paths[idx]
 
 
-def delete_useless_saves(model_date_path):
-    w_dirs = [d for d in Path(model_date_path).glob("*") if d.is_dir()]
-    w_dirs.sort()
+def delete_useless_saves(root):
+    dates = [d for d in Path(root).glob("*") if d.is_dir()]
+    dates.sort()
 
-    # _weight の無いディレクトリを消去
-    for w in reversed(w_dirs):
-        if len(list(w.glob(_weight))) == 0:
-            # w_dirs.remove(w)
-            shutil.rmtree(w)
+    for date in reversed(dates):
+        if Preferences.get(date, "running") != True and len(list(date.glob(_weight))) == 0:
+            shutil.rmtree(date)
 
 
 def _get_idx(text, len_list):
