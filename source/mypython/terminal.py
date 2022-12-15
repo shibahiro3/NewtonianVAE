@@ -60,8 +60,16 @@ class Prompt:
     del_line = "\r\x1b[K"
 
     @staticmethod
-    def print_one_line(small_obj):
-        builtins.print(Prompt.del_line + str(small_obj), end="")
+    def print_one_line(small_obj, clip=True):
+        text = str(small_obj)
+
+        if clip:
+            max_len = os.get_terminal_size().columns
+            cnt, first_, last_ = Prompt._clip(text, max_len, max_len - 5, max_len)
+            if cnt > max_len:
+                text = first_ + " ..."
+
+        builtins.print(Prompt.del_line + text, end="")
 
     @staticmethod
     def fit_terminal(text):
@@ -73,7 +81,7 @@ class Prompt:
             return first_ + " ... " + last_
 
     @staticmethod
-    def _clip(text, len_max, first_max, last_max):
+    def _clip(text, len_max, len_first_max, len_last_max):
         cnt = 0
         first_size = 0
         for i, c in enumerate(text):  # i: 0 to N-1
@@ -83,9 +91,9 @@ class Prompt:
                 cnt += 1
 
             if first_size == 0:
-                if cnt == first_max:
+                if cnt == len_first_max:
                     first_size = i + 1
-                elif cnt > first_max:
+                elif cnt > len_first_max:
                     first_size = i
 
         last_size = 0
@@ -99,10 +107,10 @@ class Prompt:
                     cnt_ += 1
 
                 if last_size == 0:
-                    if cnt_ == last_max:
+                    if cnt_ == len_last_max:
                         last_size = i + 1
                         break
-                    elif cnt_ > last_max:
+                    elif cnt_ > len_last_max:
                         last_size = i
                         break
 

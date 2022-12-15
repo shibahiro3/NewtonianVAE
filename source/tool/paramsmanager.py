@@ -1,11 +1,11 @@
 from collections import ChainMap
 from pathlib import Path
+from pprint import pprint
 from typing import Optional, Union
 
 import json5
-from torch import NumberType
 
-from mypython.pyutil import is_number_type
+from mypython.pyutil import check_args_type
 from mypython.terminal import Color
 
 
@@ -46,13 +46,15 @@ class Train(_Converter):
         data_stop: int,
         batch_size: int,
         epochs: int,
-        learning_rate: NumberType,
+        learning_rate: Union[int, float],
         save_per_epoch: int,
         max_time_length: int,
-        grad_clip_norm: Optional[NumberType] = None,
+        grad_clip_norm: Union[None, int, float] = None,
         seed: Optional[int] = None,
-        kl_annealing=False,
+        kl_annealing: bool = False,
     ) -> None:
+        check_args_type(self.__init__, locals())
+
         assert dtype in ("float16", "float32")
 
         self.data_start = data_start
@@ -81,6 +83,8 @@ class Eval(_Converter):
         result_path: str,
         training: bool = False,
     ) -> None:
+        check_args_type(self.__init__, locals())
+
         assert dtype in ("float16", "float32")
 
         self.device = device
@@ -99,6 +103,7 @@ class TrainExternal(_Converter):
         data_id: Optional[int] = None,
         resume_from: Optional[str] = None,
     ) -> None:
+        check_args_type(self.__init__, locals())
 
         self.data_path = data_path
         self.save_path = save_path
@@ -110,14 +115,13 @@ class Params(_Converter):
     def __init__(self, path) -> None:
         self.raw_: dict = json5.load(open(path))
 
-        self.model: str = self.raw_["model"]
-        self.train = Train(**self.raw_["train"])
+        def class_or_none(T, kwargs):
+            return T(**kwargs) if kwargs is not None else None
 
-        external = self.raw_.get("external", None)
-        self.external = TrainExternal(**external) if external is not None else None
-
-        eval = self.raw_.get("eval", None)
-        self.eval = Eval(**eval) if eval is not None else None
+        self.model: str = self.raw_.get("model", None)
+        self.train = class_or_none(Train, self.raw_.get("train", None))
+        self.external = class_or_none(TrainExternal, self.raw_.get("external", None))
+        self.eval = class_or_none(Eval, self.raw_.get("eval", None))
 
     @property
     def _contents(self):
