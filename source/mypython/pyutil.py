@@ -16,6 +16,7 @@ import subprocess
 import sys
 import threading
 import time
+import typing
 import unicodedata
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -29,6 +30,29 @@ from mypython.numeric import MovingAverage
 def is_number_type(x):
     _tx = type(x)
     return _tx == int or _tx == float
+
+
+def check_args_type(f, locals_):
+    for arg_name, ttype in f.__annotations__.items():
+        if arg_name == "return":
+            continue
+
+        _value = locals_[arg_name]
+        _type = type(_value)
+        # print(arg_name, ":", _value, _type.__name__, ",", ttype)
+        if typing.get_origin(ttype) == typing.Union:
+            _u_args = typing.get_args(ttype)
+            if _type not in _u_args:
+                raise TypeError(
+                    f'The value {_value} specified for "{arg_name}" is not of type {" or ".join([str(_ttype.__name__) for _ttype in _u_args])}.'
+                )
+        else:
+            if _type != ttype:
+                raise TypeError(
+                    f'The value {_value} specified for "{arg_name}" is not of type {ttype.__name__}.'
+                )
+
+        # TODO: typing.Tuple
 
 
 def s2dhms(sec):

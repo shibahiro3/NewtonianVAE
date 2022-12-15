@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple, Union
 
 import torch
-from torch import NumberType, Tensor, nn
+from torch import Tensor, nn
 from typing_extensions import Self
 
 from mypython.terminal import Color
@@ -12,7 +12,7 @@ from .base import Distribution, _eps, _to_optional_tensor
 class Bernoulli(Distribution):
     # torch.distributions.Bernoulli
 
-    def __init__(self, mu: Union[None, NumberType, Tensor] = None) -> None:
+    def __init__(self, mu: Union[None, int, float, Tensor] = None) -> None:
         super().__init__()
 
         self._mu = _to_optional_tensor(mu)

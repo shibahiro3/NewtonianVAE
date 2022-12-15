@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple, Union
 
 import torch
-from torch import NumberType, Tensor
+from torch import Tensor
 from typing_extensions import Self
 
 from mypython.terminal import Color
@@ -14,8 +14,8 @@ class Normal(Distribution):
 
     def __init__(
         self,
-        mu: Union[None, NumberType, Tensor] = None,
-        sigma: Union[None, NumberType, Tensor] = None,
+        mu: Union[None, int, float, Tensor] = None,
+        sigma: Union[None, int, float, Tensor] = None,
     ) -> None:
         super().__init__()
 
