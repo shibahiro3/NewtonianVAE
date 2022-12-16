@@ -323,10 +323,8 @@ class SpatialBroadcastDecoder64(nn.Module):
         x_grid = torch.from_numpy(x_grid)
         y_grid = torch.from_numpy(y_grid)
         # Add as constant, with extra dims for N and C
-        self.register_buffer("x_grid", x_grid.reshape((1, 1) + x_grid.shape))
-        self.register_buffer("y_grid", y_grid.reshape((1, 1) + y_grid.shape))
-        self.x_grid: Tensor
-        self.y_grid: Tensor
+        self.x_grid = nn.Parameter(x_grid.reshape((1, 1) + x_grid.shape), requires_grad=False)
+        self.y_grid = nn.Parameter(y_grid.reshape((1, 1) + y_grid.shape), requires_grad=False)
 
         self.dec_convs = nn.Sequential(
             nn.Conv2d(dim_input + 2, 64, 3, padding=1),
