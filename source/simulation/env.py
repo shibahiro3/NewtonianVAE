@@ -11,13 +11,13 @@ import cv2
 import numpy as np
 import torch
 from dm_control.suite.wrappers import pixels
+
+# from dm_control import suite
+from third.dm_control import suite
 from torch import Tensor
 
 import mypython.vision as mv
 from mypython.terminal import Color
-
-# from dm_control import suite
-from simulation import suite
 
 GYM_ENVS = [
     "Pendulum-v0",
@@ -245,7 +245,7 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
         self.domain = domain
         self.task = task
 
-        if domain == "reacher":
+        if domain == "reacher2d":
             if action_type == "default":
                 pass
             elif action_type == "forward":

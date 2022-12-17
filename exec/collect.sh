@@ -12,30 +12,6 @@ workspaceFolder=$(pwd)
 export PYTHONPATH="$workspaceFolder/source"
 
 
-# if [ "$env" == "reacher2d" ]; then
-# 	domain="reacher"
-# else
-# 	domain=$env
-# fi
-
-# override=$workspaceFolder/environment/$env/override
-
-# python source/simulation/override.py $domain $override
-
-
-
-
-# path_data=environment/$env/data
-# path_data=environment/$env/data_center2
-
-# mkdir -p $path_data
-# cp -fr $override $path_data
-# chmod 444 $path_data/override/*
-
-
-
-
-
 # Paper:
 # To train the models, we generate 1000 random se-
 # quences with 100 time-steps for the point mass and

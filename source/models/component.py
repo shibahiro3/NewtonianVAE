@@ -185,7 +185,7 @@ class Decoder(tp.Normal):
         We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.
     """
 
-    def __init__(self, dim_x: int, std=1.0, decoder_type="VisualDecoder64") -> None:
+    def __init__(self, dim_x: int, decoder_type, std=1.0) -> None:
         super().__init__()
 
         if decoder_type == "VisualDecoder64":

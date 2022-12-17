@@ -6,8 +6,9 @@
     transition_std: 0.001,
     encoder_dim_middle: 1024,
     encoder_std_function: "softplus",
-    // regularization: true,
+    regularization: false,
     fix_abc: [0, 0, 1],
+    decoder_type: "VisualDecoder64",
   },
 
   train: {

@@ -35,7 +35,7 @@ SUITE = containers.TaggedTasks()
 def get_model_and_assets():
   """Returns a tuple containing the model XML string and a dict of assets."""
 #   return common.read_model('point_mass.xml'), common.ASSETS
-  return resources.GetResource("source/simulation/suite/point_mass.xml"), common.ASSETS
+  return resources.GetResource("source/third/dm_control/suite/point_mass.xml"), common.ASSETS
 
 
 @SUITE.add('benchmarking', 'easy')

@@ -34,15 +34,16 @@ from dm_control.suite import humanoid_CMU
 from dm_control.suite import lqr
 from dm_control.suite import manipulator
 from dm_control.suite import pendulum
-# from dm_control.suite import point_mass
+# from dm_control.suite import point_mass  # Changed/added by Sugar
 from dm_control.suite import quadruped
 from dm_control.suite import reacher
 from dm_control.suite import stacker
 from dm_control.suite import swimmer
 from dm_control.suite import walker
 
-from simulation.suite import reacher2d
-from simulation.suite import point_mass
+# Changed/added by Sugar
+from third.dm_control.suite import reacher2d
+from third.dm_control.suite import point_mass
 
 # Find all domains imported.
 _DOMAINS = {name: module for name, module in locals().items()

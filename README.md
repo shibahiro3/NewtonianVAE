@@ -10,24 +10,23 @@ But I'm still working on fixing some details. Destructive changes may be made (2
 You can view this document from [index.html](docs/generated/index.html).
 
 Paper
-
-- Original: https://arxiv.org/abs/2006.01959
-- TS-NVAE: https://arxiv.org/abs/2203.05955
+* Original: https://arxiv.org/abs/2006.01959
 
 Other References (All implementations are PyTorch)
-
-- VRNN
-  - paper: https://arxiv.org/abs/1506.02216
-  - impl: https://github.com/emited/VariationalRecurrentNeuralNetwork
-- World Models
-  - paper: https://arxiv.org/abs/1803.10122
-  - impl: https://github.com/ctallec/world-models
-- PlaNet (RSSM):
-  - paper: https://arxiv.org/abs/1811.04551
-  - impl: https://github.com/Kaixhin/PlaNet
-- Spatial Broadcast Decoder
-  - paper: https://arxiv.org/abs/1901.07017
-  - impl: https://github.com/dfdazac/vaesbd
+* TS-NVAE
+  * paper: https://arxiv.org/abs/2203.05955
+* VRNN
+  * paper: https://arxiv.org/abs/1506.02216
+  * impl: https://github.com/emited/VariationalRecurrentNeuralNetwork
+* World Models
+  * paper: https://arxiv.org/abs/1803.10122
+  * impl: https://github.com/ctallec/world-models
+* PlaNet (RSSM):
+  * paper: https://arxiv.org/abs/1811.04551
+  * impl: https://github.com/Kaixhin/PlaNet
+* Spatial Broadcast Decoder
+  * paper: https://arxiv.org/abs/1901.07017
+  * impl: https://github.com/dfdazac/vaesbd
 
 ## Prerequisites
 

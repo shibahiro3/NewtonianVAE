@@ -11,8 +11,7 @@ src_paths = [
     "source/mypython",
 ]
 skip_glob = [
-    "*override",
-    "source/simulation/suite"
+    "source/third"
 ]
 # known_first_party = [
 #     "source/mypython"
@@ -20,4 +19,4 @@ skip_glob = [
 
 [tool.black]
 line-length = 100
-extend_exclude = "source/simulation/suite"
+extend_exclude = "source/third"

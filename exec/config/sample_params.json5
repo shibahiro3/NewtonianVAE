@@ -8,14 +8,16 @@
     encoder_dim_middle: 1024,
     encoder_std_function: "softplus",
 
-    // Use KL(q(x|I)‖N (0, 1))  (Optional)
-    // If not specified, it is equivalent to false.
+    // Use KL(q(x|I)‖N (0, 1))
     // Paper: Secondly, we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
-    // regularization: true,
+    regularization: false,
 
-    // Fix values for A, B, C  (Optional)
+    // Fix values for A, B, C
     // Paper: Firstly, the transition matrices were set to A = 0, B = 0, C = 1.
     fix_abc: [0, 0, 1],
+    // fix_abc: null,
+
+    decoder_type: "VisualDecoder64"
   },
 
   NewtonianVAEDerivation: {

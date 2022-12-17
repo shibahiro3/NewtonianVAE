@@ -40,7 +40,7 @@ _SMALL_TARGET = .02
 def get_model_and_assets():
   """Returns a tuple containing the model XML string and a dict of assets."""
 #   return common.read_model('reacher.xml'), common.ASSETS
-  return resources.GetResource("source/simulation/suite/reacher2d.xml"), common.ASSETS
+  return resources.GetResource("source/third/dm_control/suite/reacher2d.xml"), common.ASSETS
 
 
 @SUITE.add('benchmarking', 'easy')

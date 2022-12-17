@@ -39,9 +39,9 @@ def select_date(root) -> Optional[Path]:
     dates.sort()
 
     # _weight の無いディレクトリを除去
-    for w in reversed(dates):
-        if len(list(w.glob(_weight))) == 0:
-            dates.remove(w)
+    for date in reversed(dates):
+        if len(list(date.glob(_weight))) == 0:
+            dates.remove(date)
 
     if len(dates) == 0:
         Color.print(f'"Date and time directory" doesn\'t exist in "{root}" directory.', c=Color.red)
@@ -79,13 +79,11 @@ def select_weight(path: Path) -> Optional[Path]:
         return weight_paths[idx]
 
 
-def delete_useless_saves(root):
-    dates = [d for d in Path(root).glob("*") if d.is_dir()]
-    dates.sort()
-
-    for date in reversed(dates):
-        if Preferences.get(date, "running") != True and len(list(date.glob(_weight))) == 0:
-            shutil.rmtree(date)
+# def delete_useless_saves(root):
+#     dates = [d for d in Path(root).glob("*") if d.is_dir()]
+#     for date in reversed(dates):
+#         if Preferences.get(date, "running") != True and len(list(date.glob(_weight))) == 0:
+#             shutil.rmtree(date)
 
 
 def _get_idx(text, len_list):

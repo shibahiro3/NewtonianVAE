@@ -36,8 +36,8 @@ class NewtonianVAECellBase(nn.Module):
         transition_std: float,
         encoder_dim_middle: int,
         encoder_std_function: str,
-        fix_abc: Union[None, Tuple[NumberType, NumberType, NumberType]] = None,
-        regularization: bool = False,
+        fix_abc: Union[None, Tuple[NumberType, NumberType, NumberType]],
+        regularization: bool,
     ):
         super().__init__()
 
@@ -393,7 +393,7 @@ class NewtonianVAEV2CellBase(NewtonianVAECellBase):
 
 
 class NewtonianVAEV2Cell(NewtonianVAEV2CellBase):
-    def __init__(self, dim_x, decoder_type="VisualDecoder64", *args, **kwargs) -> None:
+    def __init__(self, dim_x, decoder_type, *args, **kwargs) -> None:
         super().__init__(dim_x=dim_x, *args, **kwargs)
 
         # p(I_t | x_t)
@@ -732,23 +732,11 @@ class NewtonianVAEV2Derivation(NewtonianVAEV2Base):
         self.cell = NewtonianVAEV2DerivationCell(*args, **kwargs)
 
 
-_NewtonianVAECellFamily = [
-    NewtonianVAECell,
-    NewtonianVAEDerivationCell,
-    NewtonianVAEV2Cell,
-    NewtonianVAEV2DerivationCell,
-]
 NewtonianVAECellFamily = Union[
     NewtonianVAECell,
     NewtonianVAEDerivationCell,
     NewtonianVAEV2Cell,
     NewtonianVAEV2DerivationCell,
-]
-_NewtonianVAEFamily = [
-    NewtonianVAE,
-    NewtonianVAEDerivation,
-    NewtonianVAEV2,
-    NewtonianVAEV2Derivation,
 ]
 NewtonianVAEFamily = Union[
     NewtonianVAE,

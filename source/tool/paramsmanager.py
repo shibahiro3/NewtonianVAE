@@ -3,7 +3,7 @@ from pathlib import Path
 from pprint import pprint
 from typing import Optional, Union
 
-import json5
+from third import json5
 
 from mypython.pyutil import check_args_type
 from mypython.terminal import Color

@@ -1,7 +1,7 @@
 import random
 from pathlib import Path
 from pprint import pprint
-from typing import List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,17 +9,15 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn, optim
 
-_NT = Union[np.ndarray, torch.Tensor]
 
-
-def reproduce(seed: int = 1234):
+def reproduce(seed: int = 1234) -> None:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
 
-def print_module_params(module: nn.Module, grad=False):
+def print_module_params(module: nn.Module, grad=False) -> None:
     print("=== Model Parameters ===")
     print(type(module))
     for name, param in module.named_parameters(recurse=True):
@@ -31,14 +29,14 @@ def print_module_params(module: nn.Module, grad=False):
                 print(f"grad: {param.grad}")  # None
 
 
-def find_function(function_name: str):
+def find_function(function_name: str) -> Callable:
     try:
         return getattr(torch, function_name)
     except:
         return getattr(F, function_name)
 
 
-def swap01(x: _NT):
+def swap01(x: Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
     # assert x.ndim >= 3
     axis = (1, 0) + tuple(range(2, x.ndim))
     if type(x) == np.ndarray:
@@ -88,7 +86,7 @@ class SequenceDataLoader(BatchIdx):
     def __init__(
         self,
         root: Union[str, Path],
-        names: list,  # ["action", "observation", "delta", "position"],
+        names: list,
         start: int,
         stop: int,
         batch_size: int,
@@ -120,12 +118,12 @@ class SequenceDataLoader(BatchIdx):
         self.names = names
 
     def __next__(self):
-        """
-        Returns:
-            action: (N, dim(u)), observation: (N, 3, H, W), ...
-        """
         return self._seq_load(
-            self.root, super().__next__(), names=self.names, dtype=self.dtype, device=self.device
+            root=self.root,
+            indexes=super().__next__(),
+            names=self.names,
+            dtype=self.dtype,
+            device=self.device,
         )
 
     @staticmethod
@@ -141,23 +139,22 @@ class SequenceDataLoader(BatchIdx):
             (T, N, *)
         """
 
-        # data = [[]] * len(names)
-        data: List[list] = []
+        batch_data: List[list] = []
         for _ in range(len(names)):
-            data.append([])
+            batch_data.append([])
 
         def _inner_load(i, name):
             return torch.from_numpy(np.load(Path(root, f"{i}", name))).to(dtype).to(device)
 
         for i in indexes:
             for j in range(len(names)):
-                data[j].append(_inner_load(i, names[j] + ".npy"))
+                batch_data[j].append(_inner_load(i, names[j] + ".npy"))
 
         for j in range(len(names)):
-            data[j] = torch.stack(data[j])
+            batch_data[j] = torch.stack(batch_data[j])
 
         if not batch_first:
             for j in range(len(names)):
-                data[j] = swap01(data[j])
+                batch_data[j] = swap01(batch_data[j])
 
-        return data
+        return batch_data

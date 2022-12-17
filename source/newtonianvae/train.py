@@ -86,16 +86,19 @@ def train(vh=VisualHandlerBase()):
     record_NLL = []
     record_KL = []
 
-    def end_process():
-        np.save(Path(managed_dir, "LOG_Loss.npy"), record_Loss)
-        np.save(Path(managed_dir, "LOG_NLL.npy"), record_NLL)
-        np.save(Path(managed_dir, "LOG_KL.npy"), record_KL)
-
-        tool.util.delete_useless_saves(params.external.save_path)
-        Preferences.remove(managed_dir, "running")
-        Color.print("\nEnd of train")
-
     Preferences.put(managed_dir, "running", True)
+
+    def end_process():
+        Preferences.remove(managed_dir, "running")
+
+        if len(list(weight_dir.glob("*"))) > 0:
+            np.save(Path(managed_dir, "LOG_Loss.npy"), record_Loss)
+            np.save(Path(managed_dir, "LOG_NLL.npy"), record_NLL)
+            np.save(Path(managed_dir, "LOG_KL.npy"), record_KL)
+        else:
+            shutil.rmtree(managed_dir)
+
+        Color.print("\nEnd of train")
 
     try:
         remaining = RemainingTime(max=params.train.epochs * len(trainloader))
