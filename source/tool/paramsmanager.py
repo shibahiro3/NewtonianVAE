@@ -129,15 +129,20 @@ class Params(_Converter):
         tmp.pop("raw_")
 
         model_params = {self.model: self.raw_[self.model]}
-        # contents = ChainMap(model_params, ret)
-        contents = dict(model_params, **tmp)
+        contents = ChainMap(model_params, tmp)
+        # contents = dict(model_params, **tmp)
 
         save_keys = ["model", self.model, "train", "external"]
-        delete_keys = contents.keys() ^ save_keys
-        for k in delete_keys:
-            contents.pop(k)
 
-        return contents
+        new_contents = {}
+        for k in save_keys:
+            new_contents[k] = contents[k]
+
+        # delete_keys = contents.keys() ^ save_keys
+        # for k in delete_keys:
+        #     contents.pop(k)
+
+        return new_contents
 
     def save_simenv(self, path, lock=True):
         path = Path(path)
