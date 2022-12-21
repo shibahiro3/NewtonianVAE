@@ -7,14 +7,14 @@ from torch import Tensor, nn
 
 import mypython.ai.torchprob as tp
 
-from .core import NewtonianVAECell, NewtonianVAECellFamily, NewtonianVAEDerivationCell
+from .cell import NewtonianVAECellFamily
 
 
 class PurePControl:
     """
     Paper:
-    we sample random starting and goal states, and successively
-    apply the control law ut ∝ (x(Igoal) − xt(It)).
+        we sample random starting and goal states, and successively
+        apply the control law ut ∝ (x(Igoal) − xt(It)).
     """
 
     def __init__(
@@ -27,11 +27,7 @@ class PurePControl:
         self.cell = cell
         self.x_goal = cell.q_encoder.cond(Igoal).rsample()
 
-    def get_action(self, I_t):
-        x_t = self.cell.q_encoder.cond(I_t).rsample()
-        return self.get_action_from_x(x_t)
-
-    def get_action_from_x(self, x_t):
+    def step(self, x_t):
         u_t = self.alpha * (self.x_goal - x_t)
         return u_t
 

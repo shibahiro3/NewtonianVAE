@@ -1,4 +1,3 @@
-import argparse
 import datetime
 import errno
 import fcntl
@@ -22,7 +21,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from posix import times_result
 from pprint import pformat
-from typing import Optional
+from typing import Callable, Optional
 
 from mypython.numeric import MovingAverage
 
@@ -32,7 +31,7 @@ def is_number_type(x):
     return _tx == int or _tx == float
 
 
-def check_args_type(f, locals_):
+def check_args_type(f: Callable, locals_):
     for arg_name, ttype in f.__annotations__.items():
         if arg_name == "return":
             continue

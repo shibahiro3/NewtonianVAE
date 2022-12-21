@@ -25,7 +25,7 @@ qt
 !__init__.py
 
 source/control/
-source/Test/
+source/test/
 gmm.py
 
 

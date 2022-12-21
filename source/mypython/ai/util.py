@@ -9,6 +9,12 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn, optim
 
+_NT = Union[np.ndarray, Tensor]
+
+
+def to_np(x: Tensor) -> np.ndarray:
+    return x.detach().cpu().numpy()
+
 
 def reproduce(seed: int = 1234) -> None:
     random.seed(seed)
@@ -23,20 +29,28 @@ def print_module_params(module: nn.Module, grad=False) -> None:
     for name, param in module.named_parameters(recurse=True):
         print(f"name: {name} | shape: {[*param.shape]}")
         if grad:
-            if type(param.grad) == torch.Tensor:
+            if type(param.grad) == Tensor:
                 print(f"grad: \n{param.grad}\n")
             else:
                 print(f"grad: {param.grad}")  # None
 
 
-def find_function(function_name: str) -> Callable:
+def swish(x):
+    return x * torch.sigmoid(x)
+
+
+def mish(x):
+    return x * torch.tanh(F.softplus(x))
+
+
+def find_function(function_name: str) -> Callable[[Tensor], Tensor]:
     try:
         return getattr(torch, function_name)
     except:
         return getattr(F, function_name)
 
 
-def swap01(x: Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
+def swap01(x: _NT) -> _NT:
     # assert x.ndim >= 3
     axis = (1, 0) + tuple(range(2, x.ndim))
     if type(x) == np.ndarray:
@@ -139,7 +153,7 @@ class SequenceDataLoader(BatchIdx):
             (T, N, *)
         """
 
-        batch_data: List[list] = []
+        batch_data: List[List[Tensor]] = []
         for _ in range(len(names)):
             batch_data.append([])
 

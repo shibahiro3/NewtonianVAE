@@ -1,9 +1,9 @@
-import argparse
 import sys
 from pathlib import Path
 from pprint import pprint
 from typing import Dict, Union
 
+import classopt
 import json5
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,8 +14,10 @@ from matplotlib.ticker import FormatStrFormatter
 import models.core
 import mypython.plotutil as mpu
 import mypython.vision as mv
+import tool.plot_config
 import tool.util
-from models.core import NewtonianVAE, NewtonianVAEV2, NewtonianVAEV2Cell
+from models.cell import CellWrap
+from models.core import NewtonianVAEFamily
 from models.pcontrol import PurePControl
 from mypython.pyutil import Seq, add_version
 from mypython.terminal import Color, Prompt
@@ -23,61 +25,56 @@ from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img
 from tool import argset, checker, paramsmanager
 from view.label import Label
 
+tool.plot_config.apply()
 try:
     import tool._plot_config
 
-    figsize = tool._plot_config.figsize_control
+    tool._plot_config.apply()
 except:
-    figsize = None
+    pass
+
+config = {
+    "figure.figsize": (12.76, 8.39),
+    "figure.subplot.left": 0.05,
+    "figure.subplot.right": 0.95,
+    "figure.subplot.bottom": 0.1,
+    "figure.subplot.top": 1,
+    "figure.subplot.hspace": 0.3,
+    "figure.subplot.wspace": 0.3,
+}
+plt.rcParams.update(config)
 
 
-parser = argparse.ArgumentParser(allow_abbrev=False)
-argset.cf(parser)
-argset.episodes(parser)
-argset.save_anim(parser)
-argset.path_model(parser, required=False)
-argset.path_result(parser, required=False)
-argset.goal_img(parser)
-argset.fix_xmap_size(parser)
-argset.alpha(parser)
-argset.steps(parser)
-argset.env_domain(parser)
-_args = parser.parse_args()
-
-
+@classopt.classopt(default_long=True, default_short=False)
 class Args:
-    episodes = _args.episodes
-    save_anim = _args.save_anim
-    cf = _args.cf
-    path_model = _args.path_model
-    path_result = _args.path_result
-    goal_img = _args.goal_img
-    fix_xmap_size = _args.fix_xmap_size
-    alpha = _args.alpha
-    steps = _args.steps
-    env_domain = _args.env_domain
+    config: str = classopt.config(**argset.descr_config, required=True)
+    episodes: int = classopt.config(**argset.descr_episodes, required=True)
+    path_model: str = classopt.config(**argset.descr_path_model, required=False)
+    path_result: str = classopt.config(**argset.descr_path_result, required=False)
+    fix_xmap_size: float = classopt.config(metavar="S", help="xmap size")
+    save_anim: bool = classopt.config()
+    goal_img: str = classopt.config(metavar="PATH", help="Goal image path (*.npy)")
+    alpha: float = classopt.config(metavar="α", help="P gain")
+    steps: int = classopt.config(metavar="E", help="Time steps")
+    env_domain: str = classopt.config(metavar="ENV")
+    movie_format: str = classopt.config(default="mp4")
 
 
-args = Args()
+args = Args.from_args()  # pylint: disable=E1101
 
 
 def main():
     # =====================================================
-    fig = plt.figure(figsize=figsize)
-    fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=1)
+    fig = plt.figure()
     mpu.get_figsize(fig)
 
     class Ax:
         def __init__(self) -> None:
-            gs = GridSpec(nrows=5, ncols=12, hspace=0)
+            gs = GridSpec(nrows=5, ncols=12)
             up = 3
 
             v1 = Seq(step=3, start_now=True)
             v2 = Seq(step=4, start_now=True)
-
-            # print(v1.now , v1.next() )
-            # print(v1.now , v1.next() )
-            # print(v1.now , v1.next() )
 
             self.action = fig.add_subplot(gs[:up, v1.now : v1.next()])
             self.Igoal = fig.add_subplot(gs[:up, v1.now : v1.next()])
@@ -100,7 +97,7 @@ def main():
     if args.save_anim:
         checker.large_episodes(args.episodes)
 
-    _params = paramsmanager.Params(args.cf)
+    _params = paramsmanager.Params(args.config)
     params_eval = _params.eval
     path_model = tool.util.priority(args.path_model, _params.external.save_path)
     del _params
@@ -115,12 +112,10 @@ def main():
         root=path_model, model_place=models.core
     )
 
-    model: Union[NewtonianVAE, NewtonianVAEV2]
+    model: NewtonianVAEFamily
     model.type(dtype)
     model.to(device)
     model.train(params_eval.training)
-
-    assert type(model.cell) == NewtonianVAEV2Cell
 
     if args.steps is not None:
         max_time_length = args.steps
@@ -129,7 +124,7 @@ def main():
 
     all_steps = max_time_length * args.episodes
 
-    env = ControlSuiteEnvWrap(**json5.load(open(args.cf))["ControlSuiteEnvWrap"])
+    env = ControlSuiteEnvWrap(**json5.load(open(args.config))["ControlSuiteEnvWrap"])
 
     Igoal = mv.cv2cnn(np.load(args.goal_img)).unsqueeze_(0).to(device)
 
@@ -152,7 +147,8 @@ def main():
 
         def init(self):
             self.ctrl = PurePControl(img2obs(Igoal), args.alpha, model.cell)
-            self.observation = env.reset().to(device)
+            self.cell_wrap = CellWrap(cell=model.cell)
+
             xp = np
             self.LOG_x = xp.full(
                 (max_time_length, model.cell.dim_x),
@@ -185,35 +181,20 @@ def main():
 
             if self.t == 0:
                 self.init()
+                self.action = torch.zeros(size=(1, model.cell.dim_x), device=device, dtype=dtype)
+                self.observation = env.reset().to(device)
 
             fig.suptitle(
                 f"Init environment: {self.episode_cnt+1}, step: {self.t:3d}",
                 fontname="monospace",
             )
 
-            # if self.t == 0:
-            #     I_t_dec = torch.full_like(self.observation, torch.nan)
-            #     x_t = model.cell.q_encoder.cond(self.observation).rsample()
-            #     action = self.ctrl.get_action_from_x(x_t)
-            #     v_t = torch.zeros_like(action)
-            # else:
-            #     I_t_dec, x_t, v_t = model.cell.decode(
-            #         self.observation, self.x_tn1, self.action_pre, self.v_tn1, 0.1
-            #     )
-            #     action = self.ctrl.get_action_from_x(x_t)
-
             ### core ###
-            x_t = model.cell.q_encoder.cond(self.observation).rsample()
-            action = self.ctrl.get_action_from_x(x_t)
-            I_t_dec = model.cell.p_decoder.cond(x_t).decode()
+            x_t, I_t_dec = self.cell_wrap.step(action=self.action, observation=self.observation)
+            self.action = self.ctrl.step(x_t)
             ############
 
-            # self.x_tn1 = x_t
-            # self.action_pre = action
-            # self.v_tn1 = v_t
-
-            # action = env.sample_random_action()
-            self.observation, _, done, position = env.step(action)
+            self.observation, _, done, position = env.step(self.action)
             self.observation = self.observation.to(device)
             self.LOG_x[self.t] = x_t.cpu()
 
@@ -223,7 +204,7 @@ def main():
             ax.set_ylim(-1.2, 1.2)
             ax.bar(
                 range(model.cell.dim_x),
-                action.detach().squeeze(0).cpu(),
+                self.action.detach().squeeze(0).cpu(),
                 color=color_action,
                 width=0.5,
             )
@@ -331,7 +312,9 @@ def main():
 
     p = AnimPack()
 
-    save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_control.mp4")
+    save_path = Path(
+        path_result, f"{manage_dir.stem}_W{weight_path.stem}_control.{args.movie_format}"
+    )
     save_path = add_version(save_path)
     mpu.anim_mode(
         "save" if args.save_anim else "anim",

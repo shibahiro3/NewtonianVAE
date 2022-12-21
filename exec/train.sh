@@ -15,7 +15,7 @@ export PYTHONPATH="$workspaceFolder/source"
 
 
 opts=(
-	--cf exec/config/$env.json5
+	--config exec/config/$env.json5
 	# --resume
 	${@:3}
 )

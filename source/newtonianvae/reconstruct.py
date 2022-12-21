@@ -1,8 +1,8 @@
-import argparse
 import sys
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, List, Union
 
+import classopt
 import json5
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
@@ -14,8 +14,9 @@ from matplotlib.ticker import FormatStrFormatter
 import models.core
 import mypython.plotutil as mpu
 import mypython.vision as mv
+import tool.plot_config
 import tool.util
-from models.core import NewtonianVAE, NewtonianVAEV2
+from models.core import NewtonianVAEFamily
 from mypython.ai.util import SequenceDataLoader
 from mypython.pyutil import Seq, add_version
 from mypython.terminal import Color, Prompt
@@ -25,79 +26,48 @@ from tool.paramsmanager import Params, ParamsEval
 from tool.util import Preferences
 from view.label import Label
 
+tool.plot_config.apply()
 try:
     import tool._plot_config
 
-    figsize = tool._plot_config.figsize_reconstruct
+    tool._plot_config.apply()
 except:
-    figsize = None
+    pass
+
+config = {
+    "figure.figsize": (12.76, 9.39),
+    "figure.subplot.left": 0.05,
+    "figure.subplot.right": 0.95,
+    "figure.subplot.bottom": 0.05,
+    "figure.subplot.top": 0.9,
+    "figure.subplot.hspace": 0.4,
+    "figure.subplot.wspace": 0.5,
+}
+plt.rcParams.update(config)
 
 
-parser = argparse.ArgumentParser(allow_abbrev=False)
-argset.episodes(parser)
-argset.cf(parser)
-argset.path_data(parser, required=False)
-argset.path_model(parser, required=False)
-argset.path_result(parser, required=False)
-argset.save_anim(parser)
-argset.fix_xmap_size(parser, required=False)
-_args = parser.parse_args()
-
-
+@classopt.classopt(default_long=True, default_short=False)
 class Args:
-    episodes = _args.episodes
-    cf = _args.cf
-    path_model = _args.path_model
-    path_data = _args.path_data
-    path_result = _args.path_result
-    fix_xmap_size = _args.fix_xmap_size
-    save_anim = _args.save_anim
+    config: str = classopt.config(**argset.descr_config, required=True)
+    episodes: int = classopt.config(**argset.descr_episodes, required=True)
+    path_model: str = classopt.config(**argset.descr_path_model, required=False)
+    path_data: str = classopt.config(**argset.descr_path_data, required=False)
+    path_result: str = classopt.config(**argset.descr_path_result, required=False)
+    fix_xmap_size: float = classopt.config(metavar="S", help="xmap size")
+    save_anim: bool = classopt.config()
+    movie_format: str = classopt.config(default="mp4")
 
 
-args = Args()
+args = Args.from_args()  # pylint: disable=E1101
 
 
 def reconstruction():
-    # ============================================================
-    fig = plt.figure(figsize=figsize)
-    fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.9)
-    mpu.get_figsize(fig)
-
-    class Ax:
-        def __init__(self) -> None:
-            gs = GridSpec(nrows=6, ncols=6, hspace=0.4, wspace=0.5)
-            up = 2
-
-            self.action = fig.add_subplot(gs[:up, 0:2])
-            self.observation = fig.add_subplot(gs[:up, 2:4])
-            self.reconstructed = fig.add_subplot(gs[:up, 4:6])
-
-            self.x_mean = fig.add_subplot(gs[up, :4])
-            self.x_dims = fig.add_subplot(gs[up, 4])
-            self.x_map = fig.add_subplot(gs[up, 5])
-
-            self.v = fig.add_subplot(gs[up + 1, :4])
-            self.v_dims = fig.add_subplot(gs[up + 1, 4])
-
-            self.xhat_mean = fig.add_subplot(gs[up + 2, :4])
-            self.xhat_mean_dims = fig.add_subplot(gs[up + 2, 4])
-
-            self.xhat_std = fig.add_subplot(gs[up + 3, :4])
-            self.xhat_std_dims = fig.add_subplot(gs[up + 3, 4])
-
-        def clear(self):
-            for ax in self.__dict__.values():
-                ax.clear()
-
-    axes = Ax()
-    # ============================================================
-
-    if args.save_anim == "save":
+    if args.save_anim:
         checker.large_episodes(args.episodes)
 
     torch.set_grad_enabled(False)
 
-    _params = paramsmanager.Params(args.cf)
+    _params = paramsmanager.Params(args.config)
     params_eval = _params.eval
     path_model = tool.util.priority(args.path_model, _params.external.save_path)
     path_data = tool.util.priority(args.path_data, _params.external.data_path)
@@ -126,13 +96,51 @@ def reconstruction():
         root=path_model, model_place=models.core
     )
 
-    model: Union[NewtonianVAE, NewtonianVAEV2]
+    model: NewtonianVAEFamily
     model.type(dtype)
     model.to(device)
     model.train(params_eval.training)
     model.is_save = True
 
     all_steps = params.train.max_time_length * args.episodes
+
+    # ============================================================
+    fig = plt.figure()
+    mpu.get_figsize(fig)
+
+    class Ax:
+        def __init__(self) -> None:
+            if hasattr(model.cell, "dim_xhat"):
+                gs = GridSpec(nrows=6, ncols=6)
+            else:
+                gs = GridSpec(nrows=4, ncols=6)
+
+            up = 2
+
+            self.action = fig.add_subplot(gs[:up, 0:2])
+            self.observation = fig.add_subplot(gs[:up, 2:4])
+            self.reconstructed = fig.add_subplot(gs[:up, 4:6])
+
+            self.x_mean = fig.add_subplot(gs[up, :4])
+            self.x_dims = fig.add_subplot(gs[up, 4])
+            self.x_map = fig.add_subplot(gs[up, 5])
+
+            self.v = fig.add_subplot(gs[up + 1, :4])
+            self.v_dims = fig.add_subplot(gs[up + 1, 4])
+
+            if hasattr(model.cell, "dim_xhat"):
+                self.xhat_mean = fig.add_subplot(gs[up + 2, :4])
+                self.xhat_mean_dims = fig.add_subplot(gs[up + 2, 4])
+
+                self.xhat_std = fig.add_subplot(gs[up + 3, :4])
+                self.xhat_std_dims = fig.add_subplot(gs[up + 3, 4])
+
+        def clear(self):
+            for ax in self.__dict__.values():
+                ax.clear()
+
+    axes = Ax()
+    # ============================================================
 
     class AnimPack:
         def __init__(self) -> None:
@@ -182,7 +190,7 @@ def reconstruction():
 
             self.min_v, self.max_v = _min_max(self.model.LOG_v)
 
-            if "xhat" in model.cell.info:
+            if hasattr(model.cell, "dim_xhat"):
                 self.min_xhat_mean, self.max_xhat_mean = _min_max(self.model.LOG_xhat_mean)
                 self.min_xhat_std, self.max_xhat_std = _min_max(self.model.LOG_xhat_std)
 
@@ -299,6 +307,7 @@ def reconstruction():
                 ms=5,
                 color="red",
             )
+            mpu.Axis_aspect_2d(ax, 1)
 
             # ===============================================================
             ax = axes.v
@@ -330,7 +339,7 @@ def reconstruction():
             ax.tick_params(bottom=False, labelbottom=False)
             mpu.Axis_aspect_2d(ax, 1)
 
-            if "xhat" in model.cell.info:
+            if hasattr(model.cell, "dim_xhat"):
                 # ===============================================================
                 ax = axes.xhat_mean
                 N = model.cell.dim_xhat
@@ -391,7 +400,9 @@ def reconstruction():
 
     p = AnimPack()
 
-    save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_reconstructed.mp4")
+    save_path = Path(
+        path_result, f"{manage_dir.stem}_W{weight_path.stem}_reconstructed.{args.movie_format}"
+    )
     save_path = add_version(save_path)
     mpu.anim_mode(
         "save" if args.save_anim else "anim",

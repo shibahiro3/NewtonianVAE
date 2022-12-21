@@ -1,8 +1,8 @@
-import argparse
 import sys
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, List, Union
 
+import classopt
 import json5
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
@@ -14,49 +14,32 @@ from matplotlib.ticker import FormatStrFormatter
 import models.core
 import mypython.plotutil as mpu
 import mypython.vision as mv
+import tool.plot_config
 import tool.util
-from models.core import NewtonianVAE, NewtonianVAEV2
+from models.core import NewtonianVAEFamily
 from mypython.ai.util import SequenceDataLoader, swap01
 from mypython.pyutil import Seq
 from mypython.terminal import Color
 from tool import argset, paramsmanager
 from view.label import Label
 
+tool.plot_config.apply()
 try:
     import tool._plot_config
 
-    figsize = tool._plot_config.figsize_correlation
+    tool._plot_config.apply()
 except:
-    figsize = None
-
-
-parser = argparse.ArgumentParser(allow_abbrev=False)
-argset.episodes(parser)
-argset.cf(parser)
-argset.path_data(parser, required=False)
-argset.path_model(parser, required=False)
-argset.path_result(parser, required=False)
-argset.fix_xmap_size(parser, required=False)
-argset.env_domain(parser)
-argset.format(parser)
-# argset.fix_xmap_size(parser, required=False)
-_args = parser.parse_args()
-
-
-class Args:
-    cf = _args.cf
-    episodes = _args.episodes
-    path_model = _args.path_model
-    path_data = _args.path_data
-    path_result = _args.path_result
-    fix_xmap_size = _args.fix_xmap_size
-    env_domain = _args.env_domain
-    format = _args.format
-
-
-args = Args()
+    pass
 
 config = {
+    "figure.figsize": (8.89, 5.83),
+    "figure.subplot.left": 0.1,
+    "figure.subplot.right": 0.95,
+    "figure.subplot.bottom": 0.05,
+    "figure.subplot.top": 0.98,
+    "figure.subplot.hspace": 0.2,
+    "figure.subplot.wspace": 0.5,
+    #
     "lines.marker": "o",
     "lines.markersize": 1,
     "lines.markeredgecolor": "None",
@@ -65,15 +48,29 @@ config = {
 plt.rcParams.update(config)
 
 
+@classopt.classopt(default_long=True, default_short=False)
+class Args:
+    config: str = classopt.config(**argset.descr_config, required=True)
+    episodes: int = classopt.config(**argset.descr_episodes, required=True)
+    path_model: str = classopt.config(**argset.descr_path_model, required=False)
+    path_data: str = classopt.config(**argset.descr_path_data, required=False)
+    path_result: str = classopt.config(**argset.descr_path_result, required=False)
+    fix_xmap_size: float = classopt.config(metavar="S", help="xmap size")
+    env_domain: str = classopt.config(metavar="ENV")
+    format: List[str] = classopt.config(nargs="*", default=["svg", "pdf"])
+
+
+args = Args.from_args()  # pylint: disable=E1101
+
+
 def correlation():
     # ============================================================
-    fig = plt.figure(figsize=figsize)
-    fig.subplots_adjust(left=0.1, right=0.95, bottom=0.05, top=0.98)
+    fig = plt.figure()
     mpu.get_figsize(fig)
 
     class Ax:
         def __init__(self) -> None:
-            gs = GridSpec(nrows=2, ncols=3, hspace=0.2, wspace=0.5)
+            gs = GridSpec(nrows=2, ncols=3)
             v1 = Seq()
             # self.physical = fig.add_subplot(gs[0, 0])
             self.latent_map = fig.add_subplot(gs[0:2, 0])
@@ -89,14 +86,11 @@ def correlation():
     # ============================================================
 
     torch.set_grad_enabled(False)
-    # if args.anim_mode == "save":
-    #     checker.large_episodes(args.episodes)
 
-    _params = paramsmanager.Params(args.cf)
+    _params = paramsmanager.Params(args.config)
     params_eval = _params.eval
     path_model = tool.util.priority(args.path_model, _params.external.save_path)
     path_data = tool.util.priority(args.path_data, _params.external.data_path)
-    # data_path = get_path_data(args.path_data, params)
     del _params
     path_result = tool.util.priority(args.path_result, params_eval.result_path)
 
@@ -122,7 +116,7 @@ def correlation():
         root=path_model, model_place=models.core
     )
 
-    model: Union[NewtonianVAE, NewtonianVAEV2]
+    model: NewtonianVAEFamily
     model.type(dtype)
     model.to(device)
     model.train(params_eval.training)

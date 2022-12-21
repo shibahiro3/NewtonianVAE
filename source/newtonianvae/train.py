@@ -1,4 +1,3 @@
-import argparse
 import shutil
 import sys
 import time
@@ -6,13 +5,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Union
 
+import classopt
 import numpy as np
 import torch
 from torch import nn, optim
 
 import models.core
 import tool.util
-from models.core import NewtonianVAE, NewtonianVAEV2
+from models.core import NewtonianVAEFamily
 from mypython.ai.util import SequenceDataLoader, print_module_params, reproduce
 from mypython.pyutil import RemainingTime, s2dhms_str
 from mypython.terminal import Color, Prompt
@@ -20,24 +20,20 @@ from tool import argset, paramsmanager
 from tool.util import Preferences, creator, dtype_device
 from tool.visualhandlerbase import VisualHandlerBase
 
-parser = argparse.ArgumentParser(allow_abbrev=False)
-argset.cf(parser)
-argset.resume(parser)
-_args = parser.parse_args()
 
-
+@classopt.classopt(default_long=True, default_short=False)
 class Args:
-    cf = _args.cf
-    resume = _args.resume
+    config: str = classopt.config(**argset.descr_config, required=True)
+    resume: bool = classopt.config(help="Load the model and resume learning")
 
 
-args = Args()
+args = Args.from_args()  # pylint: disable=E1101
 
 
 def train(vh=VisualHandlerBase()):
     torch.set_grad_enabled(True)
 
-    params = paramsmanager.Params(args.cf)
+    params = paramsmanager.Params(args.config)
 
     if params.train.seed is None:
         params.train.seed = np.random.randint(0, 2**16)
@@ -65,7 +61,7 @@ def train(vh=VisualHandlerBase()):
         model_params=params.raw_[params.model],
         resume=args.resume,
     )
-    model: Union[NewtonianVAE, NewtonianVAEV2]
+    model: NewtonianVAEFamily
     model.type(dtype)
     model.to(device)
     model.train()

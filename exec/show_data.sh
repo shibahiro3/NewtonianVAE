@@ -13,7 +13,7 @@ export PYTHONPATH="$workspaceFolder/source"
 
 
 opts=(
-	--path-data environment/$env/data
+	--path_data environment/$env/data
 	${@:2}
 )
 

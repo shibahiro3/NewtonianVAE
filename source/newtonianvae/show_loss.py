@@ -1,7 +1,8 @@
-import argparse
 import sys
 from pathlib import Path
+from typing import List
 
+import classopt
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -9,48 +10,53 @@ import seaborn as sns
 from matplotlib.gridspec import GridSpec
 
 import mypython.plotutil as mpu
+import tool.plot_config
 import tool.util
 from tool import argset
 
+tool.plot_config.apply()
 try:
     import tool._plot_config
 
-    figsize = tool._plot_config.figsize_show_loss
+    tool._plot_config.apply()
 except:
-    figsize = None
+    pass
+
+config = {
+    "figure.figsize": (11.39, 3.9),
+    "figure.subplot.left": 0.05,
+    "figure.subplot.right": 0.98,
+    "figure.subplot.bottom": 0.15,
+    "figure.subplot.top": 0.85,
+    "figure.subplot.wspace": 0.25,
+}
+plt.rcParams.update(config)
 
 
-parser = argparse.ArgumentParser(allow_abbrev=False)
-argset.path_model(parser)
-argset.start_iter(parser)
-argset.format(parser)
-argset.path_result(parser, required=False)
-_args = parser.parse_args()
-
-
+@classopt.classopt(default_long=True, default_short=False)
 class Args:
-    path_model = _args.path_model
-    path_result = _args.path_result
-    start_iter = _args.start_iter
-    format = _args.format
+    path_model: str = classopt.config(**argset.descr_path_model, required=True)
+    path_result: str = classopt.config(**argset.descr_path_result)
+    start_iter: int = classopt.config(metavar="NUM")
+    format: List[str] = classopt.config(nargs="*", default=["svg", "pdf"])
 
 
-args = Args()
+args = Args.from_args()  # pylint: disable=E1101
+
 
 assert args.start_iter > 0
 
 
 def main():
     # ============================================================
-    fig = plt.figure(figsize=figsize)
-    fig.subplots_adjust(left=0.05, right=0.98, bottom=0.15, top=0.85)
+    fig = plt.figure()
     mpu.get_figsize(fig)
     fig.suptitle("Minimize -ELBO = Loss = NLL (= Negative log-likelihood = Recon.) + KL")
 
     class Ax:
         def __init__(self) -> None:
-            gs = GridSpec(nrows=1, ncols=3, wspace=0.25)
-            self.loss = fig.add_subplot(gs[0, 0])
+            gs = GridSpec(nrows=1, ncols=3)
+            self.loss = fig.add_subplot(gs[0, 0], title="Loss")
             self.nll = fig.add_subplot(gs[0, 1])
             self.kl = fig.add_subplot(gs[0, 2])
 

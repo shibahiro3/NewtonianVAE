@@ -13,12 +13,13 @@ export PYTHONPATH="$workspaceFolder/source"
 
 
 opts=(
-	--cf exec/config/$env.json5
-	# --path-model  environment/$env/saves
-	# --path-result environment/$env/results
+	--config exec/config/$env.json5
+	# --path_model  environment/$env/saves
+	# --path_result environment/$env/results
 	
 	--episodes 10
-	# --fix-xmap-size 20
+	# --fix_xmap_size 20
+	# --movie_format gif
 	${@:2}
 )
 

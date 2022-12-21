@@ -19,9 +19,10 @@ export PYTHONPATH="$workspaceFolder/source"
 # system.
 
 opts=(
-	--cf exec/config/$env.json5
-	--episodes 1400  # for train: 1000, for validation: 200, for test: 200
+	--config exec/config/$env.json5
+	--episodes 1400  # for train: 1000  + [e.g.] for validation: 200, for test: 200
 	# --save_anim
+	# --movie_format gif
 	${@:2}
 )
 

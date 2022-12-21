@@ -2,7 +2,6 @@
 Do not import NewtonianVAE series
 """
 
-import argparse
 import builtins
 import shutil
 import sys

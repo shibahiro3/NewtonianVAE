@@ -64,7 +64,9 @@ class ABCf(nn.Module):
 
         self.func = nn.Sequential(
             nn.Linear(dim_IO, dim_IO),
-            nn.Softplus(),
+            nn.Mish(),
+            nn.Linear(dim_IO, dim_IO),
+            nn.Mish(),
             nn.Linear(dim_IO, dim_IO),
         )
 
@@ -142,7 +144,9 @@ class Transition(tp.Normal):
 
     def forward(self, x_tn1: Tensor, v_t: Tensor, dt: float):
         x_t = x_tn1 + dt * v_t
-        return x_t, self.std
+        mu = x_t
+        sigma = self.std
+        return mu, sigma
 
 
 class Encoder(tp.Normal):
@@ -156,7 +160,9 @@ class Encoder(tp.Normal):
         We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.
     """
 
-    def __init__(self, dim_x: int, dim_middle: int, std_function: Callable) -> None:
+    def __init__(
+        self, dim_x: int, dim_middle: int, std_function: Callable[[Tensor], Tensor]
+    ) -> None:
         super().__init__()
 
         self.fc = VisualEncoder64(dim_output=dim_middle)
@@ -170,8 +176,8 @@ class Encoder(tp.Normal):
         middle = self.fc(I_t)
         mu = self.mean(middle)
         sigma = self.std_function(self.std(middle))
-        # std = self.std
-        return mu, sigma + torch.finfo(sigma.dtype).eps
+        sigma += torch.finfo(sigma.dtype).eps
+        return mu, sigma
 
 
 class Decoder(tp.Normal):
@@ -185,7 +191,7 @@ class Decoder(tp.Normal):
         We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.
     """
 
-    def __init__(self, dim_x: int, decoder_type, std=1.0) -> None:
+    def __init__(self, dim_x: int, decoder_type: str, std=1.0) -> None:
         super().__init__()
 
         if decoder_type == "VisualDecoder64":
@@ -199,7 +205,9 @@ class Decoder(tp.Normal):
 
     def forward(self, x_t: Tensor):
         """"""
-        return self.dec(x_t), self.std + torch.finfo(self.std.dtype).eps
+        mu = self.dec(x_t)
+        sigma = self.std
+        return mu, sigma
 
 
 class Pxhat(tp.Normal):
@@ -209,10 +217,12 @@ class Pxhat(tp.Normal):
             p(\xhat_t \mid \x_{t-1}, \u_{t-1})
         \end{array}
 
-    paperに何の説明もない
+    It is not clearly defined in the original paper.
     """
 
-    def __init__(self, dim_x: int, dim_xhat: int, dim_middle: int, std_function: Callable) -> None:
+    def __init__(
+        self, dim_x: int, dim_xhat: int, dim_middle: int, std_function: Callable[[Tensor], Tensor]
+    ) -> None:
         super().__init__()
 
         self.fc = nn.Linear(2 * dim_x, dim_middle)
@@ -225,7 +235,8 @@ class Pxhat(tp.Normal):
         middle = self.fc(middle)
         mu = self.mean(middle)
         sigma = self.std_function(self.std(middle))
-        return mu, sigma + torch.finfo(sigma.dtype).eps
+        sigma += torch.finfo(sigma.dtype).eps
+        return mu, sigma
 
 
 class VisualEncoder64(nn.Module):

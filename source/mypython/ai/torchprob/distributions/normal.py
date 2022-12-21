@@ -49,6 +49,9 @@ class Normal(Distribution):
         assert self._sigma is not None
         return self._mu.detach()
 
+    def sample(self) -> Tensor:
+        return self.rsample()
+
     def rsample(self) -> Tensor:
         assert self._mu is not None
         assert self._sigma is not None
@@ -78,7 +81,7 @@ def log_normal(x: Tensor, mu: Tensor, sigma: Tensor) -> Tensor:
 
     .. math::
         \begin{array}{ll} \\
-            \log \mathcal{N}(x; \mu, \sigma^2) = - \frac{1}{2} \left( \exp \left( \frac{(x - \mu)^2}{\sigma^2} \right) + 2 \ln \sigma + \ln 2\pi \right)
+            \log \mathcal{N}(x \mid \mu, \sigma^2) = - \frac{1}{2} \left( \exp \left( \frac{(x - \mu)^2}{\sigma^2} \right) + 2 \ln \sigma + \ln 2\pi \right)
         \end{array}
 
     If the sigma is fixed at 1, This equation is equivalent to :math:`- \frac{1}{2} (x - \mu)^2 + C`.

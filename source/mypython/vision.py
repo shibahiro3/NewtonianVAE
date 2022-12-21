@@ -14,8 +14,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torchvision.transforms.functional as VF
+from torch import Tensor
 
-_NT = Union[np.ndarray, torch.Tensor]
+_NT = Union[np.ndarray, Tensor]
 
 
 def cv2plt(imgs):
@@ -26,7 +27,7 @@ def cv2plt(imgs):
     return BGR2RGB(imgs)
 
 
-def plt2cnn(imgs: _NT, in_size=None, out_size=None) -> torch.Tensor:
+def plt2cnn(imgs: _NT, in_size=None, out_size=None) -> Tensor:
     """
     in  (N, H, W, RGB) (0 to 255)
     out (N, RGB, H, W) (0 to 1)
@@ -46,7 +47,7 @@ def plt2cnn(imgs: _NT, in_size=None, out_size=None) -> torch.Tensor:
     return imgs.float()
 
 
-def cv2cnn(imgs: np.ndarray) -> torch.Tensor:
+def cv2cnn(imgs: np.ndarray) -> Tensor:
     return plt2cnn(cv2plt(imgs))
 
 
@@ -57,7 +58,7 @@ def cnn2plt(imgs: _NT) -> np.ndarray:
     """
     imgs = imgs * 255
     imgs = CHW2HWC(imgs)
-    if type(imgs) == torch.Tensor:
+    if type(imgs) == Tensor:
         imgs = imgs.detach().cpu().type(torch.uint8).numpy()
     elif type(imgs) == np.ndarray:
         imgs = imgs.astype(np.uint8)
@@ -109,7 +110,7 @@ def HWC2CHW(x: _NT) -> _NT:
 
 
 def _CHW_HWC_axis(x: _NT, axes) -> _NT:
-    if type(x) == torch.Tensor:
+    if type(x) == Tensor:
         return x.permute(axes)
     if type(x) == np.ndarray:
         return x.transpose(axes)
@@ -126,7 +127,7 @@ def RGB2BGR(imgs: _NT) -> _NT:
 
 
 def clip(x, min, max):
-    if type(x) == torch.Tensor:
+    if type(x) == Tensor:
         return torch.clip(x, min=min, max=max)
     else:
         return np.clip(x, a_min=min, a_max=max)

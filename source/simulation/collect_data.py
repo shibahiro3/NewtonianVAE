@@ -1,9 +1,9 @@
-import argparse
 import shutil
 import sys
 import time
 from pathlib import Path
 
+import classopt
 import json5
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,36 +11,48 @@ from matplotlib.gridspec import GridSpec
 
 import mypython.plotutil as mpu
 import mypython.vision as mv
+import tool.plot_config
 import tool.util
 from env import ControlSuiteEnvWrap, obs2img
 from mypython.terminal import Color, Prompt
 from tool import argset, checker, paramsmanager
 from tool.util import Preferences
 
+tool.plot_config.apply()
 try:
     import tool._plot_config
 
-    figsize = tool._plot_config.figsize_collect
+    tool._plot_config.apply()
 except:
-    figsize = None
+    pass
+
+config = {
+    "figure.figsize": (10.14, 4.05),
+    "figure.subplot.left": 0.05,
+    "figure.subplot.right": 0.95,
+    "figure.subplot.bottom": 0,
+    "figure.subplot.top": 1,
+    "figure.subplot.wspace": 0.3,
+}
+plt.rcParams.update(config)
 
 
-parser = argparse.ArgumentParser(allow_abbrev=False)
-argset.cf(parser)
-argset.watch(parser)
-argset.episodes(parser)
-argset.save_anim(parser)
-_args = parser.parse_args()
-
-
+@classopt.classopt(default_long=True, default_short=False)
 class Args:
-    watch = _args.watch
-    episodes = _args.episodes
-    save_anim = _args.save_anim
-    cf = _args.cf
+    config: str = classopt.config(**argset.descr_config, required=True)
+    watch: str = classopt.config(
+        choices=["render", "plt"],
+        help=(
+            "Check data without saving data. For rendering, "
+            "you can choose to use OpenCV (render) or Matplotlib (plt)."
+        ),
+    )
+    episodes: int = classopt.config(**argset.descr_episodes, required=True)
+    save_anim: bool = classopt.config()
+    movie_format: str = classopt.config(default="mp4")
 
 
-args = Args()
+args = Args.from_args()  # pylint: disable=E1101
 
 
 def env_test():
@@ -52,9 +64,9 @@ def env_test():
     if args.save_anim and args.watch == "plt":
         checker.large_episodes(args.episodes)
 
-    params = paramsmanager.Params(args.cf)
+    params = paramsmanager.Params(args.config)
 
-    env = ControlSuiteEnvWrap(**json5.load(open(args.cf))["ControlSuiteEnvWrap"])
+    env = ControlSuiteEnvWrap(**json5.load(open(args.config))["ControlSuiteEnvWrap"])
     T = env.max_episode_length // env.action_repeat
     all_steps = T * args.episodes
 
@@ -80,14 +92,13 @@ def env_test():
         def on_close(event):
             sys.exit()
 
-        fig = plt.figure(figsize=figsize)
-        fig.subplots_adjust(left=0.05, right=0.95, bottom=0, top=1)
+        fig = plt.figure()
         mpu.get_figsize(fig)
         fig.canvas.mpl_connect("close_event", on_close)
 
         class Ax:
             def __init__(self) -> None:
-                gs = GridSpec(nrows=1, ncols=3, wspace=0.3)
+                gs = GridSpec(nrows=1, ncols=3)
                 self.action = fig.add_subplot(gs[0, 0])
                 self.observation = fig.add_subplot(gs[0, 1])
                 self.position = fig.add_subplot(gs[0, 2])
@@ -213,7 +224,7 @@ def env_test():
     p = AnimPack()
 
     if args.watch == "plt":
-        save_path = Path(data_path, f"data.mp4")
+        save_path = Path(data_path, f"data.{args.movie_format}")
         mpu.anim_mode(
             "save" if args.save_anim else "anim",
             fig,

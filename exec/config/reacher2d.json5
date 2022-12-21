@@ -1,7 +1,20 @@
 {
+  // NewtonianVAE, NewtonianVAEDerivation, NewtonianVAEV2, NewtonianVAEV2Derivation
   model: "NewtonianVAEV2",
 
+  // recommended
   NewtonianVAEV2: {
+    dim_x: 2,
+    transition_std: 0.001,
+    encoder_dim_middle: 1024,
+    encoder_std_function: "softplus",
+    regularization: false,
+    // fix_abc: [0, 0, 1],
+    fix_abc: null,
+    decoder_type: "VisualDecoder64",
+  },
+
+  NewtonianVAE: {
     dim_x: 2,
     transition_std: 0.001,
     encoder_dim_middle: 1024,
@@ -9,6 +22,34 @@
     regularization: false,
     fix_abc: [0, 0, 1],
     decoder_type: "VisualDecoder64",
+  },
+
+  NewtonianVAEDerivation: {
+    dim_x: 2,
+    transition_std: 0.001,
+    encoder_dim_middle: 1024,
+    encoder_std_function: "softplus",
+    regularization: false,
+    fix_abc: [0, 0, 1],
+    decoder_type: "VisualDecoder64",
+
+    dim_xhat: 32,
+    dim_pxhat_middle: 32,
+    pxhat_std_function: "softplus",
+  },
+
+  NewtonianVAEV2Derivation: {
+    dim_x: 2,
+    transition_std: 0.001,
+    encoder_dim_middle: 1024,
+    encoder_std_function: "softplus",
+    regularization: false,
+    fix_abc: [0, 0, 1],
+    decoder_type: "VisualDecoder64",
+
+    dim_xhat: 32,
+    dim_pxhat_middle: 32,
+    pxhat_std_function: "softplus",
   },
 
   train: {
