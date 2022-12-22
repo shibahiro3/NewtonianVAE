@@ -52,9 +52,29 @@
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#view-show-data-module">view.show_data module</a></li>
-<li><a class="reference internal" href="#view-train-tensorboard-module">view.train_tensorboard module</a></li>
-<li><a class="reference internal" href="#view-train-visdom-module">view.train_visdom module</a></li>
+<li><a class="reference internal" href="#module-view.show_data">view.show_data module</a><ul>
+<li><a class="reference internal" href="#view.show_data.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-view.train_visualhandler">view.train_visualhandler module</a><ul>
+<li><a class="reference internal" href="#view.train_visualhandler.TensorBoardVisualHandler"><code class="docutils literal notranslate"><span class="pre">TensorBoardVisualHandler</span></code></a><ul>
+<li><a class="reference internal" href="#view.train_visualhandler.TensorBoardVisualHandler.plot"><code class="docutils literal notranslate"><span class="pre">TensorBoardVisualHandler.plot()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#view.train_visualhandler.VisdomVisualHandler"><code class="docutils literal notranslate"><span class="pre">VisdomVisualHandler</span></code></a><ul>
+<li><a class="reference internal" href="#view.train_visualhandler.VisdomVisualHandler.plot"><code class="docutils literal notranslate"><span class="pre">VisdomVisualHandler.plot()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#view.train_visualhandler.VisualHandlerBase"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase</span></code></a><ul>
+<li><a class="reference internal" href="#view.train_visualhandler.VisualHandlerBase.call_end"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.call_end()</span></code></a></li>
+<li><a class="reference internal" href="#view.train_visualhandler.VisualHandlerBase.call_end_init"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.call_end_init()</span></code></a></li>
+<li><a class="reference internal" href="#view.train_visualhandler.VisualHandlerBase.is_running"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.is_running</span></code></a></li>
+<li><a class="reference internal" href="#view.train_visualhandler.VisualHandlerBase.plot"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.plot()</span></code></a></li>
+<li><a class="reference internal" href="#view.train_visualhandler.VisualHandlerBase.wait_init"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.wait_init()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-view">Module contents</a></li>
 </ul>
 </li>
@@ -123,14 +143,69 @@
 </dd></dl>
 
 </section>
-<section id="view-show-data-module">
-<h2>view.show_data module<a class="headerlink" href="#view-show-data-module" title="Permalink to this heading"></a></h2>
+<section id="module-view.show_data">
+<span id="view-show-data-module"></span><h2>view.show_data module<a class="headerlink" href="#module-view.show_data" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="view.show_data.main">
+<span class="sig-prename descclassname"><span class="pre">view.show_data.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">episodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_anim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#view.show_data.main" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
-<section id="view-train-tensorboard-module">
-<h2>view.train_tensorboard module<a class="headerlink" href="#view-train-tensorboard-module" title="Permalink to this heading"></a></h2>
-</section>
-<section id="view-train-visdom-module">
-<h2>view.train_visdom module<a class="headerlink" href="#view-train-visdom-module" title="Permalink to this heading"></a></h2>
+<section id="module-view.train_visualhandler">
+<span id="view-train-visualhandler-module"></span><h2>view.train_visualhandler module<a class="headerlink" href="#module-view.train_visualhandler" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="view.train_visualhandler.TensorBoardVisualHandler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">view.train_visualhandler.</span></span><span class="sig-name descname"><span class="pre">TensorBoardVisualHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#view.train_visualhandler.TensorBoardVisualHandler" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#view.train_visualhandler.VisualHandlerBase" title="view.train_visualhandler.VisualHandlerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">VisualHandlerBase</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="view.train_visualhandler.TensorBoardVisualHandler.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">L</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_ll</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_kl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#view.train_visualhandler.TensorBoardVisualHandler.plot" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="view.train_visualhandler.VisdomVisualHandler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">view.train_visualhandler.</span></span><span class="sig-name descname"><span class="pre">VisdomVisualHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#view.train_visualhandler.VisdomVisualHandler" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#view.train_visualhandler.VisualHandlerBase" title="view.train_visualhandler.VisualHandlerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">VisualHandlerBase</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="view.train_visualhandler.VisdomVisualHandler.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">L</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_ll</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_kl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#view.train_visualhandler.VisdomVisualHandler.plot" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="view.train_visualhandler.VisualHandlerBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">view.train_visualhandler.</span></span><span class="sig-name descname"><span class="pre">VisualHandlerBase</span></span><a class="headerlink" href="#view.train_visualhandler.VisualHandlerBase" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="view.train_visualhandler.VisualHandlerBase.call_end">
+<span class="sig-name descname"><span class="pre">call_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#view.train_visualhandler.VisualHandlerBase.call_end" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="view.train_visualhandler.VisualHandlerBase.call_end_init">
+<span class="sig-name descname"><span class="pre">call_end_init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#view.train_visualhandler.VisualHandlerBase.call_end_init" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="view.train_visualhandler.VisualHandlerBase.is_running">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_running</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#view.train_visualhandler.VisualHandlerBase.is_running" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="view.train_visualhandler.VisualHandlerBase.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#view.train_visualhandler.VisualHandlerBase.plot" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="view.train_visualhandler.VisualHandlerBase.wait_init">
+<span class="sig-name descname"><span class="pre">wait_init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#view.train_visualhandler.VisualHandlerBase.wait_init" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
 <section id="module-view">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-view" title="Permalink to this heading"></a></h2>

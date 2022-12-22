@@ -1,8 +1,7 @@
 import sys
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Optional, Union
 
-import classopt
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -12,7 +11,6 @@ from matplotlib.gridspec import GridSpec
 import mypython.plotutil as mpu
 import tool.plot_config
 import tool.util
-from tool import argset
 
 tool.plot_config.apply()
 try:
@@ -22,33 +20,27 @@ try:
 except:
     pass
 
-config = {
-    "figure.figsize": (11.39, 3.9),
-    "figure.subplot.left": 0.05,
-    "figure.subplot.right": 0.98,
-    "figure.subplot.bottom": 0.15,
-    "figure.subplot.top": 0.85,
-    "figure.subplot.wspace": 0.25,
-}
-plt.rcParams.update(config)
 
+def main(
+    path_model: Optional[str],
+    path_result: Optional[str],
+    start_iter: int,
+    format: List[str],
+):
+    assert start_iter > 0
 
-@classopt.classopt(default_long=True, default_short=False)
-class Args:
-    path_model: str = classopt.config(**argset.descr_path_model, required=True)
-    path_result: str = classopt.config(**argset.descr_path_result)
-    start_iter: int = classopt.config(metavar="NUM")
-    format: List[str] = classopt.config(nargs="*", default=["svg", "pdf"])
-
-
-args = Args.from_args()  # pylint: disable=E1101
-
-
-assert args.start_iter > 0
-
-
-def main():
     # ============================================================
+    plt.rcParams.update(
+        {
+            "figure.figsize": (11.39, 3.9),
+            "figure.subplot.left": 0.05,
+            "figure.subplot.right": 0.98,
+            "figure.subplot.bottom": 0.15,
+            "figure.subplot.top": 0.85,
+            "figure.subplot.wspace": 0.25,
+        }
+    )
+
     fig = plt.figure()
     mpu.get_figsize(fig)
     fig.suptitle("Minimize -ELBO = Loss = NLL (= Negative log-likelihood = Recon.) + KL")
@@ -67,7 +59,7 @@ def main():
     axes = Ax()
     # ============================================================
 
-    manage_dir = tool.util.select_date(args.path_model)
+    manage_dir = tool.util.select_date(path_model)
     if manage_dir is None:
         return
 
@@ -76,7 +68,7 @@ def main():
     kl = np.load(Path(manage_dir, "LOG_KL.npy"))
 
     print("loss len:", len(loss))
-    start_idx = args.start_iter
+    start_idx = start_iter
 
     assert start_idx < len(loss)
 
@@ -117,12 +109,8 @@ def main():
     # ============================================================
     # fig.tight_layout()
 
-    if args.path_result is not None:
-        save_path = Path(args.path_result, f"{manage_dir.stem}_loss.hoge")
-        mpu.register_save_path(fig, save_path, args.format)
+    if path_result is not None:
+        save_path = Path(path_result, f"{manage_dir.stem}_loss.hoge")
+        mpu.register_save_path(fig, save_path, format)
 
     plt.show()
-
-
-if __name__ == "__main__":
-    main()

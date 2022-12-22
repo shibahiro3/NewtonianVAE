@@ -31,11 +31,13 @@ from dm_control.utils import io as resources
 _DEFAULT_TIME_LIMIT = 20
 SUITE = containers.TaggedTasks()
 
+# Changed/added by Sugar
+from third.dm_control import read_model
 
 def get_model_and_assets():
   """Returns a tuple containing the model XML string and a dict of assets."""
-#   return common.read_model('point_mass.xml'), common.ASSETS
-  return resources.GetResource("source/third/dm_control/suite/point_mass.xml"), common.ASSETS
+  return common.read_model('point_mass.xml'), common.ASSETS
+  return read_model("point_mass.xml"), common.ASSETS
 
 
 @SUITE.add('benchmarking', 'easy')

@@ -1,9 +1,7 @@
 import sys
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
-import classopt
-import json5
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,6 +9,7 @@ import torch
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
 
+import json5
 import models.core
 import mypython.plotutil as mpu
 import mypython.vision as mv
@@ -21,8 +20,7 @@ from mypython.ai.util import SequenceDataLoader
 from mypython.pyutil import Seq, add_version
 from mypython.terminal import Color, Prompt
 from simulation.env import obs2img
-from tool import argset, checker, paramsmanager
-from tool.paramsmanager import Params, ParamsEval
+from tool import checker, paramsmanager
 from tool.util import Preferences
 from view.label import Label
 
@@ -34,46 +32,28 @@ try:
 except:
     pass
 
-config = {
-    "figure.figsize": (12.76, 9.39),
-    "figure.subplot.left": 0.05,
-    "figure.subplot.right": 0.95,
-    "figure.subplot.bottom": 0.05,
-    "figure.subplot.top": 0.9,
-    "figure.subplot.hspace": 0.4,
-    "figure.subplot.wspace": 0.5,
-}
-plt.rcParams.update(config)
 
-
-@classopt.classopt(default_long=True, default_short=False)
-class Args:
-    config: str = classopt.config(**argset.descr_config, required=True)
-    episodes: int = classopt.config(**argset.descr_episodes, required=True)
-    path_model: str = classopt.config(**argset.descr_path_model, required=False)
-    path_data: str = classopt.config(**argset.descr_path_data, required=False)
-    path_result: str = classopt.config(**argset.descr_path_result, required=False)
-    fix_xmap_size: float = classopt.config(metavar="S", help="xmap size")
-    save_anim: bool = classopt.config()
-    movie_format: str = classopt.config(default="mp4")
-
-
-args = Args.from_args()  # pylint: disable=E1101
-
-
-def reconstruction():
-    if args.save_anim:
-        checker.large_episodes(args.episodes)
+def reconstruction(
+    config: str,
+    episodes: int,
+    path_model: Optional[str],
+    path_data: Optional[str],
+    path_result: Optional[str],
+    fix_xmap_size: Optional[int],
+    save_anim: bool,
+    format: str,
+):
+    if save_anim:
+        checker.large_episodes(episodes)
 
     torch.set_grad_enabled(False)
 
-    _params = paramsmanager.Params(args.config)
+    _params = paramsmanager.Params(config)
     params_eval = _params.eval
-    path_model = tool.util.priority(args.path_model, _params.external.save_path)
-    path_data = tool.util.priority(args.path_data, _params.external.data_path)
-    # data_path = get_path_data(args.path_data, params)
+    path_model = tool.util.priority(path_model, _params.external.save_path)
+    path_data = tool.util.priority(path_data, _params.external.data_path)
     del _params
-    path_result = tool.util.priority(args.path_result, params_eval.result_path)
+    path_result = tool.util.priority(path_result, params_eval.result_path)
 
     dtype, device = tool.util.dtype_device(
         dtype=params_eval.dtype,
@@ -85,7 +65,7 @@ def reconstruction():
         names=["action", "observation", "delta"],
         start=params_eval.data_start,
         stop=params_eval.data_stop,
-        batch_size=args.episodes,
+        batch_size=episodes,
         dtype=dtype,
         device=device,
     )
@@ -102,9 +82,21 @@ def reconstruction():
     model.train(params_eval.training)
     model.is_save = True
 
-    all_steps = params.train.max_time_length * args.episodes
+    all_steps = params.train.max_time_length * episodes
 
     # ============================================================
+    plt.rcParams.update(
+        {
+            "figure.figsize": (12.76, 9.39),
+            "figure.subplot.left": 0.05,
+            "figure.subplot.right": 0.95,
+            "figure.subplot.bottom": 0.05,
+            "figure.subplot.top": 0.9,
+            "figure.subplot.hspace": 0.4,
+            "figure.subplot.wspace": 0.5,
+        }
+    )
+
     fig = plt.figure()
     mpu.get_figsize(fig)
 
@@ -182,10 +174,10 @@ def reconstruction():
             # ----------------
             self.min_x_mean, self.max_x_mean = _min_max(self.model.LOG_x_mean)
 
-            if args.fix_xmap_size is None:
+            if fix_xmap_size is None:
                 self.min_x_map, self.max_x_map = _min_max(self.model.LOG_x_mean, axis=0)
             else:
-                l_ = args.fix_xmap_size
+                l_ = fix_xmap_size
                 self.min_x_map, self.max_x_map = np.array([[-l_, -l_], [l_, l_]])
 
             self.min_v, self.max_v = _min_max(self.model.LOG_v)
@@ -198,7 +190,7 @@ def reconstruction():
             axes.clear()
 
             Prompt.print_one_line(
-                f"{frame_cnt+1:5d} / {all_steps} ({(frame_cnt+1)*100/all_steps:.1f} %)"
+                f"{frame_cnt+1:5d} / {all_steps} ({(frame_cnt+1)*100/all_steps:.1f} %) "
             )
 
             mod = frame_cnt % params.train.max_time_length
@@ -206,12 +198,12 @@ def reconstruction():
                 self.t = -1
                 self.episode_cnt = frame_cnt // params.train.max_time_length + mod
 
-            # ======================================================
+            # ============================================================
             self.t += 1
-            color_action = mpu.cmap(model.cell.dim_x, "prism")
+            dim_colors = mpu.cmap(model.cell.dim_x, "prism")
 
             if frame_cnt == -1:
-                self.episode_cnt = np.random.randint(0, args.episodes)
+                self.episode_cnt = np.random.randint(0, episodes)
                 self.t = params.train.max_time_length - 1
                 self.init()
 
@@ -225,7 +217,7 @@ def reconstruction():
 
             color_map = cm.get_cmap("rainbow")
 
-            # ===============================================================
+            # ============================================================
             ax = axes.action
             ax.set_title(r"$\mathbf{u}_{t-1}$ (Original)")
             # ax.set_xlabel("$u_x$")
@@ -236,25 +228,25 @@ def reconstruction():
             ax.bar(
                 range(model.cell.dim_x),
                 self.action[self.t].squeeze(0).cpu().numpy(),
-                color=color_action,
+                color=dim_colors,
                 width=0.5,
             )
             ax.tick_params(bottom=False, labelbottom=False)
             mpu.Axis_aspect_2d(ax, 1)
 
-            # ===============================================================
+            # ============================================================
             ax = axes.observation
             ax.set_title(r"$\mathbf{I}_t$ (Original)")
             ax.imshow(obs2img(self.observation[self.t].squeeze(0)))
             ax.set_axis_off()
 
-            # ===============================================================
+            # ============================================================
             ax = axes.reconstructed
             ax.set_title(r"$\mathbf{I}_t$ (Reconstructed)")
             ax.imshow(obs2img(self.model.LOG_I_dec[self.t]))
             ax.set_axis_off()
 
-            # ===============================================================
+            # ============================================================
             ax = axes.x_mean
             N = model.cell.dim_x
             ax.set_title(r"$\mathbf{x}_{1:t}$")
@@ -269,7 +261,7 @@ def reconstruction():
                     lw=1,
                 )
 
-            # ===============================================================
+            # ============================================================
             ax = axes.x_dims
             N = model.cell.dim_x
             ax.set_title(r"$\mathbf{x}_{t}$  " f"(dim: {N})")
@@ -284,7 +276,7 @@ def reconstruction():
             ax.tick_params(bottom=False, labelbottom=False)
             mpu.Axis_aspect_2d(ax, 1)
 
-            # ===============================================================
+            # ============================================================
             ax = axes.x_map
             ax.set_title(r"$\mathbf{x}_{1:t}$")
             ax.set_xlim(self.min_x_map[0], self.max_x_map[0])
@@ -309,7 +301,7 @@ def reconstruction():
             )
             mpu.Axis_aspect_2d(ax, 1)
 
-            # ===============================================================
+            # ============================================================
             ax = axes.v
             N = model.cell.dim_x
             ax.set_title(r"$\mathbf{v}_{1:t}$")
@@ -324,7 +316,7 @@ def reconstruction():
                     lw=1,
                 )
 
-            # ===============================================================
+            # ============================================================
             ax = axes.v_dims
             N = model.cell.dim_x
             ax.set_title(r"$\mathbf{v}_t$  " f"(dim: {N})")
@@ -340,7 +332,7 @@ def reconstruction():
             mpu.Axis_aspect_2d(ax, 1)
 
             if hasattr(model.cell, "dim_xhat"):
-                # ===============================================================
+                # ============================================================
                 ax = axes.xhat_mean
                 N = model.cell.dim_xhat
                 ax.set_title(r"$\hat{\mathbf{x}}_{1:t}$")
@@ -355,7 +347,7 @@ def reconstruction():
                         lw=1,
                     )
 
-                # ===============================================================
+                # ============================================================
                 ax = axes.xhat_mean_dims
                 N = model.cell.dim_xhat
                 ax.set_title(r"$\hat{\mathbf{x}}_t$  " f"(dim: {N})")
@@ -369,7 +361,7 @@ def reconstruction():
                 ax.tick_params(bottom=False, labelbottom=False)
                 mpu.Axis_aspect_2d(ax, 1)
 
-                # ===============================================================
+                # ============================================================
                 ax = axes.xhat_std
                 N = model.cell.dim_xhat
                 ax.set_title(r"std of $\hat{\mathbf{x}}_{1:t}$")
@@ -384,7 +376,7 @@ def reconstruction():
                         lw=1,
                     )
 
-                # ===============================================================
+                # ============================================================
                 ax = axes.xhat_std_dims
                 N = model.cell.dim_xhat
                 ax.set_title(r"std of $\hat{\mathbf{x}}_t$  " f"(dim: {N})")
@@ -400,12 +392,10 @@ def reconstruction():
 
     p = AnimPack()
 
-    save_path = Path(
-        path_result, f"{manage_dir.stem}_W{weight_path.stem}_reconstructed.{args.movie_format}"
-    )
+    save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_reconstructed.{format}")
     save_path = add_version(save_path)
     mpu.anim_mode(
-        "save" if args.save_anim else "anim",
+        "save" if save_anim else "anim",
         fig,
         p.anim_func,
         all_steps,

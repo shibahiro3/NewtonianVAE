@@ -1,16 +1,15 @@
 import sys
 from pathlib import Path
 from pprint import pprint
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
-import classopt
-import json5
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
 
+import json5
 import models.core
 import mypython.plotutil as mpu
 import mypython.vision as mv
@@ -22,7 +21,7 @@ from models.pcontrol import PurePControl
 from mypython.pyutil import Seq, add_version
 from mypython.terminal import Color, Prompt
 from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img
-from tool import argset, checker, paramsmanager
+from tool import checker, paramsmanager
 from view.label import Label
 
 tool.plot_config.apply()
@@ -33,38 +32,32 @@ try:
 except:
     pass
 
-config = {
-    "figure.figsize": (12.76, 8.39),
-    "figure.subplot.left": 0.05,
-    "figure.subplot.right": 0.95,
-    "figure.subplot.bottom": 0.1,
-    "figure.subplot.top": 1,
-    "figure.subplot.hspace": 0.3,
-    "figure.subplot.wspace": 0.3,
-}
-plt.rcParams.update(config)
 
-
-@classopt.classopt(default_long=True, default_short=False)
-class Args:
-    config: str = classopt.config(**argset.descr_config, required=True)
-    episodes: int = classopt.config(**argset.descr_episodes, required=True)
-    path_model: str = classopt.config(**argset.descr_path_model, required=False)
-    path_result: str = classopt.config(**argset.descr_path_result, required=False)
-    fix_xmap_size: float = classopt.config(metavar="S", help="xmap size")
-    save_anim: bool = classopt.config()
-    goal_img: str = classopt.config(metavar="PATH", help="Goal image path (*.npy)")
-    alpha: float = classopt.config(metavar="α", help="P gain")
-    steps: int = classopt.config(metavar="E", help="Time steps")
-    env_domain: str = classopt.config(metavar="ENV")
-    movie_format: str = classopt.config(default="mp4")
-
-
-args = Args.from_args()  # pylint: disable=E1101
-
-
-def main():
+def main(
+    config: str,
+    episodes: int,
+    path_model: Optional[str],
+    path_result: Optional[str],
+    fix_xmap_size: float,
+    save_anim: bool,
+    goal_img: str,
+    alpha: float,
+    steps: int,
+    format: str,
+):
     # =====================================================
+    plt.rcParams.update(
+        {
+            "figure.figsize": (12.76, 8.39),
+            "figure.subplot.left": 0.05,
+            "figure.subplot.right": 0.95,
+            "figure.subplot.bottom": 0.1,
+            "figure.subplot.top": 1,
+            "figure.subplot.hspace": 0.3,
+            "figure.subplot.wspace": 0.3,
+        }
+    )
+
     fig = plt.figure()
     mpu.get_figsize(fig)
 
@@ -90,18 +83,17 @@ def main():
                 ax.clear()
 
     axes = Ax()
-    label = Label(args.env_domain)
     # =====================================================
 
     torch.set_grad_enabled(False)
-    if args.save_anim:
-        checker.large_episodes(args.episodes)
+    if save_anim:
+        checker.large_episodes(episodes)
 
-    _params = paramsmanager.Params(args.config)
+    _params = paramsmanager.Params(config)
     params_eval = _params.eval
-    path_model = tool.util.priority(args.path_model, _params.external.save_path)
+    path_model = tool.util.priority(path_model, _params.external.save_path)
     del _params
-    path_result = tool.util.priority(args.path_result, params_eval.result_path)
+    path_result = tool.util.priority(path_result, params_eval.result_path)
 
     dtype, device = tool.util.dtype_device(
         dtype=params_eval.dtype,
@@ -117,16 +109,17 @@ def main():
     model.to(device)
     model.train(params_eval.training)
 
-    if args.steps is not None:
-        max_time_length = args.steps
+    if steps is not None:
+        max_time_length = steps
     else:
         max_time_length = params.train.max_time_length
 
-    all_steps = max_time_length * args.episodes
+    all_steps = max_time_length * episodes
 
-    env = ControlSuiteEnvWrap(**json5.load(open(args.config))["ControlSuiteEnvWrap"])
+    env = ControlSuiteEnvWrap(**json5.load(open(config))["ControlSuiteEnvWrap"])
+    label = Label(env.domain)
 
-    Igoal = mv.cv2cnn(np.load(args.goal_img)).unsqueeze_(0).to(device)
+    Igoal = mv.cv2cnn(np.load(goal_img)).unsqueeze_(0).to(device)
 
     class AnimPack:
         def __init__(self) -> None:
@@ -146,7 +139,7 @@ def main():
             )
 
         def init(self):
-            self.ctrl = PurePControl(img2obs(Igoal), args.alpha, model.cell)
+            self.ctrl = PurePControl(img2obs(Igoal), alpha, model.cell)
             self.cell_wrap = CellWrap(cell=model.cell)
 
             xp = np
@@ -162,7 +155,7 @@ def main():
             axes.clear()
 
             Prompt.print_one_line(
-                f"{frame_cnt+1:5d} / {all_steps} ({(frame_cnt+1)*100/all_steps:.1f} %)"
+                f"{frame_cnt+1:5d} / {all_steps} ({(frame_cnt+1)*100/all_steps:.1f} %) "
             )
 
             mod = frame_cnt % max_time_length
@@ -170,12 +163,12 @@ def main():
                 self.t = -1
                 self.episode_cnt = frame_cnt // max_time_length + mod
 
-            # ======================================================
+            # ============================================================
             self.t += 1
-            color_action = mpu.cmap(model.cell.dim_x, "prism")
+            dim_colors = mpu.cmap(model.cell.dim_x, "prism")
 
             if frame_cnt == -1:
-                self.episode_cnt = np.random.randint(0, args.episodes)
+                self.episode_cnt = np.random.randint(0, episodes)
                 self.t = max_time_length - 1
                 self.init()
 
@@ -198,40 +191,46 @@ def main():
             self.observation = self.observation.to(device)
             self.LOG_x[self.t] = x_t.cpu()
 
-            # ===============================================================
+            # ============================================================
             ax = axes.action
             ax.set_title(r"$\mathbf{u}_{t-1}$ (Generated)")
             ax.set_ylim(-1.2, 1.2)
             ax.bar(
                 range(model.cell.dim_x),
                 self.action.detach().squeeze(0).cpu(),
-                color=color_action,
+                color=dim_colors,
                 width=0.5,
             )
-            ax.tick_params(bottom=False, labelbottom=False)
+            # ax.tick_params(bottom=False, labelbottom=False)
             mpu.Axis_aspect_2d(ax, 1)
+            ax.set_xticks(range(model.cell.dim_x))
+            if env.domain == "reacher2d":
+                ax.set_xlabel("Torque")
+                ax.set_xticklabels([r"$\mathbf{u}[1]$ (shoulder)", r"$\mathbf{u}[2]$ (wrist)"])
+            elif env.domain == "point_mass" and env.task == "easy":
+                ax.set_xticklabels([r"$\mathbf{u}[1]$ (x)", r"$\mathbf{u}[2]$ (y)"])
 
-            # ===============================================================
+            # ============================================================
             ax = axes.observation
-            ax.set_title(r"$\mathbf{I}_t$ (Env.)")
+            ax.set_title(r"$\mathbf{I}_t$ (From environment)")
             ax.imshow(obs2img(self.observation.detach().cpu()))
             ax.set_axis_off()
 
-            # ===============================================================
+            # ============================================================
             ax = axes.obs_dec
-            ax.set_title(r"$\mathbf{I}_t$ (Recon.)")
+            ax.set_title(r"$\mathbf{I}_t$ (Reconstructed)")
             ax.imshow(obs2img(I_t_dec.detach().squeeze(0).cpu()))
             ax.set_axis_off()
 
-            # ===============================================================
+            # ============================================================
             ax = axes.Igoal
             ax.set_title(r"$\mathbf{I}_{goal}$")
             ax.imshow(mv.cnn2plt(Igoal.detach().squeeze(0).cpu()))
             ax.set_axis_off()
 
-            # ===============================================================
+            # ============================================================
             ax = axes.x_map
-            ax.set_title(r"$\mathbf{x}_{1:t}, \; \alpha = $" f"${args.alpha}$")
+            ax.set_title(r"$\mathbf{x}_{1:t}, \; \alpha = $" f"${alpha}$")
             ax.plot(
                 self._attach_nan(self.LOG_x, 0),
                 self._attach_nan(self.LOG_x, 1),
@@ -255,13 +254,12 @@ def main():
                 label=r"$\mathbf{x}_{goal}$",
             )
             ax.legend(loc="lower left")
-            label.set_axes_L0L1(ax, args.fix_xmap_size)
+            label.set_axes_L0L1(ax, fix_xmap_size)
 
-            # ===============================================================
+            # ============================================================
             self.LOG_pos_0.append(position[0])
 
             ax = axes.x
-            # ax.set_title(r"$\mathbf{x}_{1:t}, \; \alpha = $" f"${args.alpha}$")
             ax.plot(
                 self.LOG_pos_0,
                 self.LOG_x[: self.t + 1, 0],
@@ -286,13 +284,12 @@ def main():
             #     label=r"$\mathbf{x}_{goal}$",
             # )
             # ax.legend(loc="uppper left")
-            label.set_axes_P0L0(ax, args.fix_xmap_size)
+            label.set_axes_P0L0(ax, fix_xmap_size)
 
-            # ===============================================================
+            # ============================================================
             self.LOG_pos_1.append(position[1])
 
             ax = axes.y
-            # ax.set_title(r"$\mathbf{x}_{1:t}, \; \alpha = $" f"${args.alpha}$")
             ax.plot(
                 self.LOG_pos_1,
                 self.LOG_x[: self.t + 1, 1],
@@ -308,16 +305,14 @@ def main():
                 color="red",
                 label=r"$\mathbf{x}_{t}$",
             )
-            label.set_axes_P1L1(ax, args.fix_xmap_size)
+            label.set_axes_P1L1(ax, fix_xmap_size)
 
     p = AnimPack()
 
-    save_path = Path(
-        path_result, f"{manage_dir.stem}_W{weight_path.stem}_control.{args.movie_format}"
-    )
+    save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_control.{format}")
     save_path = add_version(save_path)
     mpu.anim_mode(
-        "save" if args.save_anim else "anim",
+        "save" if save_anim else "anim",
         fig,
         p.anim_func,
         all_steps,
@@ -327,7 +322,3 @@ def main():
     )
 
     print()
-
-
-if __name__ == "__main__":
-    main()

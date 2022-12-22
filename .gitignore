@@ -24,9 +24,6 @@ docs/*
 qt
 !__init__.py
 
-source/control/
-source/test/
-gmm.py
 
 
 # https://github.com/numpy/numpy/blob/main/.gitignore
@@ -52,7 +49,7 @@ pmip
 .sw[nop]
 *.tmp
 *.vim
-.vscode
+# .vscode
 tags
 cscope.out
 # gnu global

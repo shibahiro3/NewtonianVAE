@@ -1,8 +1,5 @@
-import shutil
-import sys
 from pathlib import Path
 
-import classopt
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -13,9 +10,7 @@ import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.plot_config
 from mypython.ai.util import SequenceDataLoader
-from mypython.plotutil import cmap
 from simulation.env import obs2img
-from tool import argset
 
 tool.plot_config.apply()
 try:
@@ -26,32 +21,31 @@ except:
     pass
 
 
-@classopt.classopt(default_long=True, default_short=False)
-class Args:
-    episodes: int = classopt.config(**argset.descr_episodes, required=True)
-    path_data: str = classopt.config(**argset.descr_path_data, required=False)
-    save_anim: bool = classopt.config()
-    output: str = classopt.config(
-        metavar="ENV", help="Path of the video to be saved (Extension is .mp4, etc.)"
+def main(
+    episodes: int,
+    path_data: str,
+    save_anim: bool,
+    output: str,
+):
+    if save_anim:
+        assert output is not None
+
+    # ============================================================
+    plt.rcParams.update(
+        {
+            "figure.figsize": (7.97, 3.44),
+        }
     )
 
-
-args = Args.from_args()  # pylint: disable=E1101
-
-if args.save_anim:
-    assert args.output is not None
-
-
-def main():
-    # ============================================================
     fig = plt.figure()
     mpu.get_figsize(fig)
 
     class Ax:
         def __init__(self) -> None:
-            gs = GridSpec(nrows=1, ncols=2)
+            gs = GridSpec(nrows=1, ncols=3)
             self.action = fig.add_subplot(gs[0, 0])
             self.observation = fig.add_subplot(gs[0, 1])
+            self.position = fig.add_subplot(gs[0, 2])
 
         def clear(self):
             for ax in self.__dict__.values():
@@ -60,18 +54,18 @@ def main():
     axes = Ax()
     # ============================================================
 
-    merror.check_dir(args.path_data)
-    max_episode = len([p for p in Path(args.path_data).glob("*") if p.is_dir()])
+    merror.check_dir(path_data)
+    max_episode = len([p for p in Path(path_data, "episodes").glob("*") if p.is_dir()])
 
     dataloader = SequenceDataLoader(
-        root=args.path_data,
-        names=["action", "observation"],
+        root=Path(path_data, "episodes"),
+        names=["action", "observation", "position"],
         start=0,
         stop=max_episode,
-        batch_size=args.episodes,
+        batch_size=episodes,
         dtype=torch.float32,
     )
-    action, observation = next(dataloader)
+    action, observation, position = next(dataloader)
 
     T = action.shape[0]
     dim_a = action.shape[-1]
@@ -96,28 +90,49 @@ def main():
                 fontname="monospace",
             )
 
+            dim_colors = mpu.cmap(dim_a, "prism")
+
             # ============================================================
             ax = axes.action
             ax.set_title(r"$\mathbf{u}_{t-1}$")
-            l = 1.5
-            ax.set_ylim(-l, l)
-            a = action[self.t, self.episode_cnt]
-            ax.bar(range(dim_a), a, color=cmap(dim_a, "prism"), width=0.5)
-            ax.set_xticks(range(dim_a))
+            ax.set_ylim(action.min() - 0.1, action.max() + 0.1)
+            ax.bar(
+                range(dim_a),
+                action[self.t, self.episode_cnt],
+                color=dim_colors,
+                width=0.5,
+            )
+            # ax.set_xticks(range(dim_a))
+            ax.tick_params(bottom=False, labelbottom=False)
+            mpu.Axis_aspect_2d(ax, 1)
 
             # ============================================================
             ax = axes.observation
             ax.set_title(r"$\mathbf{I}_t$")
             ax.imshow(obs2img(observation[self.t, self.episode_cnt]))
 
+            # ============================================================
+            ax = axes.position
+            ax.set_title(r"Position")
+            ax.set_ylim(position.min() - 0.1, position.max() + 0.1)
+            ax.bar(
+                range(dim_a),
+                position[self.t, self.episode_cnt],
+                color=dim_colors,
+                width=0.5,
+            )
+            # ax.set_xticks(range(dim_a))
+            ax.tick_params(bottom=False, labelbottom=False)
+            mpu.Axis_aspect_2d(ax, 1)
+
     p = AnimPack()
     mpu.anim_mode(
-        "save" if args.save_anim else "anim",
+        "save" if save_anim else "anim",
         fig,
         p.anim_func,
-        T * args.episodes,
+        T * episodes,
         interval=40,
-        save_path=args.output,
+        save_path=output,
     )
 
 

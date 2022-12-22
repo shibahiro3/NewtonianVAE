@@ -10,18 +10,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-import json5
 import numpy as np
 import torch
 from matplotlib.axes import Axes
 from matplotlib.ticker import FormatStrFormatter
 from torch import nn
 
+import json5
 import mypython.plotutil as mpu
 import tool.util
 from mypython.terminal import Color
-from tool import checker
-from tool.paramsmanager import Params, ParamsEval
+from tool import checker, paramsmanager
 
 _weight = "weight*/*"
 
@@ -195,7 +194,7 @@ def load(root: str, model_place):
         sys.exit()
 
     params_path = Path(manage_dir, "params_saved.json5")
-    params = Params(params_path)
+    params = paramsmanager.Params(params_path)
     Color.print("params path:", params_path)
 
     ModelType = getattr(model_place, params.model)

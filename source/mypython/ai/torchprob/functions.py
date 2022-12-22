@@ -9,9 +9,6 @@ from torch.distributions import kl
 from .distributions.base import Distribution, _eps
 from .distributions.normal import Normal
 
-# from torch.distributions import kl_divergence
-# from pixyz.losses.divergences import KullbackLeibler
-
 
 def KLdiv(p: Distribution, q: Distribution) -> Tensor:
     if issubclass(type(p), Normal):
@@ -29,7 +26,7 @@ def log(p: Distribution, x: Tensor, *cond_vars: Tensor) -> Tensor:
 
     Match the look of the formula
     """
-    return p.cond(*cond_vars).log_p(x)
+    return p.cond(*cond_vars).log_prob(x)
 
 
 def KL_normal_normal(
@@ -52,3 +49,7 @@ def KL_normal_normal(
         - 1
     )
     return 0.5 * kld_element
+
+
+# from torch.distributions import kl_divergence
+# from pixyz.losses.divergences import KullbackLeibler

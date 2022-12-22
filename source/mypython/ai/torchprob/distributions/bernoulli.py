@@ -6,7 +6,7 @@ from typing_extensions import Self
 
 from mypython.terminal import Color
 
-from .base import Distribution, _eps, _to_optional_tensor
+from .base import Distribution, _eps, to_optional_tensor
 
 
 class Bernoulli(Distribution):
@@ -15,7 +15,7 @@ class Bernoulli(Distribution):
     def __init__(self, mu: Union[None, int, float, Tensor] = None) -> None:
         super().__init__()
 
-        self._mu = _to_optional_tensor(mu)
+        self._mu = to_optional_tensor(mu)
 
     def forward(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Tensor:
         """Compute μ of Bern(x | μ) from Bern(x | cond_vars)"""
@@ -34,7 +34,7 @@ class Bernoulli(Distribution):
         self._cnt += 1 if self._cnt < 1024 else 0
         return self
 
-    def log_p(self, x: Tensor) -> Tensor:
+    def log_prob(self, x: Tensor) -> Tensor:
         assert self._mu is not None
         assert x.shape == self._mu.shape
         return log_bernoulli(x, self._mu)
@@ -43,7 +43,7 @@ class Bernoulli(Distribution):
         assert self._mu is not None
         return self._mu.detach()
 
-    def get_dist_params(self) -> Tensor:
+    def dist_parameters(self) -> Tensor:
         assert self._mu is not None
         return self._mu
 

@@ -22,7 +22,7 @@ class Distribution(nn.Module):
         raise NotImplementedError()
         return self
 
-    def log_p(self, x: Tensor) -> Tensor:
+    def log_prob(self, x: Tensor) -> Tensor:
         """log-likelihood of Distribution
         log Dist(x | ・)
         """
@@ -37,7 +37,7 @@ class Distribution(nn.Module):
     def decode(self) -> Tensor:
         raise NotImplementedError()
 
-    def get_dist_params(self) -> Tuple[Tensor]:
+    def dist_parameters(self) -> Tuple[Tensor]:
         raise NotImplementedError()
 
     @property
@@ -49,7 +49,7 @@ class Distribution(nn.Module):
         raise NotImplementedError()
 
 
-def _to_optional_tensor(x: Union[None, int, float, Tensor]) -> Union[None, Tensor]:
+def to_optional_tensor(x: Union[None, int, float, Tensor]) -> Union[None, Tensor]:
     _type = type(x)
     if x is None:
         pass
@@ -60,5 +60,5 @@ def _to_optional_tensor(x: Union[None, int, float, Tensor]) -> Union[None, Tenso
     return x
 
 
-# _eps = torch.finfo(torch.float).eps
+# _eps = torch.finfo(torch.float).eps  # DO NOT USE
 _eps = 0

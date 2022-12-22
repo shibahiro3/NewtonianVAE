@@ -36,11 +36,13 @@ _BIG_TARGET = .05
 # _SMALL_TARGET = .015
 _SMALL_TARGET = .02
 
+# Changed/added by Sugar
+from third.dm_control import read_model
 
 def get_model_and_assets():
   """Returns a tuple containing the model XML string and a dict of assets."""
 #   return common.read_model('reacher.xml'), common.ASSETS
-  return resources.GetResource("source/third/dm_control/suite/reacher2d.xml"), common.ASSETS
+  return read_model("reacher2d.xml"), common.ASSETS
 
 
 @SUITE.add('benchmarking', 'easy')
@@ -106,7 +108,7 @@ class Reacher(base.Task):
     # Changed/added by Sugar
     # Initial arm position
     # True is original implementation
-    if True:
+    if False:
         randomizers.randomize_limited_and_rotational_joints(physics, self.random)
     else:
         pass
@@ -118,6 +120,10 @@ class Reacher(base.Task):
         # physics.named.data.qpos["wrist"] = np.array([0])
 
         ### 160 [deg] == (8/9)π ≈ 2.79 [rad]
+
+        # limit (red side)
+        physics.named.data.qpos["shoulder"] = np.array([(-8/9)*np.pi])
+        physics.named.data.qpos["wrist"] = np.array([0])
 
         # red (target)
         # physics.named.data.qpos["shoulder"] = np.array([(-7/9)*np.pi])

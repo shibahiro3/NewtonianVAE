@@ -6,7 +6,7 @@ from typing_extensions import Self
 
 from mypython.terminal import Color
 
-from .base import Distribution, _eps, _to_optional_tensor
+from .base import Distribution, _eps, to_optional_tensor
 
 
 class Normal(Distribution):
@@ -19,8 +19,8 @@ class Normal(Distribution):
     ) -> None:
         super().__init__()
 
-        self._mu = _to_optional_tensor(mu)
-        self._sigma = _to_optional_tensor(sigma)
+        self._mu = to_optional_tensor(mu)
+        self._sigma = to_optional_tensor(sigma)
 
     def forward(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Tuple[Tensor, Tensor]:
         """Compute μ, σ of N(x | μ, σ) from N(x | cond_vars)"""
@@ -32,13 +32,14 @@ class Normal(Distribution):
     def cond(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Self:
         self._mu, self._sigma = self(*cond_vars, **cond_vars_k)
 
-        _check_sigma = self._sigma.nan_to_num()
-        assert (0 <= _check_sigma).all().item(), "σ should be 0 <= σ (Normal distribution)"
+        assert (
+            (0 <= self._sigma.nan_to_num()).all().item()
+        ), "σ should be 0 <= σ (Normal distribution)"
 
         self._cnt += 1 if self._cnt < 1024 else 0
         return self
 
-    def log_p(self, x: Tensor) -> Tensor:
+    def log_prob(self, x: Tensor) -> Tensor:
         assert self._mu is not None
         assert self._sigma is not None
         assert x.shape == self._mu.shape
@@ -50,15 +51,14 @@ class Normal(Distribution):
         return self._mu.detach()
 
     def sample(self) -> Tensor:
-        return self.rsample()
+        return self.rsample().detach()
 
     def rsample(self) -> Tensor:
         assert self._mu is not None
         assert self._sigma is not None
-        x = normal_sample(self._mu, self._sigma)
-        return x
+        return normal_sample(self._mu, self._sigma)
 
-    def get_dist_params(self) -> Tuple[Tensor, Tensor]:
+    def dist_parameters(self) -> Tuple[Tensor, Tensor]:
         assert self._mu is not None
         assert self._sigma is not None
         return self._mu, self._sigma

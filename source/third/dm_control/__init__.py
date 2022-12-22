@@ -12,3 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ============================================================================
+
+
+# Changed/added by Sugar
+import os
+from dm_control.utils import io as resources
+
+def read_model(model_filename):
+  """Reads a model XML file and returns its contents as a string."""
+  return resources.GetResource(os.path.join(os.path.dirname(__file__), "suite", model_filename))

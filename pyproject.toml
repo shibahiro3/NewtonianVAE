@@ -1,21 +1,11 @@
 [tool.isort]
 profile = "black"
 src_paths = [
-    "source/models",
-    "source/newtonianvae",
-
-    "source/simulation",
-    "source/tool",
-    "source/view",
-
-    "source/mypython",
+    "source/*",
 ]
 skip_glob = [
     "source/third"
 ]
-# known_first_party = [
-#     "source/mypython"
-# ]
 
 [tool.black]
 line-length = 100

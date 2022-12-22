@@ -3,10 +3,9 @@ from pathlib import Path
 from pprint import pprint
 from typing import Optional, Union
 
-from third import json5
-
 from mypython.pyutil import check_args_type
 from mypython.terminal import Color
+from third import json5
 
 
 class _Converter:
@@ -153,18 +152,6 @@ class Params(_Converter):
         if lock:
             path.chmod(0o444)
         Color.print("saved simenv params:", path)
-
-
-class ParamsEval(Eval):
-    def __init__(self, path) -> None:
-        self.raw_ = json5.load(open(path))
-        super().__init__(**self.raw_["eval"])
-
-    @property
-    def _contents(self):
-        ret = self.__dict__.copy()
-        ret.pop("raw_")
-        return ret
 
 
 def default_to_json(obj):

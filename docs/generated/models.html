@@ -170,6 +170,7 @@
 <li><a class="reference internal" href="#models.pcontrol.PControl.Kn"><code class="docutils literal notranslate"><span class="pre">PControl.Kn()</span></code></a></li>
 <li><a class="reference internal" href="#models.pcontrol.PControl.forward"><code class="docutils literal notranslate"><span class="pre">PControl.forward()</span></code></a></li>
 <li><a class="reference internal" href="#models.pcontrol.PControl.pi"><code class="docutils literal notranslate"><span class="pre">PControl.pi()</span></code></a></li>
+<li><a class="reference internal" href="#models.pcontrol.PControl.step"><code class="docutils literal notranslate"><span class="pre">PControl.step()</span></code></a></li>
 <li><a class="reference internal" href="#models.pcontrol.PControl.training"><code class="docutils literal notranslate"><span class="pre">PControl.training</span></code></a></li>
 <li><a class="reference internal" href="#models.pcontrol.PControl.x_goal_n"><code class="docutils literal notranslate"><span class="pre">PControl.x_goal_n()</span></code></a></li>
 </ul>
@@ -927,11 +928,11 @@ vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
 <dl class="py class">
 <dt class="sig sig-object py" id="models.pcontrol.PControl">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">models.pcontrol.</span></span><span class="sig-name descname"><span class="pre">PControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_x_goal_middle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_pi_middle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_K_middle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.pcontrol.PControl" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM" title="mypython.ai.torchprob.distributions.gmm.GMM"><code class="xref py py-class docutils literal notranslate"><span class="pre">GMM</span></code></a></p>
 <p>Eq (12)</p>
 <div class="math notranslate nohighlight">
 \[\begin{array}{ll}
-    P(\u_t \mid \x_t) = \displaystyle \sum_{n=1}^N \pi_n(\x_t) \mathcal{N}(K_n(\x_{goal} - \x_t), \sigma^2)
+    P(\u_t \mid \x_t) = \displaystyle \sum_{n=1}^N \pi_n(\x_t) \mathcal{N}(\u_t \mid K_n(\x_n^{goal} - \x_t), \sigma_n^2)
 \end{array}\]</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="models.pcontrol.PControl.Kn">
@@ -941,20 +942,20 @@ vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
 <dd class="field-odd"><p>(N, D)</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Kn</p>
+<dd class="field-even"><p>K_n</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="models.pcontrol.PControl.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.pcontrol.PControl.forward" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.pcontrol.PControl.forward" title="Permalink to this definition"></a></dt>
 <dd><p>x_t: shape (<a href="#id9"><span class="problematic" id="id10">*</span></a>, dim_x)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="models.pcontrol.PControl.pi">
-<span class="sig-name descname"><span class="pre">pi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#models.pcontrol.PControl.pi" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">pi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#models.pcontrol.PControl.pi" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>(<a href="#id11"><span class="problematic" id="id12">*</span></a>, N)</p>
@@ -964,6 +965,11 @@ vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="models.pcontrol.PControl.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.pcontrol.PControl.step" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="models.pcontrol.PControl.training">
@@ -988,7 +994,7 @@ apply the control law ut ∝ (x(Igoal) − xt(It)).</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="models.pcontrol.PurePControl.step">
-<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.pcontrol.PurePControl.step" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#models.pcontrol.PurePControl.step" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

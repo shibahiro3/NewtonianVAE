@@ -37,7 +37,6 @@ class Label:
             else:
                 assert False
 
-        # color_action = mpu.cmap(2, "prism")
         self.color_x = ["#22ff7a", "#e7ad38"]
         self.color_l = ["#16aa4f", "#c59330"]
 

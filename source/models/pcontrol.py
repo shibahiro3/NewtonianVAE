@@ -27,24 +27,18 @@ class PurePControl:
         self.cell = cell
         self.x_goal = cell.q_encoder.cond(Igoal).rsample()
 
-    def step(self, x_t):
+    def step(self, x_t: Tensor):
         u_t = self.alpha * (self.x_goal - x_t)
         return u_t
 
 
-# import pixyz.distributions
-
-# pixyz.distributions.MixtureModel
-# pixyz.distributions.MixtureOfNormal
-
-
-class PControl(nn.Module):
+class PControl(tp.GMM):
     r"""
     Eq (12)
 
     .. math::
         \begin{array}{ll}
-            P(\u_t \mid \x_t) = \displaystyle \sum_{n=1}^N \pi_n(\x_t) \mathcal{N}(K_n(\x_{goal} - \x_t), \sigma^2)
+            P(\u_t \mid \x_t) = \displaystyle \sum_{n=1}^N \pi_n(\x_t) \mathcal{N}(\u_t \mid K_n(\x_n^{goal} - \x_t), \sigma_n^2)
         \end{array}
     """
 
@@ -66,7 +60,7 @@ class PControl(nn.Module):
         torch.nn.init.kaiming_normal_(self.K_W1)
         torch.nn.init.kaiming_normal_(self.K_W2)
 
-    def pi(self, x_t) -> Tensor:
+    def pi(self, x_t: Tensor) -> Tensor:
         """
         Returns:
             pi: (*, N)
@@ -78,40 +72,22 @@ class PControl(nn.Module):
     def Kn(self) -> Tensor:
         """
         Returns:
-            Kn: (N, D)
+            K_n: (N, D)
         """
         return self.K_W1 @ self.K_W2
 
     def x_goal_n(self) -> Tensor:
         return self.x_g_W1 @ self.x_g_W2
 
-    def forward(self, x_t):
+    def forward(self, x_t: Tensor):
         """
         x_t: shape (*, dim_x)
         """
-
-        # l = self.pi(x_t).mean()
-        # l.backward()
-
-        log_pi = torch.log_softmax(self.pi(x_t), dim=-1)  # (*, N)
-
-        # log_pi_ = torch.log_softmax(self.pi(x_t), dim=-1).mean()
-        # log_pi_.backward()
-
-        # Color.print(self.Kn().shape, c=Color.boldcyan)
-
-        # 上でx_tを使ってるわ。だからtensorを書き換えてしまってはいけない。(でもrequires_grad=Falseやからええ気もするけど。　)
-        # 上でx_t.clone()すれば良かったわ
+        pi = torch.softmax(self.pi(x_t), dim=-1)  # (*, N)
         x_t = x_t.unsqueeze(-2)
-        # print(x_t.requires_grad)
-        # torch.tensor()
-        # torch.unsqueeze
-        mus = self.Kn() * (self.x_goal_n() - x_t)  # (*, N, dim_x)
+        mu = self.Kn() * (self.x_goal_n() - x_t)  # (*, N, dim_x)
+        return pi, mu, self.std.to(mu.device)
 
-        # mu_ = mu.mean()
-        # mu_.backward()
-
-        # Color.print(log_pi.shape, c=Color.red)
-        # Color.print(mu.shape, c=Color.blue)
-
-        return log_pi, mus, self.std
+    def step(self, x_t: Tensor):
+        u_t = self.cond(x_t).sample()
+        return u_t

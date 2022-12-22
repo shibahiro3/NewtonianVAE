@@ -5,7 +5,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Union
 
-import classopt
 import numpy as np
 import torch
 from torch import nn, optim
@@ -16,24 +15,19 @@ from models.core import NewtonianVAEFamily
 from mypython.ai.util import SequenceDataLoader, print_module_params, reproduce
 from mypython.pyutil import RemainingTime, s2dhms_str
 from mypython.terminal import Color, Prompt
-from tool import argset, paramsmanager
+from tool import paramsmanager
 from tool.util import Preferences, creator, dtype_device
 from tool.visualhandlerbase import VisualHandlerBase
 
 
-@classopt.classopt(default_long=True, default_short=False)
-class Args:
-    config: str = classopt.config(**argset.descr_config, required=True)
-    resume: bool = classopt.config(help="Load the model and resume learning")
-
-
-args = Args.from_args()  # pylint: disable=E1101
-
-
-def train(vh=VisualHandlerBase()):
+def train(
+    config: str,
+    resume: bool,
+    vh=VisualHandlerBase(),
+):
     torch.set_grad_enabled(True)
 
-    params = paramsmanager.Params(args.config)
+    params = paramsmanager.Params(config)
 
     if params.train.seed is None:
         params.train.seed = np.random.randint(0, 2**16)
@@ -59,7 +53,7 @@ def train(vh=VisualHandlerBase()):
         model_place=models.core,
         model_name=params.model,
         model_params=params.raw_[params.model],
-        resume=args.resume,
+        resume=resume,
     )
     model: NewtonianVAEFamily
     model.type(dtype)
@@ -171,7 +165,3 @@ def train(vh=VisualHandlerBase()):
         pass
 
     end_process()
-
-
-if __name__ == "__main__":
-    train()

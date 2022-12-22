@@ -3,19 +3,18 @@ import sys
 import time
 from pathlib import Path
 
-import classopt
-import json5
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.gridspec import GridSpec
 
+import json5
 import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.plot_config
 import tool.util
-from env import ControlSuiteEnvWrap, obs2img
 from mypython.terminal import Color, Prompt
-from tool import argset, checker, paramsmanager
+from simulation.env import ControlSuiteEnvWrap, obs2img
+from tool import checker, paramsmanager
 from tool.util import Preferences
 
 tool.plot_config.apply()
@@ -26,56 +25,61 @@ try:
 except:
     pass
 
-config = {
-    "figure.figsize": (10.14, 4.05),
-    "figure.subplot.left": 0.05,
-    "figure.subplot.right": 0.95,
-    "figure.subplot.bottom": 0,
-    "figure.subplot.top": 1,
-    "figure.subplot.wspace": 0.3,
-}
-plt.rcParams.update(config)
+
+class Collector:
+    def __init__(self) -> None:
+        self.action = []
+        self.observation = []
+        self.delta = []
+        self.position = []
+
+    def save(self, path_dir):
+        path_dir = Path(path_dir)
+        path_dir.mkdir(parents=True, exist_ok=True)
+        np.save(Path(path_dir, "action.npy"), self.action)
+        np.save(Path(path_dir, "observation.npy"), self.observation)
+        np.save(Path(path_dir, "delta.npy"), self.delta)
+        np.save(Path(path_dir, "position.npy"), self.position)
 
 
-@classopt.classopt(default_long=True, default_short=False)
-class Args:
-    config: str = classopt.config(**argset.descr_config, required=True)
-    watch: str = classopt.config(
-        choices=["render", "plt"],
-        help=(
-            "Check data without saving data. For rendering, "
-            "you can choose to use OpenCV (render) or Matplotlib (plt)."
-        ),
+def main(
+    config: str,
+    episodes: int,
+    watch: str,
+    save_anim: bool,
+    format: str,
+):
+    plt.rcParams.update(
+        {
+            "figure.figsize": (10.14, 4.05),
+            "figure.subplot.left": 0.05,
+            "figure.subplot.right": 0.95,
+            "figure.subplot.bottom": 0,
+            "figure.subplot.top": 1,
+            "figure.subplot.wspace": 0.3,
+        }
     )
-    episodes: int = classopt.config(**argset.descr_episodes, required=True)
-    save_anim: bool = classopt.config()
-    movie_format: str = classopt.config(default="mp4")
 
-
-args = Args.from_args()  # pylint: disable=E1101
-
-
-def env_test():
-    if args.save_anim and args.watch != "plt":
+    if save_anim and watch != "plt":
         Color.print(
             "Ignore --save-anim option: Use --watch=plt option to save videos", c=Color.coral
         )
 
-    if args.save_anim and args.watch == "plt":
-        checker.large_episodes(args.episodes)
+    if save_anim and watch == "plt":
+        checker.large_episodes(episodes)
 
-    params = paramsmanager.Params(args.config)
+    params = paramsmanager.Params(config)
 
-    env = ControlSuiteEnvWrap(**json5.load(open(args.config))["ControlSuiteEnvWrap"])
+    env = ControlSuiteEnvWrap(**json5.load(open(config))["ControlSuiteEnvWrap"])
     T = env.max_episode_length // env.action_repeat
-    all_steps = T * args.episodes
+    all_steps = T * episodes
 
     print("observation size:", env.observation_size)
     print("action size:", env.action_size)
     print("action range:", env.action_range)
 
     data_path = Path(params.external.data_path)
-    if args.watch is None:
+    if watch is None:
         if len(list(data_path.glob("episodes/*"))) > 0:
             print(f'\n"{data_path}" directory will be rewritten.')
             if input("Do you want to continue? [y/n] ") != "y":
@@ -87,7 +91,7 @@ def env_test():
         params.save_simenv(Path(data_path, "params_env_bk.json5"))
         Preferences.put(data_path, "id", int(time.time() * 1000))
 
-    if args.watch == "plt":
+    if watch == "plt":
 
         def on_close(event):
             sys.exit()
@@ -111,32 +115,20 @@ def env_test():
 
     class AnimPack:
         def __init__(self) -> None:
-            self.init_LOG()
+            self.collector = Collector()
 
             self.t = 0
             self.episode_cnt = 0
 
-        def init_LOG(self):
-            self.LOG_action = []
-            self.LOG_observation = []
-            self.LOG_delta = []
-            self.LOG_position = []
-
-        def save_LOG(self, path_dir):
-            np.save(Path(path_dir, "action.npy"), self.LOG_action)
-            np.save(Path(path_dir, "observation.npy"), self.LOG_observation)
-            np.save(Path(path_dir, "delta.npy"), self.LOG_delta)
-            np.save(Path(path_dir, "position.npy"), self.LOG_position)
-
         def anim_func(self, frame_cnt):
-            if args.save_anim:
+            if save_anim:
                 Prompt.print_one_line(
-                    f"{frame_cnt+1:5d} / {all_steps} ({(frame_cnt+1)*100/all_steps:.1f} %)"
+                    f"{frame_cnt+1:5d} / {all_steps} ({(frame_cnt+1)*100/all_steps:.1f} %) "
                 )
 
             mod = frame_cnt % T
             if mod == 0:
-                self.init_LOG()
+                self.collector = Collector()
 
                 env.reset()
                 self.t = 0
@@ -150,21 +142,21 @@ def env_test():
             action = env.sample_random_action()
             # action = env.zeros_action()
             observation, _, done, position = env.step(action)
-            ###---------
-            # print("==========")
-            # print(action.shape)  # (2,)
-            # print(observation.shape)  # (3, 64, 64)
-            # print(position.shape)  # (2,)
-            self.LOG_action.append(action.numpy())
-            self.LOG_observation.append(observation.numpy())
-            self.LOG_delta.append(0.1)
-            self.LOG_position.append(position)
+
+            # print("===")
+            # print("action shape:     ", tuple(action.shape))  # (2,)
+            # print("observation shape:", tuple(observation.shape))  # (3, 64, 64)
+            # print("position shape:   ", position.shape)  # (2,)
+            self.collector.action.append(action.numpy())
+            self.collector.observation.append(observation.numpy())
+            self.collector.delta.append(0.1)
+            self.collector.position.append(position)
             ############
 
-            if args.watch == "render":
+            if watch == "render":
                 env.render()
 
-            elif args.watch == "plt":
+            elif watch == "plt":
                 axes.clear()
 
                 fig.suptitle(
@@ -172,13 +164,13 @@ def env_test():
                     fontname="monospace",
                 )
 
-                color_action = mpu.cmap(len(action), "prism")
+                dim_colors = mpu.cmap(len(action), "prism")
 
                 # ==================================================
                 ax = axes.action
                 ax.set_title(r"$\mathbf{u}_{t-1}$")
                 ax.set_ylim(-1.2, 1.2)
-                ax.bar(range(len(action)), action, color=color_action, width=0.5)
+                ax.bar(range(len(action)), action, color=dim_colors, width=0.5)
                 mpu.Axis_aspect_2d(ax, 1)
                 ax.set_xticks(range(len(action)))
                 if env.domain == "reacher2d":
@@ -197,7 +189,7 @@ def env_test():
                 ax.set_title("Position")
                 if env.domain == "reacher2d" and env.position_wrap == "None":
                     ax.set_ylim(-np.pi, np.pi)
-                    ax.bar(range(len(position)), position, color=color_action, width=0.5)
+                    ax.bar(range(len(position)), position, color=dim_colors, width=0.5)
                     mpu.Axis_aspect_2d(ax, 1)
                     ax.set_xlabel("Angle")
                     ax.set_xticks(range(len(position)))
@@ -208,36 +200,35 @@ def env_test():
                     ax.set_xlabel("x")
                     ax.set_ylabel("y")
                     ax.plot(position[0], position[1], marker="o", ms=10, color="orange")
-                    mpu.cartesian_coordinate(ax, 0.35)
+                    mpu.cartesian_coordinate(ax, 0.35)  # dm_control wall: 0.3
 
-            if done and not args.save_anim:
+            if done and not save_anim:
                 print(f"episode: {self.episode_cnt+1}, T = {self.t}")
 
-                if args.watch is None:
+                if watch is None:
                     episode_dir = Path(data_path, "episodes", f"{self.episode_cnt}")
-                    episode_dir.mkdir(parents=True, exist_ok=True)
-                    self.save_LOG(episode_dir)
+                    self.collector.save(episode_dir)
                     Color.print("saved", c=Color.green)
                 else:
                     Color.print("not saved", c=Color.coral)
 
     p = AnimPack()
 
-    if args.watch == "plt":
-        save_path = Path(data_path, f"data.{args.movie_format}")
+    if watch == "plt":
+        save_path = Path(data_path, f"data.{format}")
         mpu.anim_mode(
-            "save" if args.save_anim else "anim",
+            "save" if save_anim else "anim",
             fig,
             p.anim_func,
-            T * args.episodes,
+            T * episodes,
             interval=40,
             save_path=save_path,
         )
 
     else:
-        for frame_cnt in range(T * args.episodes):
+        for frame_cnt in range(T * episodes):
             p.anim_func(frame_cnt)
 
 
 if __name__ == "__main__":
-    env_test()
+    main()

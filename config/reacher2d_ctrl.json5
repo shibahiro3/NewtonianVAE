@@ -1,0 +1,35 @@
+{
+  model: "PControl",
+
+  PControl: {
+    dim_x: 2,
+    transition_std: 0.001,
+  },
+
+  train: {
+    data_start: 0,
+    data_stop: 30,
+    batch_size: 5,
+    epochs: 500,
+    learning_rate: 3e-4,
+    max_time_length: 100,
+    device: "cuda",
+    dtype: "float32",
+    save_per_epoch: 500,
+  },
+
+  external: {
+    data_path: "environment/reacher2d/data_operate",
+    save_path: "environment/reacher2d/saves_ctrl",
+  },
+
+  ControlSuiteEnvWrap: {
+    env: "reacher2d-hard",
+    seed: 1,
+    max_episode_length: 100,
+    action_repeat: 1,
+    bit_depth: 8,
+    // action_type: "default",
+    // position_wrap: "endeffector",
+  },
+}

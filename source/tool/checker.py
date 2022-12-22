@@ -1,9 +1,9 @@
 import sys
 from pathlib import Path
 
-import json5
 import torch
 
+import json5
 from mypython.terminal import Color
 
 

@@ -1,9 +1,7 @@
 import sys
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
-import classopt
-import json5
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,6 +9,7 @@ import torch
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
 
+import json5
 import models.core
 import mypython.plotutil as mpu
 import mypython.vision as mv
@@ -20,7 +19,7 @@ from models.core import NewtonianVAEFamily
 from mypython.ai.util import SequenceDataLoader, swap01
 from mypython.pyutil import Seq
 from mypython.terminal import Color
-from tool import argset, paramsmanager
+from tool import paramsmanager
 from view.label import Label
 
 tool.plot_config.apply()
@@ -31,40 +30,35 @@ try:
 except:
     pass
 
-config = {
-    "figure.figsize": (8.89, 5.83),
-    "figure.subplot.left": 0.1,
-    "figure.subplot.right": 0.95,
-    "figure.subplot.bottom": 0.05,
-    "figure.subplot.top": 0.98,
-    "figure.subplot.hspace": 0.2,
-    "figure.subplot.wspace": 0.5,
-    #
-    "lines.marker": "o",
-    "lines.markersize": 1,
-    "lines.markeredgecolor": "None",
-    "lines.linestyle": "None",
-}
-plt.rcParams.update(config)
 
-
-@classopt.classopt(default_long=True, default_short=False)
-class Args:
-    config: str = classopt.config(**argset.descr_config, required=True)
-    episodes: int = classopt.config(**argset.descr_episodes, required=True)
-    path_model: str = classopt.config(**argset.descr_path_model, required=False)
-    path_data: str = classopt.config(**argset.descr_path_data, required=False)
-    path_result: str = classopt.config(**argset.descr_path_result, required=False)
-    fix_xmap_size: float = classopt.config(metavar="S", help="xmap size")
-    env_domain: str = classopt.config(metavar="ENV")
-    format: List[str] = classopt.config(nargs="*", default=["svg", "pdf"])
-
-
-args = Args.from_args()  # pylint: disable=E1101
-
-
-def correlation():
+def correlation(
+    config: str,
+    episodes: int,
+    path_model: Optional[str],
+    path_data: Optional[str],
+    path_result: Optional[str],
+    fix_xmap_size: float,
+    env_domain: str,
+    format: List[str],
+):
     # ============================================================
+    plt.rcParams.update(
+        {
+            "figure.figsize": (8.89, 5.83),
+            "figure.subplot.left": 0.1,
+            "figure.subplot.right": 0.95,
+            "figure.subplot.bottom": 0.05,
+            "figure.subplot.top": 0.98,
+            "figure.subplot.hspace": 0.2,
+            "figure.subplot.wspace": 0.5,
+            #
+            "lines.marker": "o",
+            "lines.markersize": 1,
+            "lines.markeredgecolor": "None",
+            "lines.linestyle": "None",
+        }
+    )
+
     fig = plt.figure()
     mpu.get_figsize(fig)
 
@@ -82,17 +76,17 @@ def correlation():
             self.p1l0 = fig.add_subplot(gs[1, 2])
 
     axes = Ax()
-    label = Label(args.env_domain)
+    label = Label(env_domain)
     # ============================================================
 
     torch.set_grad_enabled(False)
 
-    _params = paramsmanager.Params(args.config)
+    _params = paramsmanager.Params(config)
     params_eval = _params.eval
-    path_model = tool.util.priority(args.path_model, _params.external.save_path)
-    path_data = tool.util.priority(args.path_data, _params.external.data_path)
+    path_model = tool.util.priority(path_model, _params.external.save_path)
+    path_data = tool.util.priority(path_data, _params.external.data_path)
     del _params
-    path_result = tool.util.priority(args.path_result, params_eval.result_path)
+    path_result = tool.util.priority(path_result, params_eval.result_path)
 
     dtype, device = tool.util.dtype_device(
         dtype=params_eval.dtype,
@@ -104,7 +98,7 @@ def correlation():
         names=["action", "observation", "delta", "position"],
         start=params_eval.data_start,
         stop=params_eval.data_stop,
-        batch_size=args.episodes,
+        batch_size=episodes,
         dtype=dtype,
         device=device,
     )
@@ -144,14 +138,10 @@ def correlation():
 
     # ============================================================
 
-    color = mpu.cmap(args.episodes, "rainbow")  # per batch color
-    # color = ["#377eb880" for _ in range(args.episodes)]
+    color = mpu.cmap(episodes, "rainbow")  # per batch color
+    # color = ["#377eb880" for _ in range(episodes)]
 
-    lmax = args.fix_xmap_size
-    # if args.fix_xmap_size is not None:
-    #     lmax = args.fix_xmap_size
-    # else:
-    #     lmax = np.abs([latent_map.min(), latent_map.max()]).max()
+    lmax = fix_xmap_size
 
     # ============================================================
     x = latent_map[..., 0]
@@ -160,7 +150,7 @@ def correlation():
     ax = axes.latent_map
     ax.set_title("Latent map")
 
-    for i in range(args.episodes):
+    for i in range(episodes):
         ax.plot(x[i], y[i], color=color[i])
     label.set_axes_L0L1(ax, lmax)
 
@@ -171,7 +161,7 @@ def correlation():
     ax = axes.p0l0
     ax.set_title(f"Correlation = {corr_p0l0:.4f}")
 
-    for i in range(args.episodes):
+    for i in range(episodes):
         ax.plot(x[i], y[i], color=color[i])
     label.set_axes_P0L0(ax, lmax)
 
@@ -182,7 +172,7 @@ def correlation():
     ax = axes.p1l1
     ax.set_title(f"Correlation = {corr_p1l1:.4f}")
 
-    for i in range(args.episodes):
+    for i in range(episodes):
         ax.plot(x[i], y[i], color=color[i])
     label.set_axes_P1L1(ax, lmax)
 
@@ -193,7 +183,7 @@ def correlation():
     ax = axes.p0l1
     ax.set_title(f"Correlation = {corr_p0l1:.4f}")
 
-    for i in range(args.episodes):
+    for i in range(episodes):
         ax.plot(x[i], y[i], color=color[i])
     label.set_axes_P0L1(ax, lmax)
 
@@ -204,17 +194,13 @@ def correlation():
     ax = axes.p1l0
     ax.set_title(f"Correlation = {corr_p1l0:.4f}")
 
-    for i in range(args.episodes):
+    for i in range(episodes):
         ax.plot(x[i], y[i], color=color[i])
     label.set_axes_P1L0(ax, lmax)
 
     # ============================================================
     save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_correlation.pdf")
     # save_path = add_version(save_path)
-    mpu.register_save_path(fig, save_path, args.format)
+    mpu.register_save_path(fig, save_path, format)
 
     plt.show()
-
-
-if __name__ == "__main__":
-    correlation()
