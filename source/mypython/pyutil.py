@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import copy
 import datetime
 import errno
 import fcntl
@@ -21,7 +24,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from posix import times_result
 from pprint import pformat
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
+
+import numpy as np
+from typing_extensions import Self
 
 from mypython.numeric import MovingAverage
 
@@ -31,25 +37,32 @@ def is_number_type(x):
     return _tx == int or _tx == float
 
 
-def check_args_type(f: Callable, locals_):
+def check_args_type(f: Callable, argname_value):
+    """argname_value: ex. locals(), self.__dict__"""
+
+    errs = []
+
     for arg_name, ttype in f.__annotations__.items():
-        if arg_name == "return":
+        if arg_name in ("self", "return"):
             continue
 
-        _value = locals_[arg_name]
+        _value = argname_value[arg_name]
         _type = type(_value)
-        # print(arg_name, ":", _value, _type.__name__, ",", ttype)
+        # print(arg_name, ":", _value, _type.__name__, "|", ttype)
         if typing.get_origin(ttype) == typing.Union:
             _u_args = typing.get_args(ttype)
             if _type not in _u_args:
-                raise TypeError(
-                    f'The value {_value} specified for "{arg_name}" is not of type {" or ".join([str(_ttype.__name__) for _ttype in _u_args])}.'
-                )
+                elem = " or ".join([f'"{_ttype.__name__}"' for _ttype in _u_args])
+                errs.append(f'The value {_value} specified for "{arg_name}" is not of type {elem}.')
         else:
             if _type != ttype:
-                raise TypeError(
-                    f'The value {_value} specified for "{arg_name}" is not of type {ttype.__name__}.'
+                errs.append(
+                    f'The value {_value} specified for "{arg_name}" is not of type "{ttype.__name__}".'
                 )
+
+    if len(errs) > 0:
+        errs = ["  " + e for e in errs]
+        raise TypeError("\n" + "\n".join(errs))
 
         # TODO: typing.Tuple
 
@@ -108,6 +121,71 @@ class Seq:
         return self._i
 
 
+class Seq2:
+    def __init__(self, size: int, ratio_index: Tuple[int, int], start=0, lazy=False) -> None:
+        """| a, b | a, b | ..."""
+
+        _gcd = math.gcd(*ratio_index)
+        _a = ratio_index[0] // _gcd
+        _b = ratio_index[1] // _gcd
+
+        self._start = start
+        self._step_a = _a
+        self._step_b = _b
+        self._size = size
+        self._length = (_a + _b) * (size - 1) + _a
+        self._lazy = lazy
+
+        if not self._lazy:
+            self._i = start - _b
+        else:
+            self._i = start
+
+    @property
+    def a(self):
+        if not self._lazy:
+            self._i += self._step_b
+            return self._i
+        else:
+            return self._i + self._step_b
+
+    @property
+    def b(self):
+        if not self._lazy:
+            self._i += self._step_a
+            return self._i
+        else:
+            return self._i + self._step_a
+
+    @property
+    def length(self):
+        return self._length
+
+    @property
+    def size(self):
+        return self._size
+
+    def update(self):
+        self._i += self._step_a + self._step_b
+
+    @staticmethod
+    def share_length(*seq2s: Seq2):
+        for e in seq2s:
+            assert e._lazy == False
+
+        lengths = np.array([e.length for e in seq2s])
+        length = np.lcm.reduce(lengths)
+
+        for i, e in enumerate(seq2s):
+            coef = length // lengths[i]
+            e._step_a *= coef
+            e._step_b *= coef
+            e._length = (e._step_a + e._step_b) * (e._size - 1) + e._step_a
+            e._i = e._start - e._step_b
+
+        return length
+
+
 class RemainingTime:
     def __init__(self, max: Optional[int] = None, size=10) -> None:
         """
@@ -155,3 +233,27 @@ class RemainingTime:
     def elapsed(self):
         """Returns: [seconds]"""
         return self._time_now - self._time_start
+
+
+class initialize:
+    """
+    Examples:
+        @initialize.all_with(None)
+        class Data:
+            ...
+    """
+
+    @staticmethod
+    def all_with(value, value_wrap=copy.copy):
+        def _inner(cls):
+            def init(self):
+                for name in cls.__annotations__.keys():
+                    if value_wrap is None:
+                        setattr(self, name, value)
+                    else:
+                        setattr(self, name, value_wrap(value))
+
+            setattr(cls, "__init__", init)
+            return cls
+
+        return _inner

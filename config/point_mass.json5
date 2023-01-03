@@ -2,20 +2,33 @@
   model: "NewtonianVAEV2",
 
   NewtonianVAEV2: {
-    dim_x: 2,
-    transition_std: 0.001,
-    encoder_dim_middle: 1024,
-    encoder_std_function: "softplus",
     regularization: false,
-    fix_abc: [0, 0, 1],
-    // fix_abc: null,
-    decoder_type: "SpatialBroadcastDecoder64",
+    velocity: {
+      dim_x: 2,
+      fix_abc: [0, 0, 1],
+      // fix_abc: null,
+    },
+    transition: {
+      std: 0.001,
+      // std: null,
+    },
+    encoder: {
+      dim_x: 2,
+      dim_middle: 1024,
+      std_function: "softplus",
+    },
+    decoder: {
+      dim_x: 2,
+      decoder_type: "SpatialBroadcastDecoder64",
+      std: 1,
+      // std: null,
+    },
   },
 
   train: {
     data_start: 0,
     data_stop: 1000,
-    batch_size: 10,
+    batch_size: 20,
     epochs: 300,
     learning_rate: 3e-4,
     max_time_length: 100,
@@ -23,11 +36,7 @@
     dtype: "float32",
     kl_annealing: true,
     save_per_epoch: 20,
-  },
-
-  external: {
-    data_path: "environment/point_mass/data_rwalk",
-    save_path: "environment/point_mass/saves",
+    check_value: false,
   },
 
   eval: {
@@ -35,17 +44,20 @@
     dtype: "float32",
     data_start: 1000,
     data_stop: 1050,
-    training: false,
-    result_path: "environment/point_mass/results",
   },
 
   ControlSuiteEnvWrap: {
-    // hard はactionの座標系にアフィン変換が適用されてる
     env: "point_mass-easy",
     seed: 1,
     max_episode_length: 100,
     action_repeat: 1,
     bit_depth: 8,
     action_type: "random_walk",
+  },
+
+  path: {
+    data_dir: "environments/point_mass/data",
+    saves_dir: "environments/point_mass/saves",
+    results_dir: "environments/point_mass/results",
   },
 }

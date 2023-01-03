@@ -1,6 +1,8 @@
+import os
 import shutil
 import sys
 import time
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Union
@@ -10,6 +12,7 @@ import torch
 from torch import nn, optim
 
 import models.core
+import mypython.ai.torchprob as tp
 import tool.util
 from models.core import NewtonianVAEFamily
 from mypython.ai.util import SequenceDataLoader, print_module_params, reproduce
@@ -17,7 +20,7 @@ from mypython.pyutil import RemainingTime, s2dhms_str
 from mypython.terminal import Color, Prompt
 from tool import paramsmanager
 from tool.util import Preferences, creator, dtype_device
-from tool.visualhandlerbase import VisualHandlerBase
+from view.visualhandlerbase import VisualHandlerBase
 
 
 def train(
@@ -39,7 +42,7 @@ def train(
     )
 
     trainloader = SequenceDataLoader(
-        root=Path(params.external.data_path, "episodes"),
+        root=Path(params.path.data_dir, "episodes"),
         names=["action", "observation", "delta"],
         start=params.train.data_start,
         stop=params.train.data_stop,
@@ -49,10 +52,10 @@ def train(
     )
 
     model, managed_dir, weight_dir, resume_weight_path = creator(
-        root=params.external.save_path,
+        root=params.path.saves_dir,
         model_place=models.core,
         model_name=params.model,
-        model_params=params.raw_[params.model],
+        model_params=params.model_params,
         resume=resume,
     )
     model: NewtonianVAEFamily
@@ -62,11 +65,8 @@ def train(
     # print_module_params(model)
     optimizer = optim.Adam(model.parameters(), params.train.learning_rate)
 
-    params.external.data_id = Preferences.get(params.external.data_path, "id")
-    params.external.resume_from = (
-        str(resume_weight_path) if (resume_weight_path is not None) else None
-    )
-
+    params.path.resume_weight = resume_weight_path
+    params.pid = os.getpid()
     params.save(Path(managed_dir, "params_saved.json5"))
 
     vh.title = managed_dir.stem
@@ -88,9 +88,10 @@ def train(
         else:
             shutil.rmtree(managed_dir)
 
-        Color.print("\nEnd of train")
+        print("\nEnd of train")
 
     try:
+        tp.config.check_value = params.train.check_value  # if False, A little bit faster
         remaining = RemainingTime(max=params.train.epochs * len(trainloader))
         for epoch in range(1, params.train.epochs + 1):
 
@@ -133,8 +134,17 @@ def train(
                 E_ll = -E_ll.cpu().item()
                 E_kl = E_kl.cpu().item()
 
-                remaining.update()
+                record_Loss.append(L)
+                record_NLL.append(E_ll)
+                record_KL.append(E_kl)
 
+                vh.plot(L, E_ll, E_kl, epoch)
+                if not vh.is_running:
+                    vh.call_end()
+                    end_process()
+                    return
+
+                remaining.update()
                 Prompt.print_one_line(
                     (
                         f"Epoch: {epoch} | "
@@ -147,21 +157,14 @@ def train(
                     )
                 )
 
-                record_Loss.append(L)
-                record_NLL.append(E_ll)
-                record_KL.append(E_kl)
-
-                vh.plot(L, E_ll, E_kl, epoch)
-                if not vh.is_running:
-                    vh.call_end()
-                    end_process()
-                    return
-
             if epoch % params.train.save_per_epoch == 0:
                 torch.save(model.state_dict(), Path(weight_dir, f"{epoch}.pth"))
                 print("saved")
 
     except KeyboardInterrupt:
-        pass
+        print("\nKeyboardInterrupt")
+    except:
+        print("=== traceback ===")
+        print(traceback.format_exc())
 
     end_process()

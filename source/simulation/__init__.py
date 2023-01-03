@@ -1,3 +1,3 @@
 """
-Simulation environment is a must
+Simulation environment is required
 """

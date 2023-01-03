@@ -12,10 +12,6 @@ from torch import Tensor, nn, optim
 _NT = Union[np.ndarray, Tensor]
 
 
-def to_np(x: Tensor) -> np.ndarray:
-    return x.detach().cpu().numpy()
-
-
 def reproduce(seed: int = 1234) -> None:
     random.seed(seed)
     np.random.seed(seed)
@@ -61,6 +57,16 @@ def swap01(x: _NT) -> _NT:
         assert False
 
 
+def to_np(x) -> np.ndarray:
+    _type = type(x)
+    if _type == Tensor:
+        return x.detach().cpu().numpy()
+    elif _type == np.ndarray:
+        return x
+    else:
+        return np.array(x)
+
+
 class BatchIdx:
     def __init__(self, start: int, stop: int, batch_size: int):
         assert stop - start >= batch_size
@@ -93,7 +99,7 @@ class BatchIdx:
 
 class SequenceDataLoader(BatchIdx):
     """
-    Ref:
+    References:
         torch.utils.data.IterableDataset
     """
 
@@ -106,6 +112,7 @@ class SequenceDataLoader(BatchIdx):
         batch_size: int,
         dtype: torch.dtype,
         device=torch.device("cpu"),
+        show_selected_index=False,
     ):
         """
         root: directory path of data
@@ -130,11 +137,20 @@ class SequenceDataLoader(BatchIdx):
         self.device = device
         self.dtype = dtype
         self.names = names
+        self.show_selected_index = show_selected_index
 
     def __next__(self):
+        mask = super().__next__()
+
+        if self.show_selected_index:
+            msg = f"=== Selected index ({self.__class__.__name__}) ==="
+            print(msg)
+            print(mask)
+            print("=" * len(msg))
+
         return self._seq_load(
             root=self.root,
-            indexes=super().__next__(),
+            indexes=mask,
             names=self.names,
             dtype=self.dtype,
             device=self.device,

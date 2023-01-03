@@ -1,66 +1,83 @@
+import math
+from numbers import Number, Real
 from typing import List, Optional, Tuple, Union
 
 import torch
-from torch import Tensor, nn
+from torch import Tensor
 from typing_extensions import Self
 
 from mypython.terminal import Color
 
-from .base import Distribution, _eps, to_optional_tensor
+from .. import config
+from .base import Distribution, ProbParamsValueError, _eps, to_optional_tensor
 
 
 class Bernoulli(Distribution):
     # torch.distributions.Bernoulli
 
-    def __init__(self, mu: Union[None, int, float, Tensor] = None) -> None:
+    ParamsReturnType = Tensor
+
+    def __init__(
+        self,
+        mu: Union[None, int, float, Tensor] = None,
+    ) -> None:
         super().__init__()
 
-        self._mu = to_optional_tensor(mu)
+        self._mu_pvt_ = to_optional_tensor(mu)
 
-    def forward(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Tensor:
-        """Compute μ of Bern(x | μ) from Bern(x | cond_vars)"""
+    def forward(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> ParamsReturnType:
         raise NotImplementedError()
         mu: Tensor
         return mu
 
-    def cond(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Self:
-        self._mu = self(*cond_vars, **cond_vars_k)
+    def __call__(self, *args, **kwargs) -> ParamsReturnType:
+        return super().__call__(*args, **kwargs)
 
-        _check_mu = self._mu.nan_to_num()
-        assert (
-            (0 <= _check_mu).all() and (_check_mu <= 1).all()
-        ).item(), "μ should be 0 <= μ <= 1 (Bernoulli distribution)"
+    def given(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Self:
+        self._cnt_given += 1 if self._cnt_given < 1024 else 0
+        self._mu_pvt_ = self(*cond_vars, **cond_vars_k)
 
-        self._cnt += 1 if self._cnt < 1024 else 0
+        if config.check_value:
+            assert type(self._mu_pvt_) == Tensor
+
+            if self._mu_pvt_.isnan().any().item():
+                raise ProbParamsValueError("μ contains nan (Bernoulli)")
+            if not ((0 <= self._mu_pvt_).all() and (self._mu_pvt_ <= 1).all()).item():
+                raise ProbParamsValueError("μ should be 0 ≤ μ ≤ 1 (Bernoulli)")
+
         return self
 
     def log_prob(self, x: Tensor) -> Tensor:
-        assert self._mu is not None
-        assert x.shape == self._mu.shape
-        return log_bernoulli(x, self._mu)
+        assert self._mu_pvt_ is not None
+        assert x.shape == self._mu_pvt_.shape
+        return self.func_log(x, self._mu_pvt_)
 
     def decode(self) -> Tensor:
-        assert self._mu is not None
-        return self._mu.detach()
+        assert self._mu_pvt_ is not None
+        return self._mu_pvt_.detach()
 
-    def dist_parameters(self) -> Tensor:
-        assert self._mu is not None
-        return self._mu
+    def dist_parameters(self) -> ParamsReturnType:
+        assert self._mu_pvt_ is not None
+        return self._mu_pvt_
+
+    def clear_dist_parameters(self) -> None:
+        self._cnt_given = 0
+        self._mu_pvt_ = None
 
     @property
     def loc(self) -> Tensor:
-        return self._mu
+        return self._mu_pvt_
 
     @property
     def scale(self) -> Tensor:
-        return torch.sqrt(self._mu * (1 - self._mu))
+        return torch.sqrt(self._mu_pvt_ * (1 - self._mu_pvt_))
 
+    @staticmethod
+    def func_log(x: Tensor, mu: Tensor) -> Tensor:
+        """
+        References:
+            https://docs.chainer.org/en/stable/reference/generated/chainer.functions.bernoulli_nll.html
+            https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L181
+        """
 
-def log_bernoulli(x: Tensor, mu: Tensor) -> Tensor:
-    """
-    Ref:
-        https://docs.chainer.org/en/stable/reference/generated/chainer.functions.bernoulli_nll.html
-        https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L181
-    """
-
-    return x * torch.log(mu + _eps) + (1 - x) * torch.log(1 - mu - _eps)
+        return x * torch.log(mu + _eps) + (1 - x) * torch.log(1 - mu - _eps)

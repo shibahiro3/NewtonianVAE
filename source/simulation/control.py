@@ -1,60 +1,216 @@
+import dataclasses
 import sys
 from pathlib import Path
 from pprint import pprint
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
+from torch import Tensor
 
+import controller.train as ct
 import json5
 import models.core
+import models.pcontrol
 import mypython.plotutil as mpu
 import mypython.vision as mv
-import tool.plot_config
 import tool.util
+import view.plot_config
 from models.cell import CellWrap
 from models.core import NewtonianVAEFamily
-from models.pcontrol import PurePControl
-from mypython.pyutil import Seq, add_version
+from models.pcontrol import PControl
+from mypython.ai.util import to_np
+from mypython.pyutil import Seq, Seq2, add_version, initialize
 from mypython.terminal import Color, Prompt
 from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img
 from tool import checker, paramsmanager
+from tool.util import RecoderBase
 from view.label import Label
 
-tool.plot_config.apply()
+view.plot_config.apply()
 try:
-    import tool._plot_config
+    import view._plot_config
 
-    tool._plot_config.apply()
+    view._plot_config.apply()
 except:
     pass
 
 
 def main(
-    config: str,
+    config_ctrl: str,
     episodes: int,
-    path_model: Optional[str],
-    path_result: Optional[str],
     fix_xmap_size: float,
     save_anim: bool,
-    goal_img: str,
-    alpha: float,
     steps: int,
     format: str,
 ):
-    # =====================================================
+    if save_anim:
+        checker.large_episodes(episodes)
+
+    torch.set_printoptions(precision=4, sci_mode=False)
+
+    params_ctrl = paramsmanager.Params(config_ctrl)
+    dtype, device = tool.util.dtype_device(
+        dtype=params_ctrl.eval.dtype,
+        device=params_ctrl.eval.device,
+    )
+
+    p_pctrl, manage_dir, weight_path, saved_params_ctrl = tool.util.load(
+        root=params_ctrl.path.saves_dir,
+        model_place=models.pcontrol,
+    )
+    p_pctrl: PControl
+    p_pctrl.type(dtype)
+    p_pctrl.to(device)
+    p_pctrl.eval()
+
+    model, _ = tool.util.load_direct(
+        weight_path=saved_params_ctrl.path.used_nvae_weight, model_place=models.core
+    )
+    model: NewtonianVAEFamily
+    model.type(dtype)
+    model.to(device)
+    model.eval()
+
+    path_result = tool.util.priority(
+        params_ctrl.path.results_dir, saved_params_ctrl.path.results_dir
+    )
+    env = ControlSuiteEnvWrap(**params_ctrl.raw_["ControlSuiteEnvWrap"])
+
+    if steps is not None:
+        max_time_length = steps
+    else:
+        max_time_length = params_ctrl.train.max_time_length
+
+    del params_ctrl
+    del saved_params_ctrl
+
+    print("=== PControl params ===")
+    Color.print("x^goal_n:")
+    print(p_pctrl.x_goal_n.detach().cpu())
+    Color.print("K_n")
+    print(p_pctrl.K_n.detach().cpu())
+
+    record = calculate(
+        p_pctrl=p_pctrl, model=model, env=env, episodes=episodes, time_length=max_time_length
+    )
+
+    all_steps = max_time_length * episodes
+
+    p = draw(
+        record=record,
+        model=model,
+        env=env,
+        p_pctrl=p_pctrl,
+        max_time_length=max_time_length,
+        all_steps=all_steps,
+        fix_xmap_size=fix_xmap_size,
+    )
+
+    save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_control.{format}")
+    save_path = add_version(save_path)
+    mpu.anim_mode(
+        "save" if save_anim else "anim",
+        p.fig,
+        p.anim_func,
+        all_steps,
+        interval=40,
+        freeze_cnt=-1,
+        save_path=save_path,
+    )
+
+    print()
+
+
+@initialize.all_with([])
+class Pack(RecoderBase):
+    action: np.ndarray
+    observation: np.ndarray
+    reconstruction: np.ndarray
+    x: np.ndarray
+    position: np.ndarray
+    pi: np.ndarray
+
+
+def calculate(
+    p_pctrl: PControl,
+    model: NewtonianVAEFamily,
+    env: ControlSuiteEnvWrap,
+    episodes: int,
+    time_length: int,
+):
+    torch.set_grad_enabled(False)
+
+    record = Pack()
+
+    dtype = next(model.parameters()).dtype
+    device = next(model.parameters()).device
+
+    print("Calculating...")
+    for episode in range(episodes):
+        record.add_list()
+
+        cell_wrap = CellWrap(cell=model.cell)
+
+        action = torch.zeros(size=(1, model.cell.dim_x), device=device, dtype=dtype)
+        observation = env.reset().to(dtype=dtype).to(device=device)
+
+        for t in range(time_length):
+            action_prev = action  # for recording
+
+            x_t, I_t_dec = cell_wrap.step(action=action_prev, observation=observation)
+            x_t_ = ct.preprocess_x(x_t)
+            action_ = p_pctrl.step(x_t_)
+            action = ct.postprocess_u(action_)
+
+            observation, _, done, position = env.step(action)
+            observation = observation.to(dtype=dtype).to(device=device)
+
+            pi, mu, sigma = p_pctrl.dist_parameters()
+
+            record.append(
+                action=to_np(action_prev.squeeze(0)),
+                observation=to_np(observation.squeeze(0)),
+                reconstruction=to_np(I_t_dec.squeeze(0)),
+                x=to_np(x_t.squeeze(0)),
+                position=position,
+                pi=to_np(pi.squeeze(0)),
+            )
+
+            Prompt.print_one_line(
+                f"Trial: {episode+1:2d}/{episodes} | Step: {t+1:4d}/{time_length} "
+            )
+
+    print("\nDone")
+    record.to_whole_np(show_shape=True)
+
+    return record
+
+
+def draw(
+    record: Pack,
+    p_pctrl: PControl,
+    model: NewtonianVAEFamily,
+    env: ControlSuiteEnvWrap,
+    max_time_length: int,
+    all_steps: int,
+    fix_xmap_size: float,
+):
+    dim_colors = mpu.cmap(model.cell.dim_x, "prism")
+    label = Label(env.domain)
+
     plt.rcParams.update(
         {
             "figure.figsize": (12.76, 8.39),
-            "figure.subplot.left": 0.05,
-            "figure.subplot.right": 0.95,
+            "figure.subplot.left": 0.07,
+            "figure.subplot.right": 0.98,
             "figure.subplot.bottom": 0.1,
-            "figure.subplot.top": 1,
-            "figure.subplot.hspace": 0.3,
-            "figure.subplot.wspace": 0.3,
+            "figure.subplot.top": 0.9,
+            "figure.subplot.hspace": 0,
+            "figure.subplot.wspace": 0,
         }
     )
 
@@ -63,93 +219,30 @@ def main(
 
     class Ax:
         def __init__(self) -> None:
-            gs = GridSpec(nrows=5, ncols=12)
-            up = 3
+            r = Seq2(2, (6, 1), lazy=True)
+            c1 = Seq2(3, (4, 1))
+            c2 = Seq2(4, (2, 1))
+            length = Seq2.share_length(c1, c2)
+            gs = GridSpec(nrows=r.length, ncols=length)
 
-            v1 = Seq(step=3, start_now=True)
-            v2 = Seq(step=4, start_now=True)
-
-            self.action = fig.add_subplot(gs[:up, v1.now : v1.next()])
-            self.Igoal = fig.add_subplot(gs[:up, v1.now : v1.next()])
-            self.observation = fig.add_subplot(gs[:up, v1.now : v1.next()])
-            self.obs_dec = fig.add_subplot(gs[:up, v1.now : v1.next()])
-
-            self.x_map = fig.add_subplot(gs[up:5, v2.now : v2.next()])
-            self.x = fig.add_subplot(gs[up:5, v2.now : v2.next()])
-            self.y = fig.add_subplot(gs[up:5, v2.now : v2.next()])
+            self.action = fig.add_subplot(gs[r.a : r.b, c1.a : c1.b])
+            self.observation = fig.add_subplot(gs[r.a : r.b, c1.a : c1.b])
+            self.obs_dec = fig.add_subplot(gs[r.a : r.b, c1.a : c1.b])
+            r.update()
+            self.pi = fig.add_subplot(gs[r.a : r.b, c2.a : c2.b])
+            self.x_map = fig.add_subplot(gs[r.a : r.b, c2.a : c2.b])
+            self.x = fig.add_subplot(gs[r.a : r.b, c2.a : c2.b])
+            self.y = fig.add_subplot(gs[r.a : r.b, c2.a : c2.b])
 
         def clear(self):
             for ax in self.__dict__.values():
                 ax.clear()
 
     axes = Ax()
-    # =====================================================
-
-    torch.set_grad_enabled(False)
-    if save_anim:
-        checker.large_episodes(episodes)
-
-    _params = paramsmanager.Params(config)
-    params_eval = _params.eval
-    path_model = tool.util.priority(path_model, _params.external.save_path)
-    del _params
-    path_result = tool.util.priority(path_result, params_eval.result_path)
-
-    dtype, device = tool.util.dtype_device(
-        dtype=params_eval.dtype,
-        device=params_eval.device,
-    )
-
-    model, manage_dir, weight_path, params = tool.util.load(
-        root=path_model, model_place=models.core
-    )
-
-    model: NewtonianVAEFamily
-    model.type(dtype)
-    model.to(device)
-    model.train(params_eval.training)
-
-    if steps is not None:
-        max_time_length = steps
-    else:
-        max_time_length = params.train.max_time_length
-
-    all_steps = max_time_length * episodes
-
-    env = ControlSuiteEnvWrap(**json5.load(open(config))["ControlSuiteEnvWrap"])
-    label = Label(env.domain)
-
-    Igoal = mv.cv2cnn(np.load(goal_img)).unsqueeze_(0).to(device)
 
     class AnimPack:
         def __init__(self) -> None:
-            self.t = -1
-
-        def _attach_nan(self, x, i: int):
-            xp = np
-            return xp.concatenate(
-                [
-                    x[: self.t, i],
-                    xp.full(
-                        (max_time_length - self.t,),
-                        xp.nan,
-                        dtype=x.dtype,
-                    ),
-                ]
-            )
-
-        def init(self):
-            self.ctrl = PurePControl(img2obs(Igoal), alpha, model.cell)
-            self.cell_wrap = CellWrap(cell=model.cell)
-
-            xp = np
-            self.LOG_x = xp.full(
-                (max_time_length, model.cell.dim_x),
-                xp.nan,
-                dtype=torch.empty((), dtype=dtype).numpy().dtype,
-            )
-            self.LOG_pos_0 = []
-            self.LOG_pos_1 = []
+            self.fig = fig
 
         def anim_func(self, frame_cnt):
             axes.clear()
@@ -161,46 +254,33 @@ def main(
             mod = frame_cnt % max_time_length
             if mod == 0:
                 self.t = -1
-                self.episode_cnt = frame_cnt // max_time_length + mod
+                self.episode = frame_cnt // max_time_length + mod
+
+            self.t += 1
+            # print(self.episode, self.t)
 
             # ============================================================
-            self.t += 1
-            dim_colors = mpu.cmap(model.cell.dim_x, "prism")
-
-            if frame_cnt == -1:
-                self.episode_cnt = np.random.randint(0, episodes)
-                self.t = max_time_length - 1
-                self.init()
-
-            if self.t == 0:
-                self.init()
-                self.action = torch.zeros(size=(1, model.cell.dim_x), device=device, dtype=dtype)
-                self.observation = env.reset().to(device)
 
             fig.suptitle(
-                f"Init environment: {self.episode_cnt+1}, step: {self.t:3d}",
+                f"Trial: {self.episode+1}, Step: {self.t:3d}",
                 fontname="monospace",
             )
-
-            ### core ###
-            x_t, I_t_dec = self.cell_wrap.step(action=self.action, observation=self.observation)
-            self.action = self.ctrl.step(x_t)
-            ############
-
-            self.observation, _, done, position = env.step(self.action)
-            self.observation = self.observation.to(device)
-            self.LOG_x[self.t] = x_t.cpu()
 
             # ============================================================
             ax = axes.action
             ax.set_title(r"$\mathbf{u}_{t-1}$ (Generated)")
-            ax.set_ylim(-1.2, 1.2)
             ax.bar(
                 range(model.cell.dim_x),
-                self.action.detach().squeeze(0).cpu(),
+                record.action[self.episode, self.t],
                 color=dim_colors,
                 width=0.5,
             )
+
+            min_ = record.action.min()
+            max_ = record.action.max()
+            margin_ = (max_ - min_) * 0.1
+            ax.set_ylim(min_ - margin_, max_ + margin_)
+
             # ax.tick_params(bottom=False, labelbottom=False)
             mpu.Axis_aspect_2d(ax, 1)
             ax.set_xticks(range(model.cell.dim_x))
@@ -213,112 +293,115 @@ def main(
             # ============================================================
             ax = axes.observation
             ax.set_title(r"$\mathbf{I}_t$ (From environment)")
-            ax.imshow(obs2img(self.observation.detach().cpu()))
+            ax.imshow(obs2img(record.observation[self.episode, self.t]))
             ax.set_axis_off()
 
             # ============================================================
             ax = axes.obs_dec
             ax.set_title(r"$\mathbf{I}_t$ (Reconstructed)")
-            ax.imshow(obs2img(I_t_dec.detach().squeeze(0).cpu()))
+            ax.imshow(obs2img(record.reconstruction[self.episode, self.t]))
             ax.set_axis_off()
 
             # ============================================================
-            ax = axes.Igoal
-            ax.set_title(r"$\mathbf{I}_{goal}$")
-            ax.imshow(mv.cnn2plt(Igoal.detach().squeeze(0).cpu()))
-            ax.set_axis_off()
+            ax = axes.pi
+            ax.set_title(r"${\pi}_{k}(\mathbf{x})$")
+            ax.bar(
+                range(record.pi.shape[-1]),
+                record.pi[self.episode, self.t],
+                width=0.5,
+            )
+            ax.set_ylim(0, 1.1)
+            mpu.Axis_aspect_2d(ax, 1)
+            # ax.tick_params(labelbottom=False)
+            ax.set_xticks(range(record.pi.shape[-1]))
+            ax.set_xticklabels([" "] * record.pi.shape[-1])
 
             # ============================================================
             ax = axes.x_map
-            ax.set_title(r"$\mathbf{x}_{1:t}, \; \alpha = $" f"${alpha}$")
+            ax.set_title(r"$\mathbf{x}_{1:t}$")
             ax.plot(
-                self._attach_nan(self.LOG_x, 0),
-                self._attach_nan(self.LOG_x, 1),
+                record.x[self.episode, : self.t + 1, 0],
+                record.x[self.episode, : self.t + 1, 1],
                 marker="o",
                 ms=2,
             )
             ax.scatter(
-                self.LOG_x[self.t, 0],
-                self.LOG_x[self.t, 1],
+                record.x[self.episode, self.t, 0],
+                record.x[self.episode, self.t, 1],
                 marker="o",
                 s=20,
                 color="red",
                 label=r"$\mathbf{x}_{t}$",
             )
             ax.scatter(
-                self.ctrl.x_goal.squeeze(0)[0].cpu(),
-                self.ctrl.x_goal.squeeze(0)[1].cpu(),
+                p_pctrl.x_goal_n.squeeze(0)[:, 0].cpu(),
+                p_pctrl.x_goal_n.squeeze(0)[:, 1].cpu(),
                 marker="o",
                 s=20,
                 color="purple",
                 label=r"$\mathbf{x}_{goal}$",
             )
-            ax.legend(loc="lower left")
+            # ax.legend(loc="lower left")
+            ax.legend()
+
+            min_ = min(p_pctrl.x_goal_n.squeeze(0)[:, 0].cpu().min(), record.x[..., 0].min())
+            max_ = max(p_pctrl.x_goal_n.squeeze(0)[:, 0].cpu().max(), record.x[..., 0].max())
+            margin_ = (max_ - min_) * 0.1
+            ax.set_xlim(min_ - margin_, max_ + margin_)
+
+            min_ = min(p_pctrl.x_goal_n.squeeze(0)[:, 1].cpu().min(), record.x[..., 1].min())
+            max_ = max(p_pctrl.x_goal_n.squeeze(0)[:, 1].cpu().max(), record.x[..., 1].max())
+            margin_ = (max_ - min_) * 0.1
+            ax.set_ylim(min_ - margin_, max_ + margin_)
+
             label.set_axes_L0L1(ax, fix_xmap_size)
 
             # ============================================================
-            self.LOG_pos_0.append(position[0])
-
             ax = axes.x
+            idx = 0
             ax.plot(
-                self.LOG_pos_0,
-                self.LOG_x[: self.t + 1, 0],
-                # self._attach_nan(self.LOG_x, 1),
+                record.position[self.episode, : self.t + 1, idx],
+                record.x[self.episode, : self.t + 1, idx],
                 marker="o",
                 ms=2,
             )
             ax.scatter(
-                self.LOG_pos_0[-1],
-                self.LOG_x[self.t, 0],
+                record.position[self.episode, self.t, idx],
+                record.x[self.episode, self.t, idx],
                 marker="o",
                 s=20,
                 color="red",
                 label=r"$\mathbf{x}_{t}$",
             )
-            # ax.scatter(
-            #     self.ctrl.x_goal.squeeze(0)[0].cpu(),
-            #     self.ctrl.x_goal.squeeze(0)[1].cpu(),
-            #     marker="o",
-            #     s=20,
-            #     color="purple",
-            #     label=r"$\mathbf{x}_{goal}$",
-            # )
-            # ax.legend(loc="uppper left")
+            min_ = record.x[..., idx].min()
+            max_ = record.x[..., idx].max()
+            margin_ = (max_ - min_) * 0.1
+            ax.set_ylim(min_ - margin_, max_ + margin_)
+
             label.set_axes_P0L0(ax, fix_xmap_size)
 
             # ============================================================
-            self.LOG_pos_1.append(position[1])
-
             ax = axes.y
+            idx = 1
             ax.plot(
-                self.LOG_pos_1,
-                self.LOG_x[: self.t + 1, 1],
-                # self._attach_nan(self.LOG_x, 1),
+                record.position[self.episode, : self.t + 1, idx],
+                record.x[self.episode, : self.t + 1, idx],
                 marker="o",
                 ms=2,
             )
             ax.scatter(
-                self.LOG_pos_1[-1],
-                self.LOG_x[self.t, 1],
+                record.position[self.episode, self.t, idx],
+                record.x[self.episode, self.t, idx],
                 marker="o",
                 s=20,
                 color="red",
                 label=r"$\mathbf{x}_{t}$",
             )
+            min_ = record.x[..., idx].min()
+            max_ = record.x[..., idx].max()
+            margin_ = (max_ - min_) * 0.1
+            ax.set_ylim(min_ - margin_, max_ + margin_)
+
             label.set_axes_P1L1(ax, fix_xmap_size)
 
-    p = AnimPack()
-
-    save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_control.{format}")
-    save_path = add_version(save_path)
-    mpu.anim_mode(
-        "save" if save_anim else "anim",
-        fig,
-        p.anim_func,
-        all_steps,
-        interval=40,
-        freeze_cnt=-1,
-        save_path=save_path,
-    )
-
-    print()
+    return AnimPack()

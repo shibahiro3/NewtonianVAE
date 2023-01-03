@@ -45,8 +45,6 @@ class Label:
             ax.set_xlabel(self.latent_0, color=self.color_l[0])
             if lmax is not None:
                 ax.set_xlim(-lmax, lmax)
-            # else:
-            #     ax.set_xlim()
             ax.xaxis.set_major_formatter(FormatStrFormatter("%3.1f"))
 
             ax.set_ylabel(self.latent_1, color=self.color_l[1])

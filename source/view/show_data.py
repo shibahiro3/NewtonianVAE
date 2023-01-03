@@ -8,28 +8,27 @@ from matplotlib.gridspec import GridSpec
 import mypython.error as merror
 import mypython.plotutil as mpu
 import mypython.vision as mv
-import tool.plot_config
+import view.plot_config
 from mypython.ai.util import SequenceDataLoader
+from mypython.terminal import Color, Prompt
 from simulation.env import obs2img
+from tool import paramsmanager
 
-tool.plot_config.apply()
+view.plot_config.apply()
 try:
-    import tool._plot_config
+    import view._plot_config
 
-    tool._plot_config.apply()
+    view._plot_config.apply()
 except:
     pass
 
 
 def main(
+    config: str,
     episodes: int,
-    path_data: str,
     save_anim: bool,
-    output: str,
+    format: str,
 ):
-    if save_anim:
-        assert output is not None
-
     # ============================================================
     plt.rcParams.update(
         {
@@ -54,21 +53,24 @@ def main(
     axes = Ax()
     # ============================================================
 
-    merror.check_dir(path_data)
-    max_episode = len([p for p in Path(path_data, "episodes").glob("*") if p.is_dir()])
+    params = paramsmanager.Params(config)
+
+    merror.check_dir(params.path.data_dir)
 
     dataloader = SequenceDataLoader(
-        root=Path(path_data, "episodes"),
+        root=Path(params.path.data_dir, "episodes"),
         names=["action", "observation", "position"],
-        start=0,
-        stop=max_episode,
+        start=params.train.data_start,
+        stop=params.train.data_stop,
         batch_size=episodes,
         dtype=torch.float32,
+        show_selected_index=True,
     )
     action, observation, position = next(dataloader)
 
     T = action.shape[0]
     dim_a = action.shape[-1]
+    all_steps = T * episodes
 
     class AnimPack:
         def __init__(self) -> None:
@@ -77,6 +79,10 @@ def main(
 
         def anim_func(self, frame_cnt):
             axes.clear()
+
+            Prompt.print_one_line(
+                f"{frame_cnt+1:5d} / {all_steps} ({(frame_cnt+1)*100/all_steps:.1f} %) "
+            )
 
             mod = frame_cnt % T
             if mod == 0:
@@ -130,11 +136,7 @@ def main(
         "save" if save_anim else "anim",
         fig,
         p.anim_func,
-        T * episodes,
+        all_steps,
         interval=40,
-        save_path=output,
+        save_path=Path(params.path.data_dir, f"data.{format}"),
     )
-
-
-if __name__ == "__main__":
-    main()

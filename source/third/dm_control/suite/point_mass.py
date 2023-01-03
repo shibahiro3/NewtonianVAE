@@ -36,8 +36,8 @@ from third.dm_control import read_model
 
 def get_model_and_assets():
   """Returns a tuple containing the model XML string and a dict of assets."""
-  return common.read_model('point_mass.xml'), common.ASSETS
-  return read_model("point_mass.xml"), common.ASSETS
+  # return common.read_model('point_mass.xml'), common.ASSETS
+  return read_model("point_mass.xml"), common.ASSETS  # Changed/added by Sugar
 
 
 @SUITE.add('benchmarking', 'easy')
@@ -109,13 +109,13 @@ class PointMass(base.Task):
     # Changed/added by Sugar
     # Fix init position
     if False:
-        randomizers.randomize_limited_and_rotational_joints(physics, self.random)
+      randomizers.randomize_limited_and_rotational_joints(physics, self.random)
     else:
-        pos = self.random.uniform(-0.15, 0.15, size=2)
-        physics.named.data.qpos["root_x"] = pos[0]
-        physics.named.data.qpos["root_y"] = pos[1]
-        # print(physics.named.data.qpos)
-    
+      pos = self.random.uniform(-0.15, 0.15, size=2)
+      physics.named.data.qpos["root_x"] = pos[0]
+      physics.named.data.qpos["root_y"] = pos[1]
+      # print(physics.named.data.qpos)
+
 
     if self._randomize_gains:
       dir1 = self.random.randn(2)

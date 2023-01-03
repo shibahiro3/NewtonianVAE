@@ -9,21 +9,21 @@ import seaborn as sns
 from matplotlib.gridspec import GridSpec
 
 import mypython.plotutil as mpu
-import tool.plot_config
 import tool.util
+import view.plot_config
+from tool import paramsmanager
 
-tool.plot_config.apply()
+view.plot_config.apply()
 try:
-    import tool._plot_config
+    import view._plot_config
 
-    tool._plot_config.apply()
+    view._plot_config.apply()
 except:
     pass
 
 
 def main(
-    path_model: Optional[str],
-    path_result: Optional[str],
+    config: str,
     start_iter: int,
     format: List[str],
 ):
@@ -59,7 +59,9 @@ def main(
     axes = Ax()
     # ============================================================
 
-    manage_dir = tool.util.select_date(path_model)
+    params_path = paramsmanager.Params(config).path
+
+    manage_dir = tool.util.select_date(params_path.saves_dir)
     if manage_dir is None:
         return
 
@@ -109,8 +111,8 @@ def main(
     # ============================================================
     # fig.tight_layout()
 
-    if path_result is not None:
-        save_path = Path(path_result, f"{manage_dir.stem}_loss.hoge")
+    if params_path.results_dir is not None:
+        save_path = Path(params_path.results_dir, f"{manage_dir.stem}_loss")
         mpu.register_save_path(fig, save_path, format)
 
     plt.show()

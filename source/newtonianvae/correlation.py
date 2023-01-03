@@ -9,12 +9,11 @@ import torch
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
 
-import json5
 import models.core
 import mypython.plotutil as mpu
 import mypython.vision as mv
-import tool.plot_config
 import tool.util
+import view.plot_config
 from models.core import NewtonianVAEFamily
 from mypython.ai.util import SequenceDataLoader, swap01
 from mypython.pyutil import Seq
@@ -22,11 +21,11 @@ from mypython.terminal import Color
 from tool import paramsmanager
 from view.label import Label
 
-tool.plot_config.apply()
+view.plot_config.apply()
 try:
-    import tool._plot_config
+    import view._plot_config
 
-    tool._plot_config.apply()
+    view._plot_config.apply()
 except:
     pass
 
@@ -34,9 +33,6 @@ except:
 def correlation(
     config: str,
     episodes: int,
-    path_model: Optional[str],
-    path_data: Optional[str],
-    path_result: Optional[str],
     fix_xmap_size: float,
     env_domain: str,
     format: List[str],
@@ -79,43 +75,48 @@ def correlation(
     label = Label(env_domain)
     # ============================================================
 
+    # =========================== load ===========================
     torch.set_grad_enabled(False)
 
-    _params = paramsmanager.Params(config)
-    params_eval = _params.eval
-    path_model = tool.util.priority(path_model, _params.external.save_path)
-    path_data = tool.util.priority(path_data, _params.external.data_path)
-    del _params
-    path_result = tool.util.priority(path_result, params_eval.result_path)
+    params = paramsmanager.Params(config)
 
     dtype, device = tool.util.dtype_device(
-        dtype=params_eval.dtype,
-        device=params_eval.device,
+        dtype=params.train.dtype,
+        device=params.train.device,
     )
+
+    model, manage_dir, weight_path, saved_params = tool.util.load(
+        root=params.path.saves_dir,
+        model_place=models.core,
+    )
+    model: NewtonianVAEFamily
+    model.type(dtype)
+    model.to(device)
+    model.eval()
+    model.is_save = True
+
+    path_data = tool.util.priority(params.path.data_dir, saved_params.path.data_dir)
+    path_result = tool.util.priority(params.path.results_dir, saved_params.path.results_dir)
 
     testloader = SequenceDataLoader(
         root=Path(path_data, "episodes"),
         names=["action", "observation", "delta", "position"],
-        start=params_eval.data_start,
-        stop=params_eval.data_stop,
+        start=params.eval.data_start,
+        stop=params.eval.data_stop,
         batch_size=episodes,
         dtype=dtype,
         device=device,
     )
+
+    del params
+    del saved_params
+    # ======================== end of load =======================
+
     action, observation, delta, position = next(testloader)
     delta.unsqueeze_(-1)
     position = position.detach().cpu()
 
-    model, manage_dir, weight_path, params = tool.util.load(
-        root=path_model, model_place=models.core
-    )
-
-    model: NewtonianVAEFamily
-    model.type(dtype)
-    model.to(device)
-    model.train(params_eval.training)
-    model.is_save = True
-
+    print("Calculating...")
     model(action=action, observation=observation, delta=delta)
     model.LOG2numpy()
 
@@ -135,6 +136,7 @@ def correlation(
     corr_p1l0 = np.corrcoef(
         physical.reshape(-1, model.cell.dim_x)[:, 1], latent_map.reshape(-1, model.cell.dim_x)[:, 0]
     )[0, 1]
+    print("Done")
 
     # ============================================================
 

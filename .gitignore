@@ -3,6 +3,11 @@
 _*
 *_
 
+# Source #
+##########
+qt
+!__init__.py
+
 # Virtual environment #
 #######################
 venv/
@@ -18,12 +23,6 @@ log*/
 #############
 docs/*
 !docs/generated
-
-# Source #
-##########
-qt
-!__init__.py
-
 
 
 # https://github.com/numpy/numpy/blob/main/.gitignore
@@ -49,7 +48,7 @@ pmip
 .sw[nop]
 *.tmp
 *.vim
-# .vscode
+.vscode
 tags
 cscope.out
 # gnu global

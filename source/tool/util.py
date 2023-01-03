@@ -162,7 +162,15 @@ def creator(
     model_params: dict,
     resume: bool = False,
 ):
-    datetime_now = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
+    """
+    managed_dir (date and time)
+    ├── weight_dir
+    │   ├── {epoch}.pth (weight_path)
+    │   ...
+    └── params_saved.json5
+    """
+
+    datetime_now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     managed_dir = Path(root, datetime_now)
     weight_dir = Path(managed_dir, "weight")
     weight_dir.mkdir(parents=True, exist_ok=True)
@@ -194,14 +202,23 @@ def load(root: str, model_place):
         sys.exit()
 
     params_path = Path(manage_dir, "params_saved.json5")
-    params = paramsmanager.Params(params_path)
+    saved_params = paramsmanager.Params(params_path)
     Color.print("params path:", params_path)
 
-    ModelType = getattr(model_place, params.model)
-    model: nn.Module = ModelType(**params.raw_[params.model])
+    ModelType = getattr(model_place, saved_params.model)
+    model: nn.Module = ModelType(**saved_params.model_params)
     model.load_state_dict(torch.load(weight_path))
+    return model, manage_dir, weight_path, saved_params
 
-    return model, manage_dir, weight_path, params
+
+def load_direct(weight_path, model_place):
+    weight_path = Path(weight_path)
+    manage_dir = weight_path.parent.parent
+    params = paramsmanager.Params(Path(manage_dir, "params_saved.json5"))
+    ModelType = getattr(model_place, params.model)
+    model: nn.Module = ModelType(**params.model_params)
+    model.load_state_dict(torch.load(weight_path))
+    return model, params
 
 
 def priority(x1, x2, default=None):
@@ -211,3 +228,24 @@ def priority(x1, x2, default=None):
         return x2
     else:
         return default
+
+
+class RecoderBase:
+    def append(self, **kwargs):
+        for k in self.__dict__.keys():
+            self.__dict__[k][-1].append(kwargs[k])
+
+    def add_list(self):
+        for k, v in self.__dict__.items():
+            v.append([])
+
+    def to_whole_np(self, show_shape=False):
+        for k, v in self.__dict__.items():
+            self.__dict__[k] = np.stack(v)
+
+        if show_shape:
+            max_ = max([len(e) for e in self.__dict__.keys()])
+            print("=== Recorded shape ===")
+            for k, v in self.__dict__.items():
+                print(f"{k}: " + " " * (max_ - len(k)) + f"{v.shape}")
+            print("======================")

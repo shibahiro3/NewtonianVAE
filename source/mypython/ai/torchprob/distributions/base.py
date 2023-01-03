@@ -1,3 +1,5 @@
+import math
+from numbers import Number, Real
 from typing import List, Optional, Tuple, Union
 
 import torch
@@ -8,36 +10,53 @@ from mypython.terminal import Color
 
 
 class Distribution(nn.Module):
+
+    ParamsReturnType = Union[Tensor, List[Tensor]]
+
     def __init__(self) -> None:
         super().__init__()
-        self._cnt = 0
+        self._cnt_given = 0  # Number of times given() has been called
 
-    def forward(self, *cond_vars: Tensor, **cond_vars_k: Tensor):
-        """Compute Θ of Dist(x | Θ) from Dist(x | cond_vars)"""
+        # self._Theta = ...  # Parameters of the distribution
+
+    def forward(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> ParamsReturnType:
+        """Compute Θ of p(･ | Θ) from cond_vars and cond_vars_k"""
         raise NotImplementedError()
-        return self
 
-    def cond(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Self:
-        """Compute Θ of Dist(x | Θ) from Dist(x | cond_vars)"""
+    def __call__(self, *args, **kwargs) -> ParamsReturnType:
+        return super().__call__(*args, **kwargs)
+
+    def given(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Self:
+        """__call__(forward) is called and the parameters of the distribution are saved"""
         raise NotImplementedError()
         return self
 
     def log_prob(self, x: Tensor) -> Tensor:
         """log-likelihood of Distribution
-        log Dist(x | ・)
+        log p(x | Θ)
         """
         raise NotImplementedError()
 
     def sample(self) -> Tensor:
+        """Sampling with detached current graph"""
         raise NotImplementedError()
 
     def rsample(self) -> Tensor:
+        """Sampling with attached current graph"""
         raise NotImplementedError()
 
     def decode(self) -> Tensor:
+        """
+        It is difficult to read from the program that the mathematical variable Θ represents an image, etc.
+        Therefore, this function is defined as an alias for Θ.
+        """
         raise NotImplementedError()
 
-    def dist_parameters(self) -> Tuple[Tensor]:
+    def dist_parameters(self) -> ParamsReturnType:
+        """Return Θ"""
+        raise NotImplementedError()
+
+    def clear_dist_parameters(self) -> None:
         raise NotImplementedError()
 
     @property
@@ -49,15 +68,19 @@ class Distribution(nn.Module):
         raise NotImplementedError()
 
 
-def to_optional_tensor(x: Union[None, int, float, Tensor]) -> Union[None, Tensor]:
+def to_optional_tensor(x: Union[None, int, float, Tensor]) -> Optional[Tensor]:
     _type = type(x)
     if x is None:
-        pass
+        return None
     elif _type == int or _type == float:
-        x = torch.tensor(x)
+        return torch.tensor(x)
     else:
         assert _type == Tensor
-    return x
+        return x
+
+
+class ProbParamsValueError(Exception):
+    pass
 
 
 # _eps = torch.finfo(torch.float).eps  # DO NOT USE

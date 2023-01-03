@@ -14,14 +14,18 @@ def check_dist_model(model: nn.Module):
 
     for name, submodel in model._modules.items():  # __dict__ には無い
         if issubclass(type(submodel), Distribution):
-            if submodel._cnt == 0:
+            submodel: Distribution
+            if submodel._cnt_given == 0:
                 color = Color.blue
-            elif submodel._cnt > 1:
+            elif submodel._cnt_given > 1:
                 color = Color.coral
             else:
                 color = ""
 
             print(
-                "name, times .cond() has run = " + color + f"{name}, {submodel._cnt}" + Color.reset
+                "name, times .given() has run = "
+                + color
+                + f"{name}, {submodel._cnt_given}"
+                + Color.reset
             )
-            submodel._cnt = 0
+            submodel.clear_dist_parameters()

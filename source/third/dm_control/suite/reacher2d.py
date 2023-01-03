@@ -17,16 +17,15 @@
 
 import collections
 
-from dm_control import mujoco
-from dm_control.rl import control
-from dm_control.suite import base
-from dm_control.suite import common
-from dm_control.suite.utils import randomizers
-from dm_control.utils import containers
-from dm_control.utils import rewards
 import numpy as np
 
+from dm_control import mujoco
+from dm_control.rl import control
+from dm_control.suite import base, common
+from dm_control.suite.utils import randomizers
+from dm_control.utils import containers
 from dm_control.utils import io as resources
+from dm_control.utils import rewards
 
 SUITE = containers.TaggedTasks()
 _DEFAULT_TIME_LIMIT = 20
@@ -39,27 +38,28 @@ _SMALL_TARGET = .02
 # Changed/added by Sugar
 from third.dm_control import read_model
 
+
 def get_model_and_assets():
   """Returns a tuple containing the model XML string and a dict of assets."""
-#   return common.read_model('reacher.xml'), common.ASSETS
-  return read_model("reacher2d.xml"), common.ASSETS
+  # return common.read_model('reacher.xml'), common.ASSETS
+  return read_model("reacher2d.xml"), common.ASSETS  # Changed/added by Sugar
 
-
+# Changed/added by Sugar (add "init_position" arg)
 @SUITE.add('benchmarking', 'easy')
-def easy(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None):
+def easy(time_limit=_DEFAULT_TIME_LIMIT, random=None, init_position=None, environment_kwargs=None):
   """Returns reacher with sparse reward with 5e-2 tol and randomized target."""
   physics = Physics.from_xml_string(*get_model_and_assets())
-  task = Reacher(target_size=_BIG_TARGET, random=random)
+  task = Reacher(target_size=_BIG_TARGET, random=random, init_position=init_position)
   environment_kwargs = environment_kwargs or {}
   return control.Environment(
       physics, task, time_limit=time_limit, **environment_kwargs)
 
-
+# Changed/added by Sugar (add "init_position" arg)
 @SUITE.add('benchmarking')
-def hard(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None):
+def hard(time_limit=_DEFAULT_TIME_LIMIT, random=None, init_position=None, environment_kwargs=None):
   """Returns reacher with sparse reward with 1e-2 tol and randomized target."""
   physics = Physics.from_xml_string(*get_model_and_assets())
-  task = Reacher(target_size=_SMALL_TARGET, random=random)
+  task = Reacher(target_size=_SMALL_TARGET, random=random, init_position=init_position)
   environment_kwargs = environment_kwargs or {}
   return control.Environment(
       physics, task, time_limit=time_limit, **environment_kwargs)
@@ -88,7 +88,8 @@ class Physics(mujoco.Physics):
 class Reacher(base.Task):
   """A reacher `Task` to reach the target."""
 
-  def __init__(self, target_size, random=None):
+  # Changed/added by Sugar
+  def __init__(self, target_size, random=None, init_position=None):
     """Initialize an instance of `Reacher`.
 
     Args:
@@ -101,62 +102,66 @@ class Reacher(base.Task):
     self._target_size = target_size
     super().__init__(random=random)
 
+    # Changed/added by Sugar
+    self.init_position = init_position
+
   def initialize_episode(self, physics):
     """Sets the state of the environment at the start of each episode."""
     physics.named.model.geom_size['target', 0] = self._target_size
 
     # Changed/added by Sugar
     # Initial arm position
-    # True is original implementation
-    if False:
-        randomizers.randomize_limited_and_rotational_joints(physics, self.random)
+    if self.init_position is None:
+      # original implementation
+      randomizers.randomize_limited_and_rotational_joints(physics, self.random)
+
+    elif self.init_position == "zero":
+      physics.named.data.qpos["shoulder"] = np.array([0])
+      physics.named.data.qpos["wrist"] = np.array([0])
+
+    ### 160 [deg] == (8/9)π ≈ 2.79 [rad]
+    elif self.init_position == "limit_red_side":
+      physics.named.data.qpos["shoulder"] = np.array([(-8/9)*np.pi])
+      physics.named.data.qpos["wrist"] = np.array([0])
+
+    elif self.init_position == "red":  # target
+      physics.named.data.qpos["shoulder"] = np.array([(-7/9)*np.pi])
+      physics.named.data.qpos["wrist"] = np.array([(3/9)*np.pi])
+
+    elif self.init_position == "green":  # target2
+      physics.named.data.qpos["shoulder"] = np.array([(-4/9)*np.pi])
+      physics.named.data.qpos["wrist"] = np.array([(6/9)*np.pi])
+
+    elif self.init_position == "yellow":  # target3
+      physics.named.data.qpos["shoulder"] = np.array([(5/9)*np.pi])
+      physics.named.data.qpos["wrist"] = np.array([(3/9)*np.pi])
+
+    elif self.init_position == "limit_yellow_side":
+      physics.named.data.qpos["shoulder"] = np.array([(8/9)*np.pi])
+      physics.named.data.qpos["wrist"] = np.array([(8/9)*np.pi])
+
+    elif self.init_position == "paper":
+      # paper...?
+      # Here is the initialize process. 
+      # [0.0, 1.0) [rad] == [0.0, 57.29) [deg]
+      physics.named.data.qpos["shoulder"] = 0.5 + (self.random.rand() - 0.5)
+      # [-2.84, -2.34) [rad] == [-162.72, -134.07) [deg]
+      physics.named.data.qpos["wrist"] = -np.pi + 0.3 + self.random.rand() * 0.5
     else:
-        pass
+      assert False
 
-        # radian
-
-        # zero
-        # physics.named.data.qpos["shoulder"] = np.array([0])
-        # physics.named.data.qpos["wrist"] = np.array([0])
-
-        ### 160 [deg] == (8/9)π ≈ 2.79 [rad]
-
-        # limit (red side)
-        physics.named.data.qpos["shoulder"] = np.array([(-8/9)*np.pi])
-        physics.named.data.qpos["wrist"] = np.array([0])
-
-        # red (target)
-        # physics.named.data.qpos["shoulder"] = np.array([(-7/9)*np.pi])
-        # physics.named.data.qpos["wrist"] = np.array([(3/9)*np.pi])
-
-        # green (target2)
-        # physics.named.data.qpos["shoulder"] = np.array([(-4/9)*np.pi])
-        # physics.named.data.qpos["wrist"] = np.array([(6/9)*np.pi])
-
-        # yellow (target3)
-        # physics.named.data.qpos["shoulder"] = np.array([(5/9)*np.pi])
-        # physics.named.data.qpos["wrist"] = np.array([(3/9)*np.pi])
-
-        # paper...?
-        # Here is the initialize process. 
-        # [0.0, 1.0) [rad] == [0.0, 57.29) [deg]
-        # physics.named.data.qpos["shoulder"] = 0.5 + (self.random.rand() - 0.5)
-        # [-2.84, -2.34) [rad] == [-162.72, -134.07) [deg]
-        # physics.named.data.qpos["wrist"] = -np.pi + 0.3 + self.random.rand() * 0.5
-
-        # print(physics.named.data.qpos)
-
+    # print(physics.named.data.qpos)
 
     # Changed/added by Sugar
     # Randomize target position (red ball)
     # True is original implementation
     if False:
-        angle = self.random.uniform(0, 2 * np.pi)
-        radius = self.random.uniform(.05, .20)
-        physics.named.model.geom_pos['target', 'x'] = radius * np.sin(angle)
-        physics.named.model.geom_pos['target', 'y'] = radius * np.cos(angle)
+      angle = self.random.uniform(0, 2 * np.pi)
+      radius = self.random.uniform(.05, .20)
+      physics.named.model.geom_pos['target', 'x'] = radius * np.sin(angle)
+      physics.named.model.geom_pos['target', 'y'] = radius * np.cos(angle)
     else:
-        physics.named.model.geom_pos["target"] = np.array([-0.07108755, -0.19531144, 0])
+      physics.named.model.geom_pos["target"] = np.array([-0.07108755, -0.19531144, 0])
 
     super().initialize_episode(physics)
 

@@ -1,21 +1,42 @@
 import os
 import sys
+from pathlib import Path
 
-os.chdir(os.pardir)  # workspaceFolder
-sys.path.append("source")
+workspaceFolder = Path(__file__).absolute().parent.parent
+os.chdir(workspaceFolder)
+sys.path.append(str(workspaceFolder))
+sys.path.append(str(workspaceFolder / "source"))
+
 
 import argparse
 from argparse import RawTextHelpFormatter
-from pprint import pprint
 
 import argset
-
-from newtonianvae import train
-from view import train_visualhandler
+from source.newtonianvae import train
+from source.view import visualhandler
 
 # fmt: off
-parser = argparse.ArgumentParser(allow_abbrev=False, formatter_class=RawTextHelpFormatter)
-parser.add_argument("--config", type=str, default="config/reacher2d.json5", **argset.config)
+parser = argparse.ArgumentParser(
+    allow_abbrev=False,
+    formatter_class=RawTextHelpFormatter,
+    description=
+"""if you use "--visual tensorboard":
+  1. Another terminal: $ tensorboard --logdir="log_tb"
+  2. Open the output URL (http://localhost:6006/) in a browser
+  3. $ python train.py --visual tensorboard
+
+if you use "--visual visdom":
+  1. Another terminal: $ python -m visdom.server -port 8097
+  2. Open the output URL (http://localhost:8097) in a browser
+  3. $ python train.py --visual visdom
+
+Examples:
+  $ python train.py --config config/reacher2d.json5
+  $ python train.py --config config/point_mass.json5
+  $ python train.py --config config/reacher2d.json5 --visual visdom
+""",
+)
+parser.add_argument("--config", type=str, required=True, **argset.config)
 parser.add_argument("--resume", action="store_true", help="Load the model and resume learning")
 parser.add_argument("--visual", type=str, choices=["tensorboard", "visdom"])
 args = parser.parse_args()
@@ -23,26 +44,12 @@ args = parser.parse_args()
 
 
 if args.visual is None:
-    vh = train_visualhandler.VisualHandlerBase()
+    vh = visualhandler.VisualHandlerBase()
 elif args.visual == "tensorboard":
-    # 1. Another console: $ tensorboard --logdir="log_tb"
-    # 2. Open the output URL (http://localhost:6006/) in a browser
-    # 3. $ python train.py --visual tensorboard
-    vh = train_visualhandler.TensorBoardVisualHandler(log_dir="log_tb")
+    vh = visualhandler.TensorBoardVisualHandler(log_dir="log_tb")
 elif args.visual == "visdom":
-    # 1. Another console: $ python -m visdom.server -port 8097
-    # 2. Open the output URL (http://localhost:8097) in a browser
-    # 3. $ python train.py --visual visdom
-    vh = train_visualhandler.VisdomVisualHandler(port=8097)
-
+    vh = visualhandler.VisdomVisualHandler(port=8097)
 
 argdict = vars(args)
 argdict.pop("visual")
 train.train(**argdict, vh=vh)
-
-"""
-Examples:
-python train.py
-python train.py --config "config/point_mass.json5"
-python train.py --visual visdom
-"""

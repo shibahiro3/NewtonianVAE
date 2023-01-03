@@ -42,6 +42,7 @@
 <li><a class="reference internal" href="#">mypython.ai.torchprob package</a><ul>
 <li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mypython.ai.torchprob.config">mypython.ai.torchprob.config module</a></li>
 <li><a class="reference internal" href="#module-mypython.ai.torchprob.debug">mypython.ai.torchprob.debug module</a><ul>
 <li><a class="reference internal" href="#mypython.ai.torchprob.debug.check_dist_model"><code class="docutils literal notranslate"><span class="pre">check_dist_model()</span></code></a></li>
 </ul>
@@ -49,9 +50,13 @@
 <li><a class="reference internal" href="#module-mypython.ai.torchprob.functions">mypython.ai.torchprob.functions module</a><ul>
 <li><a class="reference internal" href="#mypython.ai.torchprob.functions.KL_normal_normal"><code class="docutils literal notranslate"><span class="pre">KL_normal_normal()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.ai.torchprob.functions.KLdiv"><code class="docutils literal notranslate"><span class="pre">KLdiv()</span></code></a></li>
-<li><a class="reference internal" href="#mypython.ai.torchprob.functions.log"><code class="docutils literal notranslate"><span class="pre">log()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.ai.torchprob.functions.log"><code class="docutils literal notranslate"><span class="pre">log</span></code></a><ul>
+<li><a class="reference internal" href="#mypython.ai.torchprob.functions.log.given"><code class="docutils literal notranslate"><span class="pre">log.given()</span></code></a></li>
 </ul>
 </li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-mypython.ai.torchprob.nanini">mypython.ai.torchprob.nanini module</a></li>
 <li><a class="reference internal" href="#module-mypython.ai.torchprob">Module contents</a></li>
 </ul>
 </li>
@@ -91,10 +96,12 @@
 <li class="toctree-l2"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#module-mypython.ai.torchprob.distributions.base">mypython.ai.torchprob.distributions.base module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution"><code class="docutils literal notranslate"><span class="pre">Distribution</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution.cond"><code class="docutils literal notranslate"><span class="pre">Distribution.cond()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution.ParamsReturnType"><code class="docutils literal notranslate"><span class="pre">Distribution.ParamsReturnType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution.clear_dist_parameters"><code class="docutils literal notranslate"><span class="pre">Distribution.clear_dist_parameters()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution.decode"><code class="docutils literal notranslate"><span class="pre">Distribution.decode()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution.dist_parameters"><code class="docutils literal notranslate"><span class="pre">Distribution.dist_parameters()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution.forward"><code class="docutils literal notranslate"><span class="pre">Distribution.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution.given"><code class="docutils literal notranslate"><span class="pre">Distribution.given()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution.loc"><code class="docutils literal notranslate"><span class="pre">Distribution.loc</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution.log_prob"><code class="docutils literal notranslate"><span class="pre">Distribution.log_prob()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution.rsample"><code class="docutils literal notranslate"><span class="pre">Distribution.rsample()</span></code></a></li>
@@ -103,45 +110,57 @@
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution.training"><code class="docutils literal notranslate"><span class="pre">Distribution.training</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.ProbParamsValueError"><code class="docutils literal notranslate"><span class="pre">ProbParamsValueError</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.to_optional_tensor"><code class="docutils literal notranslate"><span class="pre">to_optional_tensor()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#module-mypython.ai.torchprob.distributions.bernoulli">mypython.ai.torchprob.distributions.bernoulli module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli"><code class="docutils literal notranslate"><span class="pre">Bernoulli</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.cond"><code class="docutils literal notranslate"><span class="pre">Bernoulli.cond()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.ParamsReturnType"><code class="docutils literal notranslate"><span class="pre">Bernoulli.ParamsReturnType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.clear_dist_parameters"><code class="docutils literal notranslate"><span class="pre">Bernoulli.clear_dist_parameters()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.decode"><code class="docutils literal notranslate"><span class="pre">Bernoulli.decode()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.dist_parameters"><code class="docutils literal notranslate"><span class="pre">Bernoulli.dist_parameters()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.forward"><code class="docutils literal notranslate"><span class="pre">Bernoulli.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.func_log"><code class="docutils literal notranslate"><span class="pre">Bernoulli.func_log()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.given"><code class="docutils literal notranslate"><span class="pre">Bernoulli.given()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.loc"><code class="docutils literal notranslate"><span class="pre">Bernoulli.loc</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.log_prob"><code class="docutils literal notranslate"><span class="pre">Bernoulli.log_prob()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.scale"><code class="docutils literal notranslate"><span class="pre">Bernoulli.scale</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.Bernoulli.training"><code class="docutils literal notranslate"><span class="pre">Bernoulli.training</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.bernoulli.log_bernoulli"><code class="docutils literal notranslate"><span class="pre">log_bernoulli()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#module-mypython.ai.torchprob.distributions.gmm">mypython.ai.torchprob.distributions.gmm module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM"><code class="docutils literal notranslate"><span class="pre">GMM</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.cond"><code class="docutils literal notranslate"><span class="pre">GMM.cond()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.ParamsReturnType"><code class="docutils literal notranslate"><span class="pre">GMM.ParamsReturnType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.clear_dist_parameters"><code class="docutils literal notranslate"><span class="pre">GMM.clear_dist_parameters()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.dist_parameters"><code class="docutils literal notranslate"><span class="pre">GMM.dist_parameters()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.forward"><code class="docutils literal notranslate"><span class="pre">GMM.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.func_log"><code class="docutils literal notranslate"><span class="pre">GMM.func_log()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.func_pdf"><code class="docutils literal notranslate"><span class="pre">GMM.func_pdf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.func_rsample"><code class="docutils literal notranslate"><span class="pre">GMM.func_rsample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.func_rsample_gumbel"><code class="docutils literal notranslate"><span class="pre">GMM.func_rsample_gumbel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.given"><code class="docutils literal notranslate"><span class="pre">GMM.given()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.log_prob"><code class="docutils literal notranslate"><span class="pre">GMM.log_prob()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.rsample"><code class="docutils literal notranslate"><span class="pre">GMM.rsample()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.sample"><code class="docutils literal notranslate"><span class="pre">GMM.sample()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.GMM.training"><code class="docutils literal notranslate"><span class="pre">GMM.training</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.log_gmm"><code class="docutils literal notranslate"><span class="pre">log_gmm()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.gmm.sample_gmm"><code class="docutils literal notranslate"><span class="pre">sample_gmm()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#module-mypython.ai.torchprob.distributions.normal">mypython.ai.torchprob.distributions.normal module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal"><code class="docutils literal notranslate"><span class="pre">Normal</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.cond"><code class="docutils literal notranslate"><span class="pre">Normal.cond()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.ParamsReturnType"><code class="docutils literal notranslate"><span class="pre">Normal.ParamsReturnType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.clear_dist_parameters"><code class="docutils literal notranslate"><span class="pre">Normal.clear_dist_parameters()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.decode"><code class="docutils literal notranslate"><span class="pre">Normal.decode()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.dist_parameters"><code class="docutils literal notranslate"><span class="pre">Normal.dist_parameters()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.forward"><code class="docutils literal notranslate"><span class="pre">Normal.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.func_log"><code class="docutils literal notranslate"><span class="pre">Normal.func_log()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.func_pdf"><code class="docutils literal notranslate"><span class="pre">Normal.func_pdf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.func_rsample"><code class="docutils literal notranslate"><span class="pre">Normal.func_rsample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.given"><code class="docutils literal notranslate"><span class="pre">Normal.given()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.loc"><code class="docutils literal notranslate"><span class="pre">Normal.loc</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.log_prob"><code class="docutils literal notranslate"><span class="pre">Normal.log_prob()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.rsample"><code class="docutils literal notranslate"><span class="pre">Normal.rsample()</span></code></a></li>
@@ -150,8 +169,6 @@
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.Normal.training"><code class="docutils literal notranslate"><span class="pre">Normal.training</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.log_normal"><code class="docutils literal notranslate"><span class="pre">log_normal()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.normal.normal_sample"><code class="docutils literal notranslate"><span class="pre">normal_sample()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#module-mypython.ai.torchprob.distributions">Module contents</a></li>
@@ -162,6 +179,9 @@
 </section>
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-mypython.ai.torchprob.config">
+<span id="mypython-ai-torchprob-config-module"></span><h2>mypython.ai.torchprob.config module<a class="headerlink" href="#module-mypython.ai.torchprob.config" title="Permalink to this heading"></a></h2>
 </section>
 <section id="module-mypython.ai.torchprob.debug">
 <span id="mypython-ai-torchprob-debug-module"></span><h2>mypython.ai.torchprob.debug module<a class="headerlink" href="#module-mypython.ai.torchprob.debug" title="Permalink to this heading"></a></h2>
@@ -176,10 +196,8 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="mypython.ai.torchprob.functions.KL_normal_normal">
 <span class="sig-prename descclassname"><span class="pre">mypython.ai.torchprob.functions.</span></span><span class="sig-name descname"><span class="pre">KL_normal_normal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.functions.KL_normal_normal" title="Permalink to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Ref:</dt><dd><p><a class="reference external" href="https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L172">https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L172</a></p>
-</dd>
-</dl>
+<dd><p class="rubric">References</p>
+<p><a class="reference external" href="https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L172">https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L172</a></p>
 </dd></dl>
 
 <dl class="py function">
@@ -187,21 +205,33 @@
 <span class="sig-prename descclassname"><span class="pre">mypython.ai.torchprob.functions.</span></span><span class="sig-name descname"><span class="pre">KLdiv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution" title="mypython.ai.torchprob.distributions.base.Distribution"><span class="pre">Distribution</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution" title="mypython.ai.torchprob.distributions.base.Distribution"><span class="pre">Distribution</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.functions.KLdiv" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
-<dl class="py function">
+<dl class="py class">
 <dt class="sig sig-object py" id="mypython.ai.torchprob.functions.log">
-<span class="sig-prename descclassname"><span class="pre">mypython.ai.torchprob.functions.</span></span><span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution" title="mypython.ai.torchprob.distributions.base.Distribution"><span class="pre">Distribution</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#mypython.ai.torchprob.functions.log" title="Permalink to this definition"></a></dt>
-<dd><p>log p(x | cond)</p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mypython.ai.torchprob.functions.</span></span><span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mypython.ai.torchprob.distributions.html#mypython.ai.torchprob.distributions.base.Distribution" title="mypython.ai.torchprob.distributions.base.Distribution"><span class="pre">Distribution</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.ai.torchprob.functions.log" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>log p(x | cond)</p>
 <p>Match the look of the formula</p>
+<p class="rubric">Examples</p>
+<p>math : log (y | x)
+impl : tp.log(prob, y).given(x).mean()</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.ai.torchprob.functions.log.given">
+<span class="sig-name descname"><span class="pre">given</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">cond_vars_k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.ai.torchprob.functions.log.given" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </section>
+<section id="module-mypython.ai.torchprob.nanini">
+<span id="mypython-ai-torchprob-nanini-module"></span><h2>mypython.ai.torchprob.nanini module<a class="headerlink" href="#module-mypython.ai.torchprob.nanini" title="Permalink to this heading"></a></h2>
+</section>
 <section id="module-mypython.ai.torchprob">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mypython.ai.torchprob" title="Permalink to this heading"></a></h2>
-<dl class="simple">
-<dt>Ref:</dt><dd><p><a class="reference external" href="https://github.com/masa-su/pixyz">https://github.com/masa-su/pixyz</a>
+<p>This package just keeps the parameters of the probability distribution in the instance.
+This will enable coding that is similar to a formula.</p>
+<p class="rubric">References</p>
+<p><a class="reference external" href="https://github.com/masa-su/pixyz">https://github.com/masa-su/pixyz</a>
 <a class="reference external" href="https://github.com/pyro-ppl/pyro">https://github.com/pyro-ppl/pyro</a></p>
-</dd>
-</dl>
 </section>
 </section>
 

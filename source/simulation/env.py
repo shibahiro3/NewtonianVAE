@@ -1,11 +1,11 @@
 """
-Ref:
+References:
     https://github.com/Kaixhin/PlaNet/blob/master/env.py
     https://github.com/deepmind/dm_control
 """
 
 
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import cv2
 import numpy as np
@@ -113,11 +113,18 @@ class ControlSuiteEnv:
         max_episode_length: int,
         action_repeat: int,
         bit_depth: int,
+        init_position: Optional[str] = None,
     ):
         assert max_episode_length <= 1000
 
+        self.random = np.random.RandomState(seed)
+
         domain, task = env.split("-")
-        self._env = suite.load(domain_name=domain, task_name=task, task_kwargs={"random": seed})
+
+        task_kwargs = {"random": seed, "init_position": init_position}
+        task_kwargs = {k: v for k, v in task_kwargs.items() if v is not None}
+
+        self._env = suite.load(domain_name=domain, task_name=task, task_kwargs=task_kwargs)
         if not symbolic:
             self._env = pixels.Wrapper(self._env, pixels_only=False)
 
@@ -205,13 +212,13 @@ class ControlSuiteEnv:
         )  # .unsqueeze(dim=0)
 
     def adjust_camera(self):
-        camimg = self._env.physics.render(camera_id=0)  # id=1はfinger目線だったw
+        camimg = self._env.physics.render(camera_id=0)
         return camimg
 
     # Sample an action randomly from a uniform distribution over all valid actions
     def sample_random_action(self) -> Tensor:
         spec = self._env.action_spec()
-        return torch.from_numpy(np.random.uniform(spec.minimum, spec.maximum, spec.shape))
+        return torch.from_numpy(self.random.uniform(spec.minimum, spec.maximum, spec.shape))
 
     def zeros_action(self) -> Tensor:
         spec = self._env.action_spec()
@@ -228,6 +235,7 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
         bit_depth: int,
         action_type: str = "default",
         position_wrap: str = "None",
+        init_position: Optional[str] = None,
     ):
         super().__init__(
             env=env,
@@ -236,6 +244,7 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
             max_episode_length=max_episode_length,
             action_repeat=action_repeat,
             bit_depth=bit_depth,
+            init_position=init_position,
         )
 
         self.action_type = action_type
@@ -259,6 +268,8 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
                 self.position_wrapper = reacher_default2endeffectorpos
             else:
                 assert False
+
+            from pprint import pprint
 
         elif domain == "point_mass":
             if action_type == "default":
@@ -316,23 +327,22 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
 
     def action_random_walk(self):
         c = 0.3
-        _uniform = torch.distributions.Uniform(-c, c)
         if self.t == 0:
-            self.action = _uniform.sample((2,))
+            self.action = torch.from_numpy(self.random.uniform(-c, c, size=(2,)))
         else:
-            self.action += _uniform.sample((2,))
+            self.action += torch.from_numpy(self.random.uniform(-c, c, size=(2,)))
         return torch.clip(self.action, -1, 1)
 
     def action_point_mass_circle(self):
         theta = self.t / self.max_episode_length
         r = 0.6
         a = 0.5
-        x = r * np.cos(2 * np.pi * theta) + np.random.uniform(-a, a)
-        y = r * np.sin(2 * np.pi * theta) + np.random.uniform(-a, a)
+        x = r * np.cos(2 * np.pi * theta) + self.random.uniform(-a, a)
+        y = r * np.sin(2 * np.pi * theta) + self.random.uniform(-a, a)
         return torch.tensor([x, y])
 
     def action_forward(self):
-        return torch.tensor([np.random.uniform(-0.3, 0.7), np.random.uniform(-0.2, 0.6)])
+        return torch.tensor([self.random.uniform(-0.3, 0.7), self.random.uniform(-0.2, 0.6)])
 
 
 def reacher_default2endeffectorpos(position):

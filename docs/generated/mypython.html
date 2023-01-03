@@ -61,6 +61,7 @@
 <li><a class="reference internal" href="#mypython.plotutil.cartesian_coordinate"><code class="docutils literal notranslate"><span class="pre">cartesian_coordinate()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.plotutil.cmap"><code class="docutils literal notranslate"><span class="pre">cmap()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.plotutil.get_figsize"><code class="docutils literal notranslate"><span class="pre">get_figsize()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.plotutil.legend_reduce"><code class="docutils literal notranslate"><span class="pre">legend_reduce()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.plotutil.register_save_path"><code class="docutils literal notranslate"><span class="pre">register_save_path()</span></code></a></li>
 </ul>
 </li>
@@ -77,8 +78,21 @@
 <li><a class="reference internal" href="#mypython.pyutil.Seq.now"><code class="docutils literal notranslate"><span class="pre">Seq.now</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#mypython.pyutil.Seq2"><code class="docutils literal notranslate"><span class="pre">Seq2</span></code></a><ul>
+<li><a class="reference internal" href="#mypython.pyutil.Seq2.a"><code class="docutils literal notranslate"><span class="pre">Seq2.a</span></code></a></li>
+<li><a class="reference internal" href="#mypython.pyutil.Seq2.b"><code class="docutils literal notranslate"><span class="pre">Seq2.b</span></code></a></li>
+<li><a class="reference internal" href="#mypython.pyutil.Seq2.length"><code class="docutils literal notranslate"><span class="pre">Seq2.length</span></code></a></li>
+<li><a class="reference internal" href="#mypython.pyutil.Seq2.share_length"><code class="docutils literal notranslate"><span class="pre">Seq2.share_length()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.pyutil.Seq2.size"><code class="docutils literal notranslate"><span class="pre">Seq2.size</span></code></a></li>
+<li><a class="reference internal" href="#mypython.pyutil.Seq2.update"><code class="docutils literal notranslate"><span class="pre">Seq2.update()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#mypython.pyutil.add_version"><code class="docutils literal notranslate"><span class="pre">add_version()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.pyutil.check_args_type"><code class="docutils literal notranslate"><span class="pre">check_args_type()</span></code></a></li>
+<li><a class="reference internal" href="#mypython.pyutil.initialize"><code class="docutils literal notranslate"><span class="pre">initialize</span></code></a><ul>
+<li><a class="reference internal" href="#mypython.pyutil.initialize.all_with"><code class="docutils literal notranslate"><span class="pre">initialize.all_with()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#mypython.pyutil.is_number_type"><code class="docutils literal notranslate"><span class="pre">is_number_type()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.pyutil.s2dhms"><code class="docutils literal notranslate"><span class="pre">s2dhms()</span></code></a></li>
 <li><a class="reference internal" href="#mypython.pyutil.s2dhms_str"><code class="docutils literal notranslate"><span class="pre">s2dhms_str()</span></code></a></li>
@@ -175,8 +189,10 @@
 <li class="toctree-l3"><a class="reference internal" href="mypython.ai.torchprob.html">mypython.ai.torchprob package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.html#subpackages">Subpackages</a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.html#module-mypython.ai.torchprob.config">mypython.ai.torchprob.config module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.html#module-mypython.ai.torchprob.debug">mypython.ai.torchprob.debug module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.html#module-mypython.ai.torchprob.functions">mypython.ai.torchprob.functions module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.html#module-mypython.ai.torchprob.nanini">mypython.ai.torchprob.nanini module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="mypython.ai.torchprob.html#module-mypython.ai.torchprob">Module contents</a></li>
 </ul>
 </li>
@@ -279,8 +295,14 @@
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="mypython.plotutil.legend_reduce">
+<span class="sig-prename descclassname"><span class="pre">mypython.plotutil.</span></span><span class="sig-name descname"><span class="pre">legend_reduce</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Figure</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.plotutil.legend_reduce" title="Permalink to this definition"></a></dt>
+<dd><p>The same label name is regarded as the same expression</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="mypython.plotutil.register_save_path">
-<span class="sig-prename descclassname"><span class="pre">mypython.plotutil.</span></span><span class="sig-name descname"><span class="pre">register_save_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.plotutil.register_save_path" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">mypython.plotutil.</span></span><span class="sig-name descname"><span class="pre">register_save_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffixs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.plotutil.register_save_path" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </section>
@@ -341,6 +363,42 @@
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="mypython.pyutil.Seq2">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mypython.pyutil.</span></span><span class="sig-name descname"><span class="pre">Seq2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lazy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.pyutil.Seq2" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.pyutil.Seq2.a">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">a</span></span><a class="headerlink" href="#mypython.pyutil.Seq2.a" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.pyutil.Seq2.b">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">b</span></span><a class="headerlink" href="#mypython.pyutil.Seq2.b" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.pyutil.Seq2.length">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">length</span></span><a class="headerlink" href="#mypython.pyutil.Seq2.length" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.pyutil.Seq2.share_length">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">share_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">seq2s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#mypython.pyutil.Seq2" title="mypython.pyutil.Seq2"><span class="pre">Seq2</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.pyutil.Seq2.share_length" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mypython.pyutil.Seq2.size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">size</span></span><a class="headerlink" href="#mypython.pyutil.Seq2.size" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.pyutil.Seq2.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mypython.pyutil.Seq2.update" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="mypython.pyutil.add_version">
 <span class="sig-prename descclassname"><span class="pre">mypython.pyutil.</span></span><span class="sig-name descname"><span class="pre">add_version</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="headerlink" href="#mypython.pyutil.add_version" title="Permalink to this definition"></a></dt>
@@ -348,8 +406,26 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mypython.pyutil.check_args_type">
-<span class="sig-prename descclassname"><span class="pre">mypython.pyutil.</span></span><span class="sig-name descname"><span class="pre">check_args_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">locals_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.pyutil.check_args_type" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">mypython.pyutil.</span></span><span class="sig-name descname"><span class="pre">check_args_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">argname_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.pyutil.check_args_type" title="Permalink to this definition"></a></dt>
+<dd><p>argname_value: ex. locals(), self.__dict__</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mypython.pyutil.initialize">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mypython.pyutil.</span></span><span class="sig-name descname"><span class="pre">initialize</span></span><a class="headerlink" href="#mypython.pyutil.initialize" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p class="rubric">Examples</p>
+<p>&#64;initialize.all_with(None)
+class Data:</p>
+<blockquote>
+<div><p>…</p>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="mypython.pyutil.initialize.all_with">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">all_with</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_wrap=&lt;function</span> <span class="pre">copy&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mypython.pyutil.initialize.all_with" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
+
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mypython.pyutil.is_number_type">

@@ -12,7 +12,7 @@ def large_episodes(episodes) -> None:
         print(
             (
                 f"You have specified a large number of episodes (= {episodes})"
-                ", though you are trying to save movie."
+                ", though you are trying to save video."
             )
         )
         input_ = input("Do you want to continue? [y/n] ")

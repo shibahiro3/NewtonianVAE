@@ -9,12 +9,11 @@ import torch
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
 
-import json5
 import models.core
 import mypython.plotutil as mpu
 import mypython.vision as mv
-import tool.plot_config
 import tool.util
+import view.plot_config
 from models.core import NewtonianVAEFamily
 from mypython.ai.util import SequenceDataLoader
 from mypython.pyutil import Seq, add_version
@@ -24,11 +23,11 @@ from tool import checker, paramsmanager
 from tool.util import Preferences
 from view.label import Label
 
-tool.plot_config.apply()
+view.plot_config.apply()
 try:
-    import tool._plot_config
+    import view._plot_config
 
-    tool._plot_config.apply()
+    view._plot_config.apply()
 except:
     pass
 
@@ -36,9 +35,6 @@ except:
 def reconstruction(
     config: str,
     episodes: int,
-    path_model: Optional[str],
-    path_data: Optional[str],
-    path_result: Optional[str],
     fix_xmap_size: Optional[int],
     save_anim: bool,
     format: str,
@@ -46,43 +42,49 @@ def reconstruction(
     if save_anim:
         checker.large_episodes(episodes)
 
+    # =========================== load ===========================
     torch.set_grad_enabled(False)
 
-    _params = paramsmanager.Params(config)
-    params_eval = _params.eval
-    path_model = tool.util.priority(path_model, _params.external.save_path)
-    path_data = tool.util.priority(path_data, _params.external.data_path)
-    del _params
-    path_result = tool.util.priority(path_result, params_eval.result_path)
+    params = paramsmanager.Params(config)
 
     dtype, device = tool.util.dtype_device(
-        dtype=params_eval.dtype,
-        device=params_eval.device,
+        dtype=params.train.dtype,
+        device=params.train.device,
     )
+
+    model, manage_dir, weight_path, saved_params = tool.util.load(
+        root=params.path.saves_dir,
+        model_place=models.core,
+    )
+    model: NewtonianVAEFamily
+    model.type(dtype)
+    model.to(device)
+    model.eval()
+    model.is_save = True
+
+    path_data = tool.util.priority(params.path.data_dir, saved_params.path.data_dir)
+    path_result = tool.util.priority(params.path.results_dir, saved_params.path.results_dir)
 
     testloader = SequenceDataLoader(
         root=Path(path_data, "episodes"),
-        names=["action", "observation", "delta"],
-        start=params_eval.data_start,
-        stop=params_eval.data_stop,
+        names=["action", "observation", "delta"],  # <<
+        start=params.eval.data_start,
+        stop=params.eval.data_stop,
         batch_size=episodes,
         dtype=dtype,
         device=device,
     )
+
+    T = saved_params.train.max_time_length
+
+    del params
+    del saved_params
+    # ======================== end of load =======================
+
     action, observation, delta = next(testloader)
     delta.unsqueeze_(-1)
 
-    model, manage_dir, weight_path, params = tool.util.load(
-        root=path_model, model_place=models.core
-    )
-
-    model: NewtonianVAEFamily
-    model.type(dtype)
-    model.to(device)
-    model.train(params_eval.training)
-    model.is_save = True
-
-    all_steps = params.train.max_time_length * episodes
+    all_steps = T * episodes
 
     # ============================================================
     plt.rcParams.update(
@@ -148,7 +150,7 @@ def reconstruction(
                 [
                     x[: self.t, i],
                     xp.full(
-                        (params.train.max_time_length - self.t,),
+                        (T - self.t,),
                         xp.nan,
                         dtype=x.dtype,
                     ),
@@ -193,10 +195,10 @@ def reconstruction(
                 f"{frame_cnt+1:5d} / {all_steps} ({(frame_cnt+1)*100/all_steps:.1f} %) "
             )
 
-            mod = frame_cnt % params.train.max_time_length
+            mod = frame_cnt % T
             if mod == 0:
                 self.t = -1
-                self.episode_cnt = frame_cnt // params.train.max_time_length + mod
+                self.episode_cnt = frame_cnt // T + mod
 
             # ============================================================
             self.t += 1
@@ -204,7 +206,7 @@ def reconstruction(
 
             if frame_cnt == -1:
                 self.episode_cnt = np.random.randint(0, episodes)
-                self.t = params.train.max_time_length - 1
+                self.t = T - 1
                 self.init()
 
             if self.t == 0:
@@ -250,12 +252,12 @@ def reconstruction(
             ax = axes.x_mean
             N = model.cell.dim_x
             ax.set_title(r"$\mathbf{x}_{1:t}$")
-            ax.set_xlim(0, params.train.max_time_length)
+            ax.set_xlim(0, T)
             ax.set_ylim(self.min_x_mean, self.max_x_mean)
             ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
             for i in range(N):
                 ax.plot(
-                    range(params.train.max_time_length),
+                    range(T),
                     self._attach_nan(self.model.LOG_x_mean, i),
                     color=color_map(1 - i / N),
                     lw=1,
@@ -305,12 +307,12 @@ def reconstruction(
             ax = axes.v
             N = model.cell.dim_x
             ax.set_title(r"$\mathbf{v}_{1:t}$")
-            ax.set_xlim(0, params.train.max_time_length)
+            ax.set_xlim(0, T)
             ax.set_ylim(self.min_v, self.max_v)
             ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
             for i in range(N):
                 ax.plot(
-                    range(params.train.max_time_length),
+                    range(T),
                     self._attach_nan(self.model.LOG_v, i),
                     color=color_map(1 - i / N),
                     lw=1,
@@ -336,12 +338,12 @@ def reconstruction(
                 ax = axes.xhat_mean
                 N = model.cell.dim_xhat
                 ax.set_title(r"$\hat{\mathbf{x}}_{1:t}$")
-                ax.set_xlim(0, params.train.max_time_length)
+                ax.set_xlim(0, T)
                 ax.set_ylim(self.min_xhat_mean, self.max_xhat_mean)
                 ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
                 for i in range(N):
                     ax.plot(
-                        range(params.train.max_time_length),
+                        range(T),
                         self._attach_nan(self.model.LOG_xhat_mean, i),
                         color=color_map(1 - i / N),
                         lw=1,
@@ -365,12 +367,12 @@ def reconstruction(
                 ax = axes.xhat_std
                 N = model.cell.dim_xhat
                 ax.set_title(r"std of $\hat{\mathbf{x}}_{1:t}$")
-                ax.set_xlim(0, params.train.max_time_length)
+                ax.set_xlim(0, T)
                 ax.set_ylim(self.min_xhat_std, self.max_xhat_std)
                 ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
                 for i in range(N):
                     ax.plot(
-                        range(params.train.max_time_length),
+                        range(T),
                         self._attach_nan(self.model.LOG_xhat_std, i),
                         color=color_map(1 - i / N),
                         lw=1,
@@ -414,7 +416,3 @@ def _min_max(x, axis=None, pad_ratio=0.2):
     min -= padding
     max += padding
     return min, max
-
-
-if __name__ == "__main__":
-    reconstruction()

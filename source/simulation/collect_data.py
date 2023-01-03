@@ -7,21 +7,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.gridspec import GridSpec
 
-import json5
 import mypython.plotutil as mpu
 import mypython.vision as mv
-import tool.plot_config
 import tool.util
+import view.plot_config
 from mypython.terminal import Color, Prompt
 from simulation.env import ControlSuiteEnvWrap, obs2img
 from tool import checker, paramsmanager
 from tool.util import Preferences
 
-tool.plot_config.apply()
+view.plot_config.apply()
 try:
-    import tool._plot_config
+    import view._plot_config
 
-    tool._plot_config.apply()
+    view._plot_config.apply()
 except:
     pass
 
@@ -70,7 +69,7 @@ def main(
 
     params = paramsmanager.Params(config)
 
-    env = ControlSuiteEnvWrap(**json5.load(open(config))["ControlSuiteEnvWrap"])
+    env = ControlSuiteEnvWrap(**params.raw_["ControlSuiteEnvWrap"])
     T = env.max_episode_length // env.action_repeat
     all_steps = T * episodes
 
@@ -78,10 +77,12 @@ def main(
     print("action size:", env.action_size)
     print("action range:", env.action_range)
 
-    data_path = Path(params.external.data_path)
+    data_path = Path(params.path.data_dir)
     if watch is None:
         if len(list(data_path.glob("episodes/*"))) > 0:
-            print(f'\n"{data_path}" directory will be rewritten.')
+            print(
+                f'\n"{data_path}" already has data. This directory will be erased and replaced with new data.'
+            )
             if input("Do you want to continue? [y/n] ") != "y":
                 print("Abort.")
                 return

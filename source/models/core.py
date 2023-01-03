@@ -195,8 +195,8 @@ class NewtonianVAE(NewtonianVAEBase):
 
             if t == 0:
                 v_t = torch.zeros(size=(BS, D), device=action.device, dtype=action.dtype)
-                x_t = self.cell.q_encoder.cond(I_t).rsample()
-                I_dec = self.cell.p_decoder.cond(x_t).decode()
+                x_t = self.cell.q_encoder.given(I_t).rsample()
+                I_dec = self.cell.p_decoder.given(x_t).decode()
 
                 x_tn1 = x_t
                 v_tn1 = v_t
@@ -305,7 +305,7 @@ class NewtonianVAEDerivation(NewtonianVAEDerivationBase):
 
             if t == 0:
                 v_t = torch.zeros(size=(BS, D), device=action.device, dtype=action.dtype)
-                x_t = self.cell.q_encoder.cond(I_t).rsample()
+                x_t = self.cell.q_encoder.given(I_t).rsample()
                 I_dec = torch.full_like(I_t, torch.nan)
 
                 x_tn1 = x_t
@@ -431,16 +431,16 @@ class NewtonianVAEV2(NewtonianVAEBase):
             _, BS, D = action.shape  # _ : T
 
             if t == 0:
-                x_q_t = self.cell.q_encoder.cond(I_t).rsample()
+                x_q_t = self.cell.q_encoder.given(I_t).rsample()
                 v_t = torch.zeros(size=(BS, D), device=action.device, dtype=action.dtype)
-                I_dec = self.cell.p_decoder.cond(x_q_t).decode()
+                I_dec = self.cell.p_decoder.given(x_q_t).decode()
 
                 x_q_tn1 = x_q_t
 
             elif t == 1:
-                x_q_t = self.cell.q_encoder.cond(I_t).rsample()
+                x_q_t = self.cell.q_encoder.given(I_t).rsample()
                 v_t = (x_q_t - x_q_tn1) / delta[t]
-                I_dec = self.cell.p_decoder.cond(x_q_t).decode()
+                I_dec = self.cell.p_decoder.given(x_q_t).decode()
 
             else:
                 output = self.cell(
@@ -552,9 +552,9 @@ class NewtonianVAEV2Derivation(NewtonianVAEDerivationBase):
             _, BS, D = action.shape  # _ : T
 
             if t == 0:
-                x_q_t = self.cell.q_encoder.cond(I_t).rsample()
+                x_q_t = self.cell.q_encoder.given(I_t).rsample()
                 v_t = torch.zeros(size=(BS, D), device=action.device, dtype=action.dtype)
-                I_dec = torch.full_like(I_t, torch.nan)  # self.cell.p_decoder.cond(x_q_t).decode()
+                I_dec = torch.full_like(I_t, torch.nan)
 
                 x_q_tn1 = x_q_t
 
@@ -563,10 +563,10 @@ class NewtonianVAEV2Derivation(NewtonianVAEDerivationBase):
                     self.LOG_xhat_std.append(np.full((BS, self.cell.dim_xhat), np.nan))
 
             elif t == 1:
-                x_q_t = self.cell.q_encoder.cond(I_t).rsample()
+                x_q_t = self.cell.q_encoder.given(I_t).rsample()
                 v_t = (x_q_t - x_q_tn1) / delta[t]
-                xhat_t = self.cell.p_xhat.cond(x_q_tn1, u_tn1).rsample()
-                I_dec = self.cell.p_decoder.cond(xhat_t).decode()
+                xhat_t = self.cell.p_xhat.given(x_q_tn1, u_tn1).rsample()
+                I_dec = self.cell.p_decoder.given(xhat_t).decode()
 
                 if self.is_save:
                     self.LOG_xhat_mean.append(to_np(self.cell.p_xhat.loc))

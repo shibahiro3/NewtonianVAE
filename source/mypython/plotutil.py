@@ -46,19 +46,28 @@ def cartesian_coordinate(ax: Axes, r: float):
     ax.vlines(0, -r, r, color="black")
 
 
-def register_save_path(fig: Figure, path, suffix: list):
+def register_save_path(fig: Figure, path, suffixs: list):
     plt.rcParams["keymap.save"] = ""
     path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
 
     def _save(event: KeyEvent):
         if event.key == "s":
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-            for suf in suffix:
-                p = path.with_suffix("." + suf)
+            for suffix in suffixs:
+                p = path.with_suffix("." + suffix)
                 event.canvas.figure.savefig(p)
                 Color.print("saved to:", p)
 
     fig.canvas.mpl_connect("key_press_event", _save)
+
+
+def legend_reduce(fig: Figure):
+    """The same label name is regarded as the same expression"""
+    labels_handles = {}
+    for ax in fig.axes:
+        for h, l in zip(*ax.get_legend_handles_labels()):
+            labels_handles[l] = h
+    fig.legend(handles=labels_handles.values(), labels=labels_handles.keys())
 
 
 def anim_mode(
@@ -100,7 +109,7 @@ def anim_mode(
         plt.show()
 
     elif mode == "save":
-        Color.print("saving to: ", save_path)
+        Color.print("saving to:", save_path)
         Path(save_path).parent.mkdir(parents=True, exist_ok=True)
 
         anim = FuncAnimation(fig, anim_func, frames=frames, init_func=null, interval=interval)

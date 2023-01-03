@@ -1,23 +1,32 @@
 import os
 import sys
+from pathlib import Path
 
-os.chdir(os.pardir)  # workspaceFolder
-sys.path.append("source")
+workspaceFolder = Path(__file__).absolute().parent.parent
+os.chdir(workspaceFolder)
+sys.path.append(str(workspaceFolder))
+sys.path.append(str(workspaceFolder / "source"))
 
 import argparse
 from argparse import RawTextHelpFormatter
 from pprint import pprint
 
 import argset
-
-from newtonianvae import show_loss
+from source.newtonianvae import show_loss
 
 # fmt: off
-parser = argparse.ArgumentParser(allow_abbrev=False, formatter_class=RawTextHelpFormatter)
-parser.add_argument("--path-model", type=str, default="environment/reacher2d/saves", **argset.path_model)
-parser.add_argument("--path-result", type=str, default="environment/reacher2d/results", **argset.path_result)
-parser.add_argument("--start-iter", type=int, default=100, metavar="NUM")
-parser.add_argument("--format", type=str, default=["svg", "pdf"], nargs="*", **argset.fotmat_file)
+parser = argparse.ArgumentParser(
+    allow_abbrev=False,
+    formatter_class=RawTextHelpFormatter,
+    description=
+"""Examples:
+  $ python show_loss.py --config config/reacher2d.json5
+  $ python show_loss.py --config config/point_mass.json5
+""",
+)
+parser.add_argument("--config", type=str, required=True, **argset.config)
+parser.add_argument("--start-iter", type=int, default=100, metavar="NUM", help="Number of initial iterations to draw Loss")
+parser.add_argument("--format", type=str, default=["svg", "pdf", "png"], nargs="*", **argset.format_file)
 args = parser.parse_args()
 # fmt: on
 

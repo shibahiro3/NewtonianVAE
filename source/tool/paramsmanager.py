@@ -1,3 +1,4 @@
+import dataclasses
 from collections import ChainMap
 from pathlib import Path
 from pprint import pprint
@@ -18,11 +19,9 @@ class _Converter:
         return self._contents
 
     def __str__(self) -> str:
-        # Color.print(self.__class__, "__str__", c=Color.coral)
         return _dumps(self._contents)
 
     def to_json(self):
-        # Color.print(self.__class__, "to_json")
         return self._contents
 
     def save(self, path, lock=True):
@@ -36,110 +35,81 @@ class _Converter:
         Color.print("saved params:", path)
 
 
+@dataclasses.dataclass
 class Train(_Converter):
-    def __init__(
-        self,
-        device: str,
-        dtype: str,
-        data_start: int,
-        data_stop: int,
-        batch_size: int,
-        epochs: int,
-        learning_rate: Union[int, float],
-        save_per_epoch: int,
-        max_time_length: int,
-        grad_clip_norm: Union[None, int, float] = None,
-        seed: Optional[int] = None,
-        kl_annealing: bool = False,
-    ) -> None:
-        check_args_type(self.__init__, locals())
+    device: str
+    dtype: str
+    data_start: int
+    data_stop: int
+    batch_size: int
+    epochs: int
+    learning_rate: Union[int, float]
+    save_per_epoch: int
+    max_time_length: int
+    grad_clip_norm: Union[None, int, float] = None
+    seed: Optional[int] = None
+    kl_annealing: bool = False
+    check_value: bool = True
 
-        assert dtype in ("float16", "float32")
-
-        self.data_start = data_start
-        self.data_stop = data_stop
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.learning_rate = learning_rate
-        self.device = device
-        self.dtype = dtype
-        self.max_time_length = max_time_length
-        self.seed = seed
-        self.grad_clip_norm = grad_clip_norm
-        self.kl_annealing = kl_annealing
-
-        # === Not related to learning ===
-        self.save_per_epoch = save_per_epoch
+    def __post_init__(self):
+        check_args_type(self, self.__dict__)
+        assert self.dtype in ("float16", "float32")
 
 
+@dataclasses.dataclass
 class Eval(_Converter):
-    def __init__(
-        self,
-        device: str,
-        dtype: str,
-        data_start: int,
-        data_stop: int,
-        result_path: str,
-        training: bool = False,
-    ) -> None:
-        check_args_type(self.__init__, locals())
+    device: str
+    dtype: str
+    data_start: Optional[int] = None
+    data_stop: Optional[int] = None
 
-        assert dtype in ("float16", "float32")
-
-        self.device = device
-        self.dtype = dtype
-        self.data_start = data_start
-        self.data_stop = data_stop
-        self.training = training
-        self.result_path = result_path
+    def __post_init__(self):
+        check_args_type(self, self.__dict__)
+        assert self.dtype in ("float16", "float32")
 
 
-class TrainExternal(_Converter):
-    def __init__(
-        self,
-        data_path: str,
-        save_path: str,
-        data_id: Optional[int] = None,
-        resume_from: Optional[str] = None,
-    ) -> None:
-        check_args_type(self.__init__, locals())
+@dataclasses.dataclass
+class Paths(_Converter):
+    data_dir: Optional[str] = None
+    saves_dir: Optional[str] = None
+    results_dir: Optional[str] = None
+    resume_weight: Optional[str] = None
+    used_nvae_weight: Optional[str] = None
 
-        self.data_path = data_path
-        self.save_path = save_path
-        self.data_id = data_id
-        self.resume_from = resume_from
+    def __post_init__(self):
+        check_args_type(self, self.__dict__)
+
+    @property
+    def _contents(self):
+        return {k: str(v) for k, v in self.__dict__.items() if v is not None}
 
 
 class Params(_Converter):
     def __init__(self, path) -> None:
+        super().__init__()
+
         self.raw_: dict = json5.load(open(path))
 
-        def class_or_none(T, kwargs):
+        def instance_or_none(T, kwargs):
             return T(**kwargs) if kwargs is not None else None
 
         self.model: str = self.raw_.get("model", None)
-        self.train = class_or_none(Train, self.raw_.get("train", None))
-        self.external = class_or_none(TrainExternal, self.raw_.get("external", None))
-        self.eval = class_or_none(Eval, self.raw_.get("eval", None))
+        self.model_params: dict = self.raw_.get(self.model, None)
+        self.train = instance_or_none(Train, self.raw_.get("train", None))
+        self.path = instance_or_none(Paths, self.raw_.get("path", None))
+        self.eval = instance_or_none(Eval, self.raw_.get("eval", None))
+        self.pid = None  # os.getpid()
 
     @property
     def _contents(self):
-        tmp = self.__dict__.copy()
-        tmp.pop("raw_")
+        model_params = {self.model: self.model_params}
+        contents = ChainMap(model_params, self.__dict__)
 
-        model_params = {self.model: self.raw_[self.model]}
-        contents = ChainMap(model_params, tmp)
-        # contents = dict(model_params, **tmp)
-
-        save_keys = ["model", self.model, "train", "external"]
+        save_keys = ["model", self.model, "train", "path", "pid"]
 
         new_contents = {}
         for k in save_keys:
             new_contents[k] = contents[k]
-
-        # delete_keys = contents.keys() ^ save_keys
-        # for k in delete_keys:
-        #     contents.pop(k)
 
         return new_contents
 

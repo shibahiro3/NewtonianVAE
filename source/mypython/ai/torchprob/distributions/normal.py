@@ -1,3 +1,5 @@
+import math
+from numbers import Real
 from typing import List, Optional, Tuple, Union
 
 import torch
@@ -6,11 +8,14 @@ from typing_extensions import Self
 
 from mypython.terminal import Color
 
-from .base import Distribution, _eps, to_optional_tensor
+from .. import config
+from .base import Distribution, ProbParamsValueError, _eps, to_optional_tensor
 
 
 class Normal(Distribution):
     # torch.distributions.Normal
+
+    ParamsReturnType = Tuple[Tensor, Tensor]
 
     def __init__(
         self,
@@ -19,90 +24,116 @@ class Normal(Distribution):
     ) -> None:
         super().__init__()
 
-        self._mu = to_optional_tensor(mu)
-        self._sigma = to_optional_tensor(sigma)
+        self._mu_pvt_ = to_optional_tensor(mu)
+        self._sigma_pvt_ = to_optional_tensor(sigma)
 
-    def forward(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Tuple[Tensor, Tensor]:
-        """Compute μ, σ of N(x | μ, σ) from N(x | cond_vars)"""
+    def forward(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> ParamsReturnType:
         raise NotImplementedError()
         mu: Tensor
         sigma: Tensor
         return mu, sigma
 
-    def cond(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Self:
-        self._mu, self._sigma = self(*cond_vars, **cond_vars_k)
+    def __call__(self, *args, **kwargs) -> ParamsReturnType:
+        return super().__call__(*args, **kwargs)
 
-        assert (
-            (0 <= self._sigma.nan_to_num()).all().item()
-        ), "σ should be 0 <= σ (Normal distribution)"
+    def given(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Self:
+        self._cnt_given += 1 if self._cnt_given < 1024 else 0
+        self._mu_pvt_, self._sigma_pvt_ = self(*cond_vars, **cond_vars_k)
 
-        self._cnt += 1 if self._cnt < 1024 else 0
+        if config.check_value:
+            assert type(self._mu_pvt_) == Tensor
+            assert type(self._sigma_pvt_) == Tensor
+
+            if self._mu_pvt_.isnan().any().item():
+                raise ProbParamsValueError("μ contains nan (Normal)")
+            if self._sigma_pvt_.isnan().any().item():
+                raise ProbParamsValueError("Σ contains nan (Normal)")
+            if not (0 <= self._sigma_pvt_).all().item():
+                raise ProbParamsValueError("σ should be 0 ≤ σ (Normal)")
+
         return self
 
     def log_prob(self, x: Tensor) -> Tensor:
-        assert self._mu is not None
-        assert self._sigma is not None
-        assert x.shape == self._mu.shape
-        return log_normal(x, self._mu, self._sigma)
+        assert self._mu_pvt_ is not None
+        assert self._sigma_pvt_ is not None
+        assert x.shape == self._mu_pvt_.shape
+
+        if config.use_original:
+            prob = self.func_log(x, self.loc, self.scale)
+        else:
+            # a little bit slow
+            prob = torch.distributions.Normal(loc=self.loc, scale=self.scale).log_prob(x)
+
+        # print(prob.shape)
+        return prob
 
     def decode(self) -> Tensor:
-        assert self._mu is not None
-        assert self._sigma is not None
-        return self._mu.detach()
+        assert self._mu_pvt_ is not None
+        assert self._sigma_pvt_ is not None
+        return self._mu_pvt_.detach()
 
     def sample(self) -> Tensor:
         return self.rsample().detach()
 
     def rsample(self) -> Tensor:
-        assert self._mu is not None
-        assert self._sigma is not None
-        return normal_sample(self._mu, self._sigma)
+        assert self._mu_pvt_ is not None
+        assert self._sigma_pvt_ is not None
 
-    def dist_parameters(self) -> Tuple[Tensor, Tensor]:
-        assert self._mu is not None
-        assert self._sigma is not None
-        return self._mu, self._sigma
+        if config.use_original:
+            rsample = self.func_rsample(self.loc, self.scale)
+        else:
+            # a little bit slow
+            rsample = torch.distributions.Normal(loc=self.loc, scale=self.scale).rsample()
+
+        # print(rsample.shape)
+        return rsample
+
+    def dist_parameters(self) -> ParamsReturnType:
+        assert self._mu_pvt_ is not None
+        assert self._sigma_pvt_ is not None
+        return self._mu_pvt_, self._sigma_pvt_
+
+    def clear_dist_parameters(self) -> None:
+        self._cnt_given = 0
+        self._mu_pvt_ = None
+        self._sigma_pvt_ = None
 
     @property
     def loc(self) -> Tensor:
-        return self._mu
+        return self._mu_pvt_
 
     @property
     def scale(self) -> Tensor:
-        return self._sigma
+        return self._sigma_pvt_
+
+    @staticmethod
+    def func_log(x: Tensor, mu: Tensor, sigma: Tensor) -> Tensor:
+        r"""Log-likelihood of a Gaussian distribution
+
+        .. math::
+            \begin{array}{ll} \\
+                \log \mathcal{N}(x \mid \mu, \sigma^2) = - \frac{1}{2} \left( \exp \left( \frac{(x - \mu)^2}{\sigma^2} \right) + 2 \ln \sigma + \ln 2\pi \right)
+            \end{array}
+        """
+
+        log_sigma = math.log(sigma) if isinstance(sigma, Real) else sigma.log()
+        return -0.5 * (((x - mu) / sigma) ** 2 + 2 * log_sigma + math.log(2 * math.pi))
+
+    @staticmethod
+    def func_rsample(mu: Tensor, sigma: Tensor) -> Tensor:
+        """
+        Reparametrization trick
+        z = μ + σε where σ ~ N(0, 1)
+        """
+
+        # return eps.mul(sigma).add_(mu)
+        eps = torch.randn_like(mu)
+        return mu + sigma * eps
+
+    @staticmethod
+    def func_pdf(x: Tensor, mu: Tensor, sigma: Tensor):
+        return torch.exp(-0.5 * (((x - mu) / sigma) ** 2)) / (math.sqrt(2.0 * math.pi) * sigma)
 
 
 # Standard normal distribution
 Normal01 = Normal(0, 1)
-
-
-def log_normal(x: Tensor, mu: Tensor, sigma: Tensor) -> Tensor:
-    r"""Log-likelihood of a Gaussian distribution
-
-    .. math::
-        \begin{array}{ll} \\
-            \log \mathcal{N}(x \mid \mu, \sigma^2) = - \frac{1}{2} \left( \exp \left( \frac{(x - \mu)^2}{\sigma^2} \right) + 2 \ln \sigma + \ln 2\pi \right)
-        \end{array}
-
-    If the sigma is fixed at 1, This equation is equivalent to :math:`- \frac{1}{2} (x - \mu)^2 + C`.
-    This is equivalent to sum of squared errors (SSE) and is widely used as a mathematical expression for reconstruction error.
-    That is, this :math:`\mu` is the image (, etc.) that is reconstructed.
-
-    References:
-        https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L185
-    """
-
-    log_2pi = 0.79817986835  # log(2π)
-    log_2pi_half = 0.39908993417  # log(2π)/2
-    # sigma_p2 = sigma.pow(2)
-    return -0.5 * (((x - mu) / sigma).pow(2) + 2 * torch.log(sigma + _eps) + log_2pi)
-
-
-def normal_sample(mu: Tensor, sigma: Tensor) -> Tensor:
-    """
-    Reparametrization trick
-    """
-
-    # return eps.mul(sigma).add_(mu)
-    eps = torch.randn_like(mu)
-    return mu + eps * sigma

@@ -8,13 +8,16 @@ r"""
     \newcommand{\KL}[2]{\operatorname{KL}\left[ #1 \, \middle\| \, #2 \right]}
 """
 
+from numbers import Real
 from typing import Callable, Optional, Tuple, Union
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torch import NumberType, Tensor, nn
 
 import mypython.ai.torchprob as tp
+from mypython.ai.util import find_function
 from mypython.terminal import Color
 
 
@@ -43,8 +46,13 @@ class ABCf(nn.Module):
 
 
     References in paper:
-        [A, log (-B), log C] = diag(f(xt, vt, ut)),
+        * [A, log (-B), log C] = diag(f(xt, vt, ut)),
         where f is a neural network with linear output activation.
+
+        * To compute the transition matrices as a function of the state we use a fully
+        connected network with 2 hidden layers with 16 units
+        and ReLU activation, with the appropriate input and
+        output dimensionality.
 
     References in paper (TS-NVAE):
         A  = diag(fA(xt, vt, ut))
@@ -60,14 +68,16 @@ class ABCf(nn.Module):
     ) -> None:
         super().__init__()
 
-        dim_IO = 3 * dim_x
-
         self.func = nn.Sequential(
-            nn.Linear(dim_IO, dim_IO),
-            nn.Mish(),
-            nn.Linear(dim_IO, dim_IO),
-            nn.Mish(),
-            nn.Linear(dim_IO, dim_IO),
+            nn.Linear(dim_x * 3, dim_x),
+            nn.ReLU(),
+            # === 2 hidden layer
+            nn.Linear(dim_x, dim_x),
+            nn.ReLU(),
+            nn.Linear(dim_x, dim_x),
+            nn.ReLU(),
+            # ===
+            nn.Linear(dim_x, dim_x * 3),
         )
 
     def forward(self, x_tn1: Tensor, v_tn1: Tensor, u_tn1: Tensor):
@@ -100,7 +110,7 @@ class Velocity(nn.Module):
 
         self.fix_abc = fix_abc
 
-    def forward(self, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: float):
+    def forward(self, x_tn1: Tensor, u_tn1: Tensor, v_tn1: Tensor, dt: Tensor):
         """"""
 
         """
@@ -110,7 +120,6 @@ class Velocity(nn.Module):
 
         if self.fix_abc is None:
             diagA, diagB, diagC = self.func_abc(x_tn1, u_tn1, v_tn1)
-            # diagA, diagB が 1、すなわちxとvにかかっていたら、簡単にnanになる
         else:
             # Paper:
             #   unbounded and full rank
@@ -137,15 +146,23 @@ class Transition(tp.Normal):
         \end{array}
     """
 
-    def __init__(self, std=1.0) -> None:
+    def __init__(self, std: Optional[Real]) -> None:
         super().__init__()
 
-        self.std = torch.tensor(std)
+        if std is not None:
+            self.std: Tensor
+            self.register_buffer("std", torch.tensor(std))
+            self.std_function = lambda x: x
+        else:
+            # σ is not σ_t, so σ should not depend on x_t.
+            self.std = nn.Parameter(torch.randn(1))
+            self.std_function = F.softplus
 
-    def forward(self, x_tn1: Tensor, v_t: Tensor, dt: float):
+    def forward(self, x_tn1: Tensor, v_t: Tensor, dt: Tensor):
         x_t = x_tn1 + dt * v_t
         mu = x_t
-        sigma = self.std
+        sigma = self.std_function(self.std)
+        # print(sigma.item())
         return mu, sigma
 
 
@@ -161,22 +178,31 @@ class Encoder(tp.Normal):
     """
 
     def __init__(
-        self, dim_x: int, dim_middle: int, std_function: Callable[[Tensor], Tensor]
+        self,
+        dim_x: int,
+        dim_middle: int,
+        std_function: Union[str, Callable[[Tensor], Tensor]],
     ) -> None:
         super().__init__()
+
+        self.dim_x = dim_x
+
+        # nn.Exp() does't exist
+        if type(std_function) == str:
+            self.std_function = find_function(std_function)
+        else:
+            self.std_function = std_function
 
         self.fc = VisualEncoder64(dim_output=dim_middle)
         self.mean = nn.Linear(dim_middle, dim_x)
         self.std = nn.Linear(dim_middle, dim_x)
-        # self.std = torch.tensor(1)
-        self.std_function = std_function
 
     def forward(self, I_t: Tensor):
         """"""
         middle = self.fc(I_t)
         mu = self.mean(middle)
         sigma = self.std_function(self.std(middle))
-        sigma += torch.finfo(sigma.dtype).eps
+        # sigma += torch.finfo(sigma.dtype).eps
         return mu, sigma
 
 
@@ -191,8 +217,10 @@ class Decoder(tp.Normal):
         We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.
     """
 
-    def __init__(self, dim_x: int, decoder_type: str, std=1.0) -> None:
+    def __init__(self, dim_x: int, decoder_type: str, std: Optional[Real]) -> None:
         super().__init__()
+
+        self.dim_x = dim_x
 
         if decoder_type == "VisualDecoder64":
             self.dec = VisualDecoder64(dim_x, 1024)
@@ -201,12 +229,20 @@ class Decoder(tp.Normal):
         else:
             assert False
 
-        self.std = torch.tensor(std)
+        if std is not None:
+            self.std: Tensor
+            self.register_buffer("std", torch.tensor(std))
+            self.std_function = lambda x: x
+        else:
+            # σ is not σ_t, so σ should not depend on x_t.
+            self.std = nn.Parameter(torch.randn(1))
+            self.std_function = F.softplus
 
     def forward(self, x_t: Tensor):
         """"""
         mu = self.dec(x_t)
-        sigma = self.std
+        sigma = self.std_function(self.std)
+        # print(sigma.item())
         return mu, sigma
 
 
@@ -221,21 +257,30 @@ class Pxhat(tp.Normal):
     """
 
     def __init__(
-        self, dim_x: int, dim_xhat: int, dim_middle: int, std_function: Callable[[Tensor], Tensor]
+        self,
+        dim_x: int,
+        dim_xhat: int,
+        dim_middle: int,
+        std_function: Union[str, Callable[[Tensor], Tensor]],
     ) -> None:
         super().__init__()
+
+        # nn.Exp() does't exist
+        if type(std_function) == str:
+            self.std_function = find_function(std_function)
+        else:
+            self.std_function = std_function
 
         self.fc = nn.Linear(2 * dim_x, dim_middle)
         self.mean = nn.Linear(dim_middle, dim_xhat)
         self.std = nn.Linear(dim_middle, dim_xhat)
-        self.std_function = std_function
 
     def forward(self, x_tn1: Tensor, u_tn1: Tensor):
         middle = torch.cat([x_tn1, u_tn1], dim=-1)
         middle = self.fc(middle)
         mu = self.mean(middle)
         sigma = self.std_function(self.std(middle))
-        sigma += torch.finfo(sigma.dtype).eps
+        # sigma += torch.finfo(sigma.dtype).eps
         return mu, sigma
 
 
@@ -247,7 +292,7 @@ class VisualEncoder64(nn.Module):
     Outputs: y
         * **y**: tensor of shape :math:`(*, \mathrm{dim\_output})`
 
-    Reference for implementation:
+    References for implementation:
         https://github.com/ctallec/world-models/blob/master/models/vae.py#L32
     """
 
@@ -283,7 +328,7 @@ class VisualDecoder64(nn.Module):
     Outputs: y
         * **y**: tensor of shape :math:`(*, 3, 64, 64)`
 
-    Reference for implementation:
+    References for implementation:
         https://github.com/ctallec/world-models/blob/master/models/vae.py#L10
     """
 
@@ -318,10 +363,10 @@ class SpatialBroadcastDecoder64(nn.Module):
     Outputs: y
         * **y**: tensor of shape :math:`(N, 3, 64, 64)`
 
-    Reference:
+    References:
         Spatial Broadcast Decoder https://arxiv.org/abs/1901.07017
 
-    Reference for implementation:
+    References for implementation:
         https://github.com/dfdazac/vaesbd/blob/master/model.py#L6
     """
 
@@ -334,8 +379,10 @@ class SpatialBroadcastDecoder64(nn.Module):
         x_grid = torch.from_numpy(x_grid)
         y_grid = torch.from_numpy(y_grid)
         # Add as constant, with extra dims for N and C
-        self.x_grid = nn.Parameter(x_grid.reshape((1, 1) + x_grid.shape), requires_grad=False)
-        self.y_grid = nn.Parameter(y_grid.reshape((1, 1) + y_grid.shape), requires_grad=False)
+        self.x_grid: Tensor
+        self.y_grid: Tensor
+        self.register_buffer("x_grid", x_grid.reshape((1, 1) + x_grid.shape))
+        self.register_buffer("y_grid", y_grid.reshape((1, 1) + y_grid.shape))
 
         self.dec_convs = nn.Sequential(
             nn.Conv2d(dim_input + 2, 64, 3, padding=1),

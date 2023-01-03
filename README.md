@@ -7,26 +7,26 @@ This is NOT an official implementation.
 Point Mass and Reacher2D show high correlation between latent space and physical location.
 But I'm still working on fixing some details. Destructive changes may be made (2022/12/14).
 
-You can view this document from [index.html](docs/generated/index.html).
-
 Paper
-* Original: https://arxiv.org/abs/2006.01959
+
+- Original: https://arxiv.org/abs/2006.01959
 
 Other References (All implementations are PyTorch)
-* TS-NVAE
-  * paper: https://arxiv.org/abs/2203.05955
-* VRNN
-  * paper: https://arxiv.org/abs/1506.02216
-  * impl: https://github.com/emited/VariationalRecurrentNeuralNetwork
-* World Models
-  * paper: https://arxiv.org/abs/1803.10122
-  * impl: https://github.com/ctallec/world-models
-* PlaNet (RSSM):
-  * paper: https://arxiv.org/abs/1811.04551
-  * impl: https://github.com/Kaixhin/PlaNet
-* Spatial Broadcast Decoder
-  * paper: https://arxiv.org/abs/1901.07017
-  * impl: https://github.com/dfdazac/vaesbd
+
+- TS-NVAE
+  - paper: https://arxiv.org/abs/2203.05955
+- VRNN
+  - paper: https://arxiv.org/abs/1506.02216
+  - impl: https://github.com/emited/VariationalRecurrentNeuralNetwork
+- World Models
+  - paper: https://arxiv.org/abs/1803.10122
+  - impl: https://github.com/ctallec/world-models
+- PlaNet (RSSM):
+  - paper: https://arxiv.org/abs/1811.04551
+  - impl: https://github.com/Kaixhin/PlaNet
+- Spatial Broadcast Decoder
+  - paper: https://arxiv.org/abs/1901.07017
+  - impl: https://github.com/dfdazac/vaesbd
 
 ## Prerequisites
 
@@ -46,55 +46,57 @@ The installation of matplotlib, opencv, and their associated Qt is likely to be 
 
 These should be run under the [exec](exec) directory.
 
-### Collect Data
-
-To see what kind of data you can get before saving an episode
-
-```bash
-./collect.sh [environment (directory name)] --watch plt (or render)
-```
+### Create Data
 
 Example:
 
 ```bash
-./collect.sh reacher2d --watch plt
+python create_data.py --config config/reacher2d.json5
 ```
 
-If you want to save the data, please remove the --watch option.
+If you want to see what kind of data you are looking for:
 
 ```bash
-./collect.sh [environment (directory name)]
+python create_data.py --config config/reacher2d.json5 --watch plt
 ```
 
 ### Train
 
-```bash
-./train.sh [environment (directory name)] train
-```
-
-If [visdom](https://github.com/fossasia/visdom) is used:
+Example:
 
 ```bash
-./train.sh [environment (directory name)] train_visdom
+python train.py --config config/reacher2d.json5
 ```
 
-Model weights are saved per `save_per_epoch`.
+### Correlation
 
-### Reconstruction
-
-Sequentially feed the trained model with $\mathbf{u}_{t-1}$ and $\mathbf{I}_t$ of the validation data to see how Reconstructed $\mathbf{I}_t$, etc., transitions.
+Example:
 
 ```bash
-./reconstruction.sh [environment (directory name)]
+python correlation.py --config config/reacher2d.json5 --env-domain reacher2d
 ```
 
-### Control in simulation
+![Result](media/2023-01-03_01-35-40_W300_correlation.png)
+
+```bash
+python correlation.py --config config/point_mass.json5 --env-domain point_mass
+```
+
+![Result](media/2023-01-03_17-53-03_W300_correlation.png)
+
+In a point_mass environment, they may become negatively correlated or the correlated axes may be inverted.
+
+### Control with PID
 
 You can give the target image in the source code and see how it behaves.
 
+Example:
+
 ```bash
-./control_sim.sh [environment (directory name)]
+python control_pure.py --config config/reacher2d.json5 --episodes 3 --format gif --save-anim
 ```
+
+![Result](media/2023-01-03_01-35-40_W300_control_pure_V2.gif)
 
 ## Acknowledgements
 

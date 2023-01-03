@@ -70,13 +70,17 @@
 <h1>source<a class="headerlink" href="#source" title="Permalink to this heading"></a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="control.html">control package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="control.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="control.html#module-control.train">control.train module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="control.html#control.train.train"><code class="docutils literal notranslate"><span class="pre">train()</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="controller.html">controller package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="controller.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="controller.html#module-controller.train">controller.train module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="controller.html#controller.train.postprocess_u"><code class="docutils literal notranslate"><span class="pre">postprocess_u()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="controller.html#controller.train.postprocess_x"><code class="docutils literal notranslate"><span class="pre">postprocess_x()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="controller.html#controller.train.preprocess_u"><code class="docutils literal notranslate"><span class="pre">preprocess_u()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="controller.html#controller.train.preprocess_x"><code class="docutils literal notranslate"><span class="pre">preprocess_x()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="controller.html#controller.train.train"><code class="docutils literal notranslate"><span class="pre">train()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="control.html#module-control">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="controller.html#module-controller">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">models package</a><ul>
@@ -206,12 +210,10 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="models.html#module-models.pcontrol">models.pcontrol module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="models.html#models.pcontrol.PControl"><code class="docutils literal notranslate"><span class="pre">PControl</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="models.html#models.pcontrol.PControl.Kn"><code class="docutils literal notranslate"><span class="pre">PControl.Kn()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="models.html#models.pcontrol.PControl.forward"><code class="docutils literal notranslate"><span class="pre">PControl.forward()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="models.html#models.pcontrol.PControl.pi"><code class="docutils literal notranslate"><span class="pre">PControl.pi()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="models.html#models.pcontrol.PControl.step"><code class="docutils literal notranslate"><span class="pre">PControl.step()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="models.html#models.pcontrol.PControl.training"><code class="docutils literal notranslate"><span class="pre">PControl.training</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="models.html#models.pcontrol.PControl.x_goal_n"><code class="docutils literal notranslate"><span class="pre">PControl.x_goal_n()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="models.html#models.pcontrol.PurePControl"><code class="docutils literal notranslate"><span class="pre">PurePControl</span></code></a><ul>
@@ -254,6 +256,7 @@
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.plotutil.cartesian_coordinate"><code class="docutils literal notranslate"><span class="pre">cartesian_coordinate()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.plotutil.cmap"><code class="docutils literal notranslate"><span class="pre">cmap()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.plotutil.get_figsize"><code class="docutils literal notranslate"><span class="pre">get_figsize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.plotutil.legend_reduce"><code class="docutils literal notranslate"><span class="pre">legend_reduce()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.plotutil.register_save_path"><code class="docutils literal notranslate"><span class="pre">register_save_path()</span></code></a></li>
 </ul>
 </li>
@@ -270,8 +273,21 @@
 <li class="toctree-l4"><a class="reference internal" href="mypython.html#mypython.pyutil.Seq.now"><code class="docutils literal notranslate"><span class="pre">Seq.now</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.pyutil.Seq2"><code class="docutils literal notranslate"><span class="pre">Seq2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mypython.html#mypython.pyutil.Seq2.a"><code class="docutils literal notranslate"><span class="pre">Seq2.a</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.html#mypython.pyutil.Seq2.b"><code class="docutils literal notranslate"><span class="pre">Seq2.b</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.html#mypython.pyutil.Seq2.length"><code class="docutils literal notranslate"><span class="pre">Seq2.length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.html#mypython.pyutil.Seq2.share_length"><code class="docutils literal notranslate"><span class="pre">Seq2.share_length()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.html#mypython.pyutil.Seq2.size"><code class="docutils literal notranslate"><span class="pre">Seq2.size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="mypython.html#mypython.pyutil.Seq2.update"><code class="docutils literal notranslate"><span class="pre">Seq2.update()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.pyutil.add_version"><code class="docutils literal notranslate"><span class="pre">add_version()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.pyutil.check_args_type"><code class="docutils literal notranslate"><span class="pre">check_args_type()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.pyutil.initialize"><code class="docutils literal notranslate"><span class="pre">initialize</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mypython.html#mypython.pyutil.initialize.all_with"><code class="docutils literal notranslate"><span class="pre">initialize.all_with()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.pyutil.is_number_type"><code class="docutils literal notranslate"><span class="pre">is_number_type()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.pyutil.s2dhms"><code class="docutils literal notranslate"><span class="pre">s2dhms()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="mypython.html#mypython.pyutil.s2dhms_str"><code class="docutils literal notranslate"><span class="pre">s2dhms_str()</span></code></a></li>
@@ -363,7 +379,32 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="simulation.html#module-simulation.control">simulation.control module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.control.Pack"><code class="docutils literal notranslate"><span class="pre">Pack</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="simulation.html#simulation.control.Pack.action"><code class="docutils literal notranslate"><span class="pre">Pack.action</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.html#simulation.control.Pack.observation"><code class="docutils literal notranslate"><span class="pre">Pack.observation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.html#simulation.control.Pack.pi"><code class="docutils literal notranslate"><span class="pre">Pack.pi</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.html#simulation.control.Pack.position"><code class="docutils literal notranslate"><span class="pre">Pack.position</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.html#simulation.control.Pack.reconstruction"><code class="docutils literal notranslate"><span class="pre">Pack.reconstruction</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.html#simulation.control.Pack.x"><code class="docutils literal notranslate"><span class="pre">Pack.x</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.control.calculate"><code class="docutils literal notranslate"><span class="pre">calculate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.control.draw"><code class="docutils literal notranslate"><span class="pre">draw()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.control.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#module-simulation.control_pure">simulation.control_pure module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.control_pure.Pack"><code class="docutils literal notranslate"><span class="pre">Pack</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="simulation.html#simulation.control_pure.Pack.action"><code class="docutils literal notranslate"><span class="pre">Pack.action</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.html#simulation.control_pure.Pack.observation"><code class="docutils literal notranslate"><span class="pre">Pack.observation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.html#simulation.control_pure.Pack.position"><code class="docutils literal notranslate"><span class="pre">Pack.position</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.html#simulation.control_pure.Pack.reconstruction"><code class="docutils literal notranslate"><span class="pre">Pack.reconstruction</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="simulation.html#simulation.control_pure.Pack.x"><code class="docutils literal notranslate"><span class="pre">Pack.x</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.control_pure.calculate"><code class="docutils literal notranslate"><span class="pre">calculate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.control_pure.draw"><code class="docutils literal notranslate"><span class="pre">draw()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="simulation.html#simulation.control_pure.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="simulation.html#module-simulation.env">simulation.env module</a><ul>
@@ -429,18 +470,42 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tool.html#module-tool.paramsmanager">tool.paramsmanager module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.paramsmanager.Eval"><code class="docutils literal notranslate"><span class="pre">Eval</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.paramsmanager.Eval"><code class="docutils literal notranslate"><span class="pre">Eval</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Eval.data_start"><code class="docutils literal notranslate"><span class="pre">Eval.data_start</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Eval.data_stop"><code class="docutils literal notranslate"><span class="pre">Eval.data_stop</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Eval.device"><code class="docutils literal notranslate"><span class="pre">Eval.device</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Eval.dtype"><code class="docutils literal notranslate"><span class="pre">Eval.dtype</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.paramsmanager.Params"><code class="docutils literal notranslate"><span class="pre">Params</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Params.save_simenv"><code class="docutils literal notranslate"><span class="pre">Params.save_simenv()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.paramsmanager.Train"><code class="docutils literal notranslate"><span class="pre">Train</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.paramsmanager.TrainExternal"><code class="docutils literal notranslate"><span class="pre">TrainExternal</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.paramsmanager.default_to_json"><code class="docutils literal notranslate"><span class="pre">default_to_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.paramsmanager.Paths"><code class="docutils literal notranslate"><span class="pre">Paths</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Paths.data_dir"><code class="docutils literal notranslate"><span class="pre">Paths.data_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Paths.results_dir"><code class="docutils literal notranslate"><span class="pre">Paths.results_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Paths.resume_weight"><code class="docutils literal notranslate"><span class="pre">Paths.resume_weight</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Paths.saves_dir"><code class="docutils literal notranslate"><span class="pre">Paths.saves_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Paths.used_nvae_weight"><code class="docutils literal notranslate"><span class="pre">Paths.used_nvae_weight</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="tool.html#module-tool.plot_config">tool.plot_config module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.plot_config.apply"><code class="docutils literal notranslate"><span class="pre">apply()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.paramsmanager.Train"><code class="docutils literal notranslate"><span class="pre">Train</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.batch_size"><code class="docutils literal notranslate"><span class="pre">Train.batch_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.check_value"><code class="docutils literal notranslate"><span class="pre">Train.check_value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.data_start"><code class="docutils literal notranslate"><span class="pre">Train.data_start</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.data_stop"><code class="docutils literal notranslate"><span class="pre">Train.data_stop</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.device"><code class="docutils literal notranslate"><span class="pre">Train.device</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.dtype"><code class="docutils literal notranslate"><span class="pre">Train.dtype</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.epochs"><code class="docutils literal notranslate"><span class="pre">Train.epochs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.grad_clip_norm"><code class="docutils literal notranslate"><span class="pre">Train.grad_clip_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.kl_annealing"><code class="docutils literal notranslate"><span class="pre">Train.kl_annealing</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.learning_rate"><code class="docutils literal notranslate"><span class="pre">Train.learning_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.max_time_length"><code class="docutils literal notranslate"><span class="pre">Train.max_time_length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.save_per_epoch"><code class="docutils literal notranslate"><span class="pre">Train.save_per_epoch</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.paramsmanager.Train.seed"><code class="docutils literal notranslate"><span class="pre">Train.seed</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.paramsmanager.default_to_json"><code class="docutils literal notranslate"><span class="pre">default_to_json()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tool.html#module-tool.util">tool.util module</a><ul>
@@ -450,25 +515,21 @@
 <li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.Preferences.remove"><code class="docutils literal notranslate"><span class="pre">Preferences.remove()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.RecoderBase"><code class="docutils literal notranslate"><span class="pre">RecoderBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.RecoderBase.add_list"><code class="docutils literal notranslate"><span class="pre">RecoderBase.add_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.RecoderBase.append"><code class="docutils literal notranslate"><span class="pre">RecoderBase.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.util.RecoderBase.to_whole_np"><code class="docutils literal notranslate"><span class="pre">RecoderBase.to_whole_np()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.backup"><code class="docutils literal notranslate"><span class="pre">backup()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.creator"><code class="docutils literal notranslate"><span class="pre">creator()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.dtype_device"><code class="docutils literal notranslate"><span class="pre">dtype_device()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.get_data_path"><code class="docutils literal notranslate"><span class="pre">get_data_path()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.load"><code class="docutils literal notranslate"><span class="pre">load()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.load_direct"><code class="docutils literal notranslate"><span class="pre">load_direct()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.priority"><code class="docutils literal notranslate"><span class="pre">priority()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.select_date"><code class="docutils literal notranslate"><span class="pre">select_date()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tool.html#tool.util.select_weight"><code class="docutils literal notranslate"><span class="pre">select_weight()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="tool.html#module-tool.visualhandlerbase">tool.visualhandlerbase module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tool.html#tool.visualhandlerbase.VisualHandlerBase"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.visualhandlerbase.VisualHandlerBase.call_end"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.call_end()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.visualhandlerbase.VisualHandlerBase.call_end_init"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.call_end_init()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.visualhandlerbase.VisualHandlerBase.is_running"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.is_running</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.visualhandlerbase.VisualHandlerBase.plot"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.plot()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="tool.html#tool.visualhandlerbase.VisualHandlerBase.wait_init"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.wait_init()</span></code></a></li>
-</ul>
-</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tool.html#module-tool">Module contents</a></li>
@@ -487,25 +548,32 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="view.html#module-view.plot_config">view.plot_config module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="view.html#view.plot_config.apply"><code class="docutils literal notranslate"><span class="pre">apply()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="view.html#module-view.show_data">view.show_data module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="view.html#view.show_data.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="view.html#module-view.train_visualhandler">view.train_visualhandler module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="view.html#view.train_visualhandler.TensorBoardVisualHandler"><code class="docutils literal notranslate"><span class="pre">TensorBoardVisualHandler</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="view.html#view.train_visualhandler.TensorBoardVisualHandler.plot"><code class="docutils literal notranslate"><span class="pre">TensorBoardVisualHandler.plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="view.html#module-view.visualhandler">view.visualhandler module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="view.html#view.visualhandler.TensorBoardVisualHandler"><code class="docutils literal notranslate"><span class="pre">TensorBoardVisualHandler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="view.html#view.visualhandler.TensorBoardVisualHandler.plot"><code class="docutils literal notranslate"><span class="pre">TensorBoardVisualHandler.plot()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="view.html#view.train_visualhandler.VisdomVisualHandler"><code class="docutils literal notranslate"><span class="pre">VisdomVisualHandler</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="view.html#view.train_visualhandler.VisdomVisualHandler.plot"><code class="docutils literal notranslate"><span class="pre">VisdomVisualHandler.plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="view.html#view.visualhandler.VisdomVisualHandler"><code class="docutils literal notranslate"><span class="pre">VisdomVisualHandler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="view.html#view.visualhandler.VisdomVisualHandler.plot"><code class="docutils literal notranslate"><span class="pre">VisdomVisualHandler.plot()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="view.html#view.train_visualhandler.VisualHandlerBase"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="view.html#view.train_visualhandler.VisualHandlerBase.call_end"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.call_end()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="view.html#view.train_visualhandler.VisualHandlerBase.call_end_init"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.call_end_init()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="view.html#view.train_visualhandler.VisualHandlerBase.is_running"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.is_running</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="view.html#view.train_visualhandler.VisualHandlerBase.plot"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.plot()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="view.html#view.train_visualhandler.VisualHandlerBase.wait_init"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.wait_init()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="view.html#module-view.visualhandlerbase">view.visualhandlerbase module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="view.html#view.visualhandlerbase.VisualHandlerBase"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="view.html#view.visualhandlerbase.VisualHandlerBase.call_end"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.call_end()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="view.html#view.visualhandlerbase.VisualHandlerBase.call_end_init"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.call_end_init()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="view.html#view.visualhandlerbase.VisualHandlerBase.is_running"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.is_running</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="view.html#view.visualhandlerbase.VisualHandlerBase.plot"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.plot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="view.html#view.visualhandlerbase.VisualHandlerBase.wait_init"><code class="docutils literal notranslate"><span class="pre">VisualHandlerBase.wait_init()</span></code></a></li>
 </ul>
 </li>
 </ul>

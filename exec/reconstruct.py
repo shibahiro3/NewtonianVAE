@@ -1,27 +1,34 @@
 import os
 import sys
+from pathlib import Path
 
-os.chdir(os.pardir)  # workspaceFolder
-sys.path.append("source")
+workspaceFolder = Path(__file__).absolute().parent.parent
+os.chdir(workspaceFolder)
+sys.path.append(str(workspaceFolder))
+sys.path.append(str(workspaceFolder / "source"))
 
 import argparse
 from argparse import RawTextHelpFormatter
 from pprint import pprint
 
 import argset
-
-from newtonianvae import reconstruct
+from source.newtonianvae import reconstruct
 
 # fmt: off
-parser = argparse.ArgumentParser(allow_abbrev=False, formatter_class=RawTextHelpFormatter)
-parser.add_argument("--config", type=str, default="config/reacher2d.json5", **argset.config)
-parser.add_argument("--path-model", type=str, **argset.path_model)
-parser.add_argument("--path-data", type=str, **argset.path_data)
-parser.add_argument("--path-result", type=str, **argset.path_result)
+parser = argparse.ArgumentParser(
+    allow_abbrev=False,
+    formatter_class=RawTextHelpFormatter,
+    description=
+"""Examples:
+  $ python reconstruct.py --config config/reacher2d.json5
+  $ python reconstruct.py --config config/point_mass.json5
+""",
+)
+parser.add_argument("--config", type=str, required=True, **argset.config)
 parser.add_argument("--episodes", type=int, default=10)
 parser.add_argument("--fix-xmap-size", type=float, metavar="S", help="xmap size")
 parser.add_argument("--save-anim", action="store_true")
-parser.add_argument("--format", type=str, default="mp4")
+parser.add_argument("--format", type=str, default="mp4", **argset.format_video)
 args = parser.parse_args()
 # fmt: on
 

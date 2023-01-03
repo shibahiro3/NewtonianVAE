@@ -1,4 +1,5 @@
-from typing import Union
+from numbers import Real
+from typing import Optional, Union
 
 import torch
 import torch.nn.functional as F
@@ -6,6 +7,7 @@ import torch.nn.init
 from torch import Tensor, nn
 
 import mypython.ai.torchprob as tp
+from mypython.terminal import Color
 
 from .cell import NewtonianVAECellFamily
 
@@ -25,7 +27,13 @@ class PurePControl:
     ) -> None:
         self.alpha = alpha
         self.cell = cell
-        self.x_goal = cell.q_encoder.cond(Igoal).rsample()
+
+        dtype = next(cell.parameters()).dtype
+        device = next(cell.parameters()).device
+
+        Igoal = Igoal.to(dtype=dtype).to(device=device)
+
+        self.x_goal = cell.q_encoder.given(Igoal).rsample()
 
     def step(self, x_t: Tensor):
         u_t = self.alpha * (self.x_goal - x_t)
@@ -42,52 +50,63 @@ class PControl(tp.GMM):
         \end{array}
     """
 
-    def __init__(self, N, dim_x, dim_x_goal_middle, dim_pi_middle, dim_K_middle, std=1.0) -> None:
+    def __init__(
+        self,
+        N: int,
+        dim_x: int,
+        dim_pi_middle: int,
+        std: Optional[Real],
+        each_k: bool = False,
+    ) -> None:
         super().__init__()
 
         self.N = N
-        self.x_g_W1 = nn.Parameter(torch.empty((N, dim_x_goal_middle)))
-        self.x_g_W2 = nn.Parameter(torch.empty((dim_x_goal_middle, dim_x)))
-        self.K_W1 = nn.Parameter(torch.empty((N, dim_K_middle)))
-        self.K_W2 = nn.Parameter(torch.empty((dim_K_middle, dim_x)))
-        self.pi_1 = nn.Linear(dim_x, dim_pi_middle)
-        self.pi_2 = nn.Linear(dim_pi_middle, N)
-        self.std = torch.tensor(std)
 
-        # https://discuss.pytorch.org/t/somthing-about-linear-py-in-nn-moudles/109304
-        torch.nn.init.kaiming_normal_(self.x_g_W1)
-        torch.nn.init.kaiming_normal_(self.x_g_W2)
-        torch.nn.init.kaiming_normal_(self.K_W1)
-        torch.nn.init.kaiming_normal_(self.K_W2)
+        self.pi_model = nn.Sequential(
+            nn.Linear(dim_x, dim_pi_middle),
+            nn.Mish(),
+            nn.Linear(dim_pi_middle, dim_pi_middle),
+            nn.Mish(),
+            nn.Linear(dim_pi_middle, N),
+            nn.Softmax(-1),
+        )
+
+        if std is not None:
+            self.std: Tensor
+            self.register_buffer("std", torch.tensor(std))
+            self.std_function = lambda x: x
+        else:
+            # σ is not σ_t, so σ should not depend on x_t.
+            self.std = nn.Parameter(torch.randn(1))
+            self.std_function = F.softplus
+
+        self.x_goal_n = nn.Parameter(torch.randn(N, dim_x))
+
+        if each_k:
+            self.K_n = nn.Parameter(torch.randn(N, dim_x))
+        else:
+            self.K_n = nn.Parameter(torch.randn(N, 1))
 
     def pi(self, x_t: Tensor) -> Tensor:
         """
         Returns:
-            pi: (*, N)
+            pi: (BS, N)
         """
-        pi = self.pi_1(x_t)
-        pi = self.pi_2(pi)
+        pi = self.pi_model(x_t)
         return pi
-
-    def Kn(self) -> Tensor:
-        """
-        Returns:
-            K_n: (N, D)
-        """
-        return self.K_W1 @ self.K_W2
-
-    def x_goal_n(self) -> Tensor:
-        return self.x_g_W1 @ self.x_g_W2
 
     def forward(self, x_t: Tensor):
         """
-        x_t: shape (*, dim_x)
+        x_t: shape (BS, dim_x)
         """
-        pi = torch.softmax(self.pi(x_t), dim=-1)  # (*, N)
+        pi = self.pi(x_t)
+        # Color.print(pi.shape, c=Color.red)
+
         x_t = x_t.unsqueeze(-2)
-        mu = self.Kn() * (self.x_goal_n() - x_t)  # (*, N, dim_x)
-        return pi, mu, self.std.to(mu.device)
+        mu = self.K_n * (self.x_goal_n - x_t)  # (BS, N, dim_x)
+        sigma = self.std_function(self.std)
+        return pi, mu, sigma
 
     def step(self, x_t: Tensor):
-        u_t = self.cond(x_t).sample()
+        u_t = self.given(x_t).sample()
         return u_t

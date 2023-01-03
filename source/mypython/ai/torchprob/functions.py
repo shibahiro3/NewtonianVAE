@@ -4,8 +4,8 @@ import numpy as np
 import torch
 from scipy import special as sp
 from torch import Tensor
-from torch.distributions import kl
 
+from . import config
 from .distributions.base import Distribution, _eps
 from .distributions.normal import Normal
 
@@ -13,20 +13,32 @@ from .distributions.normal import Normal
 def KLdiv(p: Distribution, q: Distribution) -> Tensor:
     if issubclass(type(p), Normal):
         if issubclass(type(q), Normal):
-            return KL_normal_normal(p.loc, p.scale, q.loc, q.scale)
-            # return kl._kl_normal_normal(p, q)
+            if config.use_original:
+                return KL_normal_normal(p.loc, p.scale, q.loc, q.scale)
+            else:
+                return torch.distributions.kl._kl_normal_normal(p, q)
 
     else:
         assert False, "No KLD function"
 
 
-def log(p: Distribution, x: Tensor, *cond_vars: Tensor) -> Tensor:
+class log:
     """
     log p(x | cond)
 
     Match the look of the formula
+
+    Examples:
+        math : log (y | x)
+        impl : tp.log(prob, y).given(x).mean()
     """
-    return p.cond(*cond_vars).log_prob(x)
+
+    def __init__(self, p: Distribution, *x: Tensor) -> None:
+        self._p = p
+        self._x = x
+
+    def given(self, *cond_vars: Tensor, **cond_vars_k: Tensor):
+        return self._p.given(*cond_vars, **cond_vars_k).log_prob(*self._x)
 
 
 def KL_normal_normal(
@@ -36,11 +48,9 @@ def KL_normal_normal(
     sigma_2: Tensor,
 ) -> Tensor:
     """
-    Ref:
+    References:
         https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L172
     """
-    if not (mu_1.shape == torch.Size([]) or mu_2.shape == torch.Size([])):
-        assert mu_1.shape == mu_2.shape
 
     kld_element = (
         ((mu_1 - mu_2).pow(2) + sigma_1.pow(2)) / sigma_2.pow(2)
@@ -49,7 +59,3 @@ def KL_normal_normal(
         - 1
     )
     return 0.5 * kld_element
-
-
-# from torch.distributions import kl_divergence
-# from pixyz.losses.divergences import KullbackLeibler
