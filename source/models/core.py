@@ -418,6 +418,13 @@ class NewtonianVAEV2(NewtonianVAEBase):
     def forward(self, action: Tensor, observation: Tensor, delta: Tensor):
         """"""
 
+    def forward(self, batchdata: Dict[str, Tensor]):
+        """"""
+
+        action = batchdata["action"]
+        delta = batchdata["delta"]
+        camera0 = batchdata["camera0"]
+
         T = len(action)
 
         self.init_LOG()
@@ -427,7 +434,8 @@ class NewtonianVAEV2(NewtonianVAEBase):
         E_kl_sum: Tensor = 0
 
         for t in range(T):
-            u_tn1, I_t = action[t], observation[t]
+            u_tn1 = action[t]
+            I_t = camera0[t]
 
             _, B, D = action.shape  # _ : T
 
@@ -470,10 +478,13 @@ class NewtonianVAEV2(NewtonianVAEBase):
                 self.LOG_x_mean.append(to_np(self.cell.q_encoder.loc))
 
         E = E_sum / T
-        E_ll = E_ll_sum / T
-        E_kl = E_kl_sum / T
+        L = -E
 
-        return E, E_ll, E_kl
+        losses = {
+            "camera0 Loss": -E_ll_sum / T,
+            "KL Loss": E_kl_sum / T,
+        }
+        return L, losses
 
 
 class NewtonianVAEV2Derivation(NewtonianVAEDerivationBase):
