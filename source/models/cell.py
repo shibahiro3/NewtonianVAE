@@ -1,6 +1,6 @@
 import dataclasses
 from numbers import Real
-from typing import Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -9,6 +9,7 @@ from torch import NumberType, Tensor, nn
 
 import mypython.ai.torchprob as tp
 import mypython.ai.torchprob.debug as tp_debug
+from models import component
 from mypython.ai.util import find_function, swap01
 from mypython.terminal import Color
 
@@ -249,6 +250,9 @@ class CellWrap:
         observation: I_t
         """
 
+        if observation.ndim == 3:
+            observation = observation.unsqueeze(0)
+
         x_t = self.cell.q_encoder.given(observation).sample()
 
         if hasattr(self.cell, "dim_xhat"):
@@ -267,3 +271,84 @@ class CellWrap:
 
     def reset(self):
         self.x_tn1: Tensor = None
+
+
+class MNVAECell(nn.Module):
+    """
+    Based on NewtonianVAEV2Cell
+    """
+
+    def __init__(
+        self,
+        regularization: bool,
+        velocity: dict,
+        transition: dict,
+        encoder: dict,
+        decoder: dict,
+    ) -> None:
+        super().__init__()
+
+        self.regularization = regularization
+        self.kl_beta = 1
+        self.force_training = False  # for add_graph of tensorboard
+
+        self.f_velocity = Velocity(**velocity)
+        self.q_encoder = component.MultiEncoder(**encoder)
+        self.p_decoder = component.MultiDecoder(**decoder)
+        self.p_transition = Transition(**transition)
+
+        self.dim_x = self.q_encoder.dim_x
+
+    @staticmethod
+    def img_reduction(x: Tensor):
+        # dim=0 : batch axis
+        return x.sum(dim=(1, 2, 3)).mean(dim=0)
+
+    @staticmethod
+    def vec_reduction(x: Tensor):
+        return x.sum(dim=1).mean(dim=0)
+
+    @dataclasses.dataclass
+    class Pack:
+        E: Tensor  # Use for training
+        x_q_t: Tensor  # Use for training
+        v_t: Tensor
+        image_losses: list
+        KL_loss: float
+
+    def __call__(self, *args, **kwargs) -> Pack:
+        return super().__call__(*args, **kwargs)
+
+    def forward(
+        self, I_t: List[Tensor], x_q_tn1: Tensor, x_q_tn2: Tensor, u_tn1: Tensor, dt: Tensor
+    ):
+        """"""
+
+        v_tn1 = (x_q_tn1 - x_q_tn2) / dt
+        v_t = self.f_velocity(x_q_tn1, u_tn1, v_tn1, dt)
+        x_p_t = self.p_transition.given(x_q_tn1, v_t, dt).rsample()
+
+        I_t_recs = self.p_decoder(x_p_t)
+        image_losses = []
+        recs = 0
+        for i in range(len(I_t)):
+            # log Normal Dist.: -0.5 * (((x - mu) / sigma) ** 2 ...
+            loss = self.img_reduction(F.mse_loss(I_t_recs[i], I_t[i], reduction="none"))
+            recs -= loss
+            image_losses.append(loss.item())
+
+        E_kl = self.vec_reduction(tp.KLdiv(self.q_encoder.given(I_t), self.p_transition))
+        E = recs - self.kl_beta * E_kl
+
+        if self.regularization:
+            E -= self.vec_reduction(tp.KLdiv(self.q_encoder, tp.Normal01))
+
+        x_q_t = self.q_encoder.rsample()
+
+        return self.Pack(
+            E=E,
+            x_q_t=x_q_t,
+            v_t=v_t.detach(),
+            image_losses=image_losses,
+            KL_loss=E_kl.item(),
+        )

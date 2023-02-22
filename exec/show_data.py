@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser(
     description=
 """You can check your own data sets""",
 )
-parser.add_argument("--config", type=str, required=True, **argset.config)
+parser.add_argument("-c", "--config", type=str, required=True, **argset.config)
 parser.add_argument("--episodes", type=int, default=10)
 parser.add_argument("--save-anim", action="store_true")
 parser.add_argument("--format", type=str, default="mp4", **argset.format_video)

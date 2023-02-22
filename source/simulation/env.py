@@ -5,7 +5,9 @@ References:
 """
 
 
-from typing import Optional, Tuple, Union
+from collections import ChainMap
+from numbers import Real
+from typing import Dict, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
@@ -83,16 +85,20 @@ def postprocess_observation(observation, bit_depth):
     ).astype(np.uint8)
 
 
-def _images_to_observation(image: np.ndarray, bit_depth: int, size=64) -> Tensor:
+def _images_to_observation(image: np.ndarray, bit_depth: int, size: tuple) -> Tensor:
     """
+    Args:
+        image: (240, 240, 3)
+        size: (H, W)
+
     Returns:
         image: cnn input
-            shape (3, size, size), range [-0.5, 0.5], color order = RGB
+            shape (3, H, W), range [-0.5, 0.5], color order = RGB
     """
 
     # Resize and put channel first
     image: Tensor = torch.tensor(
-        cv2.resize(image, (size, size), interpolation=cv2.INTER_LINEAR).transpose(
+        cv2.resize(image, tuple(reversed(size)), interpolation=cv2.INTER_LINEAR).transpose(
             2, 0, 1
         ),  # change color order
         dtype=torch.float32,
@@ -100,6 +106,8 @@ def _images_to_observation(image: np.ndarray, bit_depth: int, size=64) -> Tensor
 
     # Quantise, centre and dequantise inplace
     preprocess_observation_(image, bit_depth)
+
+    # assert image.shape[-2:] == size
 
     return image  # .unsqueeze(dim=0)  # Add batch dimension
 
@@ -113,7 +121,9 @@ class ControlSuiteEnv:
         max_episode_length: int,
         action_repeat: int,
         bit_depth: int,
-        init_position: Optional[str] = None,
+        imgsize: Union[list, tuple],  # (H, W)
+        camera_id=0,
+        task_settings: Optional[dict] = None,
     ):
         assert max_episode_length <= 1000
 
@@ -121,17 +131,21 @@ class ControlSuiteEnv:
 
         domain, task = env.split("-")
 
-        task_kwargs = {"random": seed, "init_position": init_position}
-        task_kwargs = {k: v for k, v in task_kwargs.items() if v is not None}
+        if task_settings is None:
+            task_kwargs = {"random": seed}
+        else:
+            task_kwargs = {"random": seed, "task_settings": task_settings}
 
         self._env = suite.load(domain_name=domain, task_name=task, task_kwargs=task_kwargs)
-        if not symbolic:
-            self._env = pixels.Wrapper(self._env, pixels_only=False)
+        # if not symbolic:
+        # self._env = pixels.Wrapper(self._env, pixels_only=False)
 
         self.symbolic = symbolic
         self.max_episode_length = max_episode_length
         self.action_repeat = action_repeat
         self.bit_depth = bit_depth
+        self.imgsize = tuple(imgsize)
+        self.camera_id = camera_id
 
         # if action_repeat != CONTROL_SUITE_ACTION_REPEATS[domain]:
         #     print(
@@ -146,7 +160,7 @@ class ControlSuiteEnv:
         if self.symbolic:
             return self._symbolic_state2observation(state)
         else:
-            return _images_to_observation(self.adjust_camera(), self.bit_depth)
+            return _images_to_observation(self.adjust_camera(), self.bit_depth, self.imgsize)
 
     def step(self, action: Tensor) -> Tuple[Tensor, float, bool]:
         action = action.detach().cpu().numpy()
@@ -164,7 +178,7 @@ class ControlSuiteEnv:
         if self.symbolic:
             observation = self._symbolic_state2observation(state)
         else:
-            observation = _images_to_observation(self.adjust_camera(), self.bit_depth)
+            observation = _images_to_observation(self.adjust_camera(), self.bit_depth, self.imgsize)
 
         return observation, reward, done
 
@@ -187,7 +201,7 @@ class ControlSuiteEnv:
                 ]
             )
             if self.symbolic
-            else (3, 64, 64)
+            else (3,) + self.imgsize
         )
 
     @property
@@ -212,7 +226,7 @@ class ControlSuiteEnv:
         )  # .unsqueeze(dim=0)
 
     def adjust_camera(self):
-        camimg = self._env.physics.render(camera_id=0)
+        camimg = self._env.physics.render(camera_id=self.camera_id)
         return camimg
 
     # Sample an action randomly from a uniform distribution over all valid actions
@@ -233,9 +247,11 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
         max_episode_length: int,
         action_repeat: int,
         bit_depth: int,
+        imgsize: Union[list, tuple],
         action_type: str = "default",
         position_wrap: str = "None",
-        init_position: Optional[str] = None,
+        camera_id=0,
+        task_settings: Optional[str] = None,
     ):
         super().__init__(
             env=env,
@@ -244,7 +260,9 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
             max_episode_length=max_episode_length,
             action_repeat=action_repeat,
             bit_depth=bit_depth,
-            init_position=init_position,
+            task_settings=task_settings,
+            camera_id=camera_id,
+            imgsize=imgsize,
         )
 
         self.action_type = action_type
@@ -269,8 +287,6 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
             else:
                 assert False
 
-            from pprint import pprint
-
         elif domain == "point_mass":
             if action_type == "default":
                 pass
@@ -279,14 +295,69 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
             elif action_type == "per_episode":
                 self.sample_random_action = self.action_per_episode
             elif action_type == "random_walk":
-                self.sample_random_action = self.action_random_walk
+                self.sample_random_action = lambda: self.action_random_walk(2, range=(-0.3, 0.3))
             else:
                 assert False
 
-    def step(self, action: Tensor) -> Tuple[Tensor, float, bool, np.ndarray]:
+        elif domain == "point_mass_3d":
+            if action_type == "default":
+                pass
+            elif action_type == "random_walk":
+                self.sample_random_action = lambda: self.action_random_walk(3, range=(-0.3, 0.3))
+            else:
+                assert False
+
+    def _camera(self):
+        # raw (np.ndarray)
+        # (H, W, RGB) (plt)
+        camera0 = self._env.physics.render(height=480, width=480, camera_id=0)
+        camera1 = self._env.physics.render(height=480, width=480, camera_id=1)
+        return camera0, camera1
+
+    def _observations(self, state):
+        observations = state.observation
+        for i, camera in enumerate(self._camera()):
+            observations[f"camera{i}"] = _images_to_observation(
+                camera, self.bit_depth, self.imgsize
+            )
+        return observations
+
+    def render(self):
+        """綺麗なまま表示する"""
+        # それぞれ画像サイズが異なってもOK
+        cameras = self._camera()
+        for camera in cameras:
+            assert camera.dtype == np.uint8
+
+        space = 10
+
+        h_sum = max([camera.shape[0] for camera in cameras])
+        w_sum = sum([camera.shape[1] for camera in cameras])
+
+        board = np.full(
+            shape=(h_sum, w_sum + space * (len(cameras) - 1), 3),
+            fill_value=255,
+            dtype=np.uint8,
+        )
+        H_accum, W_accum = 0, 0
+        for camera in cameras:
+            H, W = camera.shape[:2]
+            board[H_accum : H_accum + H, W_accum : W_accum + W, :] = camera
+            # H_accum += camera.shape[0] + space
+            W_accum += camera.shape[1] + space
+
+        cv2.imshow(f"camera0 - {len(cameras)-1}", mv.plt2cv(board))
+        cv2.waitKey(1)
+
+    def reset(self) -> Dict[str, Union[np.ndarray, Tensor, Real]]:
+        self.t = 0  # Reset internal timer
+        state = self._env.reset()
+        return self._observations(state)
+
+    def step(self, action: Tensor) -> Tuple[Dict[str, Union[np.ndarray, Tensor, Real]], bool]:
         """
         Returns: observation, reward, done, position
-            * **observation**: shape = (3, 64, 64), range = [-0.5, 0.5], color order = RGB
+            * **observation**: shape = (3, H, W), range = [-0.5, 0.5], color order = RGB
             * **reward**: 0
             * **done**: True when time reaches max_episode_length // action_repeat
             * **position**: coordinate, or two angle, etc. depends on env
@@ -304,15 +375,22 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
             if done:
                 break
 
-        observation = _images_to_observation(self.adjust_camera(), self.bit_depth)
-        position = self.position_wrapper(state.observation["position"])
-        return observation, 0, done, position
+        return self._observations(state), done
 
     def adjust_camera(self):
         """Erase the cluster of stars on the left and right"""
-        s = (320 - 240) // 2
-        camimg = self._env.physics.render(camera_id=0)[:, s : s + 240, :]
-        # print(camimg.shape)  # (240, 320, 3) -> (240, 240, 3)
+        # https://github.com/deepmind/dm_control/blob/main/dm_control/mujoco/engine.py#L171
+
+        # H, W = 240, 320 # default
+        # H, W = 480, 640  # max
+        # s = (W - H) // 2
+
+        # camimg = self._env.physics.render(camera_id=0)[:, s : s + H, :]
+        # camimg = self._env.physics.render(height=H, width=W, camera_id=0)[:, s : s + H, :]
+        # print(camimg.shape)  # (H, W, 3) -> (H, H, 3)
+
+        camimg = self._env.physics.render(height=480, width=480, camera_id=self.camera_id)
+
         return camimg
 
     @staticmethod
@@ -325,13 +403,16 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
 
         return self.action_mean
 
-    def action_random_walk(self):
-        c = 0.3
+    def action_random_walk(self, dim: int, range: tuple):
         if self.t == 0:
-            self.action = torch.from_numpy(self.random.uniform(-c, c, size=(2,)))
+            self._action = torch.from_numpy(self.random.uniform(range[0], range[1], size=(dim,)))
         else:
-            self.action += torch.from_numpy(self.random.uniform(-c, c, size=(2,)))
-        return torch.clip(self.action, -1, 1)
+            self._action += torch.from_numpy(self.random.uniform(range[0], range[1], size=(dim,)))
+
+        # self._action[0] = 0
+        # self._action[1] = 0
+        # self._action[2] = 0
+        return torch.clip(self._action, -1, 1)
 
     def action_point_mass_circle(self):
         theta = self.t / self.max_episode_length
@@ -347,6 +428,9 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
 
 def reacher_default2endeffectorpos(position):
     """
+    Deprecated
+        Hard coding (0.12 from xml file)
+
     Args:
         position: shape (*, 2)
 

@@ -3,6 +3,7 @@ from numbers import Real
 from typing import List, Optional, Tuple, Union
 
 import torch
+import torch.nn.functional as F
 from torch import Tensor
 from typing_extensions import Self
 
@@ -13,6 +14,12 @@ from .base import Distribution, ProbParamsValueError, _eps, to_optional_tensor
 
 
 class Normal(Distribution):
+    r""""""
+
+    """
+    N(x | μ, σ) = N(x | cond_vars)
+    """
+
     # torch.distributions.Normal
 
     ParamsReturnType = Tuple[Tensor, Tensor]
@@ -27,7 +34,7 @@ class Normal(Distribution):
         self._mu_pvt_ = to_optional_tensor(mu)
         self._sigma_pvt_ = to_optional_tensor(sigma)
 
-    def forward(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> ParamsReturnType:
+    def forward(self, *cond_vars, **cond_vars_k) -> ParamsReturnType:
         raise NotImplementedError()
         mu: Tensor
         sigma: Tensor
@@ -36,7 +43,7 @@ class Normal(Distribution):
     def __call__(self, *args, **kwargs) -> ParamsReturnType:
         return super().__call__(*args, **kwargs)
 
-    def given(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Self:
+    def given(self, *cond_vars, **cond_vars_k) -> Self:
         self._cnt_given += 1 if self._cnt_given < 1024 else 0
         self._mu_pvt_, self._sigma_pvt_ = self(*cond_vars, **cond_vars_k)
 
@@ -106,6 +113,14 @@ class Normal(Distribution):
     def scale(self) -> Tensor:
         return self._sigma_pvt_
 
+    @property
+    def param_mu(self) -> Tensor:
+        return self._mu_pvt_
+
+    @property
+    def param_sigma(self) -> Tensor:
+        return self._sigma_pvt_
+
     @staticmethod
     def func_log(x: Tensor, mu: Tensor, sigma: Tensor) -> Tensor:
         r"""Log-likelihood of a Gaussian distribution
@@ -114,10 +129,16 @@ class Normal(Distribution):
             \begin{array}{ll} \\
                 \log \mathcal{N}(x \mid \mu, \sigma^2) = - \frac{1}{2} \left( \exp \left( \frac{(x - \mu)^2}{\sigma^2} \right) + 2 \ln \sigma + \ln 2\pi \right)
             \end{array}
+
+        Other References:
+            https://github.com/Kaixhin/PlaNet/blob/28c8491bc01e8f1b911300749e04c308c03db051/main.py#L171
         """
 
         log_sigma = math.log(sigma) if isinstance(sigma, Real) else sigma.log()
         return -0.5 * (((x - mu) / sigma) ** 2 + 2 * log_sigma + math.log(2 * math.pi))
+
+        # return -F.mse_loss(x, mu, reduction="none")
+        # return -(x - mu) ** 2
 
     @staticmethod
     def func_rsample(mu: Tensor, sigma: Tensor) -> Tensor:

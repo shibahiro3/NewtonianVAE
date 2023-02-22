@@ -20,10 +20,10 @@ parser = argparse.ArgumentParser(
     formatter_class=RawTextHelpFormatter,
     description=
 """Examples:
-  $ python control_pure.py --config config/reacher2d.json5
+  $ python control_pure.py -c config/reacher2d.json5
 """,
 )
-parser.add_argument("--config", type=str, required=True, **argset.config)
+parser.add_argument("-c", "--config", type=str, required=True, **argset.config)
 parser.add_argument("--goal-img", type=str, default="environments/reacher2d/goals/obs_green.npy", metavar="PATH", help="Goal image path (*.npy)")
 parser.add_argument("--episodes", type=int, default=10)
 parser.add_argument("--fix-xmap-size", type=float, metavar="S", help="xmap size")

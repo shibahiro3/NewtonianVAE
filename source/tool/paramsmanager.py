@@ -24,15 +24,18 @@ class _Converter:
     def to_json(self):
         return self._contents
 
-    def save(self, path, lock=True):
+    def _save(self, path, contents: dict, msg="saved params:", lock=True):
         path = Path(path)
         assert path.suffix == ".json5"
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, mode="w") as f:
-            f.write(_dumps(self._contents))
+            f.write(_dumps(contents))
         if lock:
             path.chmod(0o444)
-        Color.print("saved params:", path)
+        Color.print(msg, path)
+
+    def save(self, path, msg="saved params:", lock=True):
+        self._save(path, self._contents, msg, lock)
 
 
 @dataclasses.dataclass
@@ -69,6 +72,12 @@ class Eval(_Converter):
 
 
 @dataclasses.dataclass
+class Preprocess(_Converter):
+    scale_u: Optional[list] = None
+    scale_x: Optional[list] = None
+
+
+@dataclasses.dataclass
 class Paths(_Converter):
     data_dir: Optional[str] = None
     saves_dir: Optional[str] = None
@@ -96,16 +105,14 @@ class Params(_Converter):
         self.model: str = self.raw_.get("model", None)
         self.model_params: dict = self.raw_.get(self.model, None)
         self.train = instance_or_none(Train, self.raw_.get("train", None))
-        self.path = instance_or_none(Paths, self.raw_.get("path", None))
         self.eval = instance_or_none(Eval, self.raw_.get("eval", None))
+        self.preprocess = instance_or_none(Preprocess, self.raw_.get("preprocess", None))
+        self.path = instance_or_none(Paths, self.raw_.get("path", None))
         self.pid = None  # os.getpid()
 
-    @property
-    def _contents(self):
+    def _select(self, save_keys):
         model_params = {self.model: self.model_params}
         contents = ChainMap(model_params, self.__dict__)
-
-        save_keys = ["model", self.model, "train", "path", "pid"]
 
         new_contents = {}
         for k in save_keys:
@@ -113,15 +120,24 @@ class Params(_Converter):
 
         return new_contents
 
-    def save_simenv(self, path, lock=True):
-        path = Path(path)
-        assert path.suffix == ".json5"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, mode="w") as f:
-            f.write(_dumps({"ControlSuiteEnvWrap": self.raw_["ControlSuiteEnvWrap"]}))
-        if lock:
-            path.chmod(0o444)
-        Color.print("saved simenv params:", path)
+    def save_train(self, path):
+        self._save(
+            path=path,
+            contents=self._select(["model", self.model, "train", "path", "pid"]),
+        )
+
+    def save_train_ctrl(self, path):
+        self._save(
+            path=path,
+            contents=self._select(["model", self.model, "train", "preprocess", "path", "pid"]),
+        )
+
+    def save_simenv(self, path):
+        self._save(
+            path=path,
+            contents={"ControlSuiteEnvWrap": self.raw_["ControlSuiteEnvWrap"]},
+            msg="saved simenv params:",
+        )
 
 
 def default_to_json(obj):

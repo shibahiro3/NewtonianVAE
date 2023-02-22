@@ -15,6 +15,7 @@ import controller.train as ct
 import json5
 import models.core
 import models.pcontrol
+import mypython.ai.torchprob as tp
 import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
@@ -86,28 +87,28 @@ def main(
         max_time_length = params_ctrl.train.max_time_length
 
     del params_ctrl
-    del saved_params_ctrl
 
-    print("=== PControl params ===")
-    Color.print("x^goal_n:")
-    print(p_pctrl.x_goal_n.detach().cpu())
-    Color.print("K_n")
-    print(p_pctrl.K_n.detach().cpu())
-
-    record = calculate(
-        p_pctrl=p_pctrl, model=model, env=env, episodes=episodes, time_length=max_time_length
+    record, x_goal_n = calculate(
+        saved_params_ctrl=saved_params_ctrl,
+        p_pctrl=p_pctrl,
+        model=model,
+        env=env,
+        episodes=episodes,
+        time_length=max_time_length,
     )
+
+    del saved_params_ctrl
 
     all_steps = max_time_length * episodes
 
     p = draw(
         record=record,
-        model=model,
-        env=env,
-        p_pctrl=p_pctrl,
+        x_goal_n=x_goal_n,
         max_time_length=max_time_length,
         all_steps=all_steps,
         fix_xmap_size=fix_xmap_size,
+        env_domain=env.domain,
+        env_task=env.task,
     )
 
     save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_control.{format}")
@@ -136,6 +137,7 @@ class Pack(RecoderBase):
 
 
 def calculate(
+    saved_params_ctrl: paramsmanager.Params,
     p_pctrl: PControl,
     model: NewtonianVAEFamily,
     env: ControlSuiteEnvWrap,
@@ -149,6 +151,21 @@ def calculate(
     dtype = next(model.parameters()).dtype
     device = next(model.parameters()).device
 
+    s_u = saved_params_ctrl.preprocess.scale_u
+    if s_u is not None:
+        scaler_u = tp.Scaler(*s_u)
+    else:
+        scaler_u = tp.Scaler()
+
+    s_x = saved_params_ctrl.preprocess.scale_x
+    if s_x is not None:
+        scaler_x = tp.Scaler(*s_x)
+    else:
+        scaler_x = tp.Scaler()
+
+    # print(scaler_u)
+    # print(scaler_x)
+
     print("Calculating...")
     for episode in range(episodes):
         record.add_list()
@@ -161,15 +178,14 @@ def calculate(
         for t in range(time_length):
             action_prev = action  # for recording
 
-            x_t, I_t_dec = cell_wrap.step(action=action_prev, observation=observation)
-            x_t_ = ct.preprocess_x(x_t)
-            action_ = p_pctrl.step(x_t_)
-            action = ct.postprocess_u(action_)
+            x_t, I_t_dec = cell_wrap.step(action=action_prev, observation=observation.unsqueeze(0))
+
+            x_t_ = scaler_x.pre(x_t)
+            action_ = p_pctrl.step(x_t_)  # u_t ~ P(u_t | x_t)
+            action = scaler_u.post(action_)
 
             observation, _, done, position = env.step(action)
             observation = observation.to(dtype=dtype).to(device=device)
-
-            pi, mu, sigma = p_pctrl.dist_parameters()
 
             record.append(
                 action=to_np(action_prev.squeeze(0)),
@@ -177,7 +193,7 @@ def calculate(
                 reconstruction=to_np(I_t_dec.squeeze(0)),
                 x=to_np(x_t.squeeze(0)),
                 position=position,
-                pi=to_np(pi.squeeze(0)),
+                pi=to_np(p_pctrl.param_pi.squeeze(0)),
             )
 
             Prompt.print_one_line(
@@ -187,20 +203,31 @@ def calculate(
     print("\nDone")
     record.to_whole_np(show_shape=True)
 
-    return record
+    # x_goal_n = scaler_u.post(p_pctrl.param_mu.squeeze(0) / p_pctrl.K_n)
+    x_goal_n = scaler_u.post(p_pctrl.x_goal_n)
+
+    print("=== PControl params ===")
+    Color.print("x^goal_n:")
+    print(x_goal_n)
+    Color.print("K_n")
+    print(p_pctrl.K_n.detach().cpu())
+
+    return record, x_goal_n
 
 
 def draw(
     record: Pack,
-    p_pctrl: PControl,
-    model: NewtonianVAEFamily,
-    env: ControlSuiteEnvWrap,
+    x_goal_n: Tensor,
     max_time_length: int,
     all_steps: int,
-    fix_xmap_size: float,
+    fix_xmap_size: float = None,
+    env_domain: str = None,
+    env_task: str = None,
 ):
-    dim_colors = mpu.cmap(model.cell.dim_x, "prism")
-    label = Label(env.domain)
+    dim_x = record.action.shape[-1]
+
+    dim_colors = mpu.cmap(dim_x, "prism")
+    label = Label(env_domain)
 
     plt.rcParams.update(
         {
@@ -270,7 +297,7 @@ def draw(
             ax = axes.action
             ax.set_title(r"$\mathbf{u}_{t-1}$ (Generated)")
             ax.bar(
-                range(model.cell.dim_x),
+                range(dim_x),
                 record.action[self.episode, self.t],
                 color=dim_colors,
                 width=0.5,
@@ -283,24 +310,28 @@ def draw(
 
             # ax.tick_params(bottom=False, labelbottom=False)
             mpu.Axis_aspect_2d(ax, 1)
-            ax.set_xticks(range(model.cell.dim_x))
-            if env.domain == "reacher2d":
+            ax.set_xticks(range(dim_x))
+            if env_domain == "reacher2d":
                 ax.set_xlabel("Torque")
                 ax.set_xticklabels([r"$\mathbf{u}[1]$ (shoulder)", r"$\mathbf{u}[2]$ (wrist)"])
-            elif env.domain == "point_mass" and env.task == "easy":
+            elif env_domain == "point_mass" and env_task == "easy":
                 ax.set_xticklabels([r"$\mathbf{u}[1]$ (x)", r"$\mathbf{u}[2]$ (y)"])
 
             # ============================================================
             ax = axes.observation
             ax.set_title(r"$\mathbf{I}_t$ (From environment)")
             ax.imshow(obs2img(record.observation[self.episode, self.t]))
-            ax.set_axis_off()
+            ax.set_xlabel(f"{record.observation.shape[-1]} px")
+            ax.set_ylabel(f"{record.observation.shape[-2]} px")
+            ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
             # ============================================================
             ax = axes.obs_dec
             ax.set_title(r"$\mathbf{I}_t$ (Reconstructed)")
             ax.imshow(obs2img(record.reconstruction[self.episode, self.t]))
-            ax.set_axis_off()
+            ax.set_xlabel(f"{record.reconstruction.shape[-1]} px")
+            ax.set_ylabel(f"{record.reconstruction.shape[-2]} px")
+            ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
             # ============================================================
             ax = axes.pi
@@ -334,8 +365,8 @@ def draw(
                 label=r"$\mathbf{x}_{t}$",
             )
             ax.scatter(
-                p_pctrl.x_goal_n.squeeze(0)[:, 0].cpu(),
-                p_pctrl.x_goal_n.squeeze(0)[:, 1].cpu(),
+                x_goal_n[:, 0].cpu(),
+                x_goal_n[:, 1].cpu(),
                 marker="o",
                 s=20,
                 color="purple",
@@ -344,13 +375,13 @@ def draw(
             # ax.legend(loc="lower left")
             ax.legend()
 
-            min_ = min(p_pctrl.x_goal_n.squeeze(0)[:, 0].cpu().min(), record.x[..., 0].min())
-            max_ = max(p_pctrl.x_goal_n.squeeze(0)[:, 0].cpu().max(), record.x[..., 0].max())
+            min_ = min(x_goal_n[:, 0].cpu().min(), record.x[..., 0].min())
+            max_ = max(x_goal_n[:, 0].cpu().max(), record.x[..., 0].max())
             margin_ = (max_ - min_) * 0.1
             ax.set_xlim(min_ - margin_, max_ + margin_)
 
-            min_ = min(p_pctrl.x_goal_n.squeeze(0)[:, 1].cpu().min(), record.x[..., 1].min())
-            max_ = max(p_pctrl.x_goal_n.squeeze(0)[:, 1].cpu().max(), record.x[..., 1].max())
+            min_ = min(x_goal_n[:, 1].cpu().min(), record.x[..., 1].min())
+            max_ = max(x_goal_n[:, 1].cpu().max(), record.x[..., 1].max())
             margin_ = (max_ - min_) * 0.1
             ax.set_ylim(min_ - margin_, max_ + margin_)
 

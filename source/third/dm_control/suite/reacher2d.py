@@ -44,22 +44,22 @@ def get_model_and_assets():
   # return common.read_model('reacher.xml'), common.ASSETS
   return read_model("reacher2d.xml"), common.ASSETS  # Changed/added by Sugar
 
-# Changed/added by Sugar (add "init_position" arg)
+# Changed/added by Sugar (add "task_settings" arg)
 @SUITE.add('benchmarking', 'easy')
-def easy(time_limit=_DEFAULT_TIME_LIMIT, random=None, init_position=None, environment_kwargs=None):
+def easy(time_limit=_DEFAULT_TIME_LIMIT, random=None, task_settings=None, environment_kwargs=None):
   """Returns reacher with sparse reward with 5e-2 tol and randomized target."""
   physics = Physics.from_xml_string(*get_model_and_assets())
-  task = Reacher(target_size=_BIG_TARGET, random=random, init_position=init_position)
+  task = Reacher(target_size=_BIG_TARGET, random=random, task_settings=task_settings)
   environment_kwargs = environment_kwargs or {}
   return control.Environment(
       physics, task, time_limit=time_limit, **environment_kwargs)
 
-# Changed/added by Sugar (add "init_position" arg)
+# Changed/added by Sugar (add "task_settings" arg)
 @SUITE.add('benchmarking')
-def hard(time_limit=_DEFAULT_TIME_LIMIT, random=None, init_position=None, environment_kwargs=None):
+def hard(time_limit=_DEFAULT_TIME_LIMIT, random=None, task_settings=None, environment_kwargs=None):
   """Returns reacher with sparse reward with 1e-2 tol and randomized target."""
   physics = Physics.from_xml_string(*get_model_and_assets())
-  task = Reacher(target_size=_SMALL_TARGET, random=random, init_position=init_position)
+  task = Reacher(target_size=_SMALL_TARGET, random=random, task_settings=task_settings)
   environment_kwargs = environment_kwargs or {}
   return control.Environment(
       physics, task, time_limit=time_limit, **environment_kwargs)
@@ -89,7 +89,7 @@ class Reacher(base.Task):
   """A reacher `Task` to reach the target."""
 
   # Changed/added by Sugar
-  def __init__(self, target_size, random=None, init_position=None):
+  def __init__(self, target_size, random=None, task_settings:dict=None):
     """Initialize an instance of `Reacher`.
 
     Args:
@@ -103,44 +103,54 @@ class Reacher(base.Task):
     super().__init__(random=random)
 
     # Changed/added by Sugar
-    self.init_position = init_position
+    if task_settings is None:
+      self.task_settings = {}
+    else:
+      self.task_settings = task_settings
 
   def initialize_episode(self, physics):
     """Sets the state of the environment at the start of each episode."""
     physics.named.model.geom_size['target', 0] = self._target_size
+    # Changed/added by Sugar
+    physics.named.model.geom_size['target2', 0] = self._target_size
+    physics.named.model.geom_size['target3', 0] = self._target_size
+
+    # None or "defalut" are similar to original implementation
+    init_position = self.task_settings.get("init_position", None)
+    target_position = self.task_settings.get("target_position", "fix")
 
     # Changed/added by Sugar
     # Initial arm position
-    if self.init_position is None:
+    if init_position is None or init_position == "default":
       # original implementation
       randomizers.randomize_limited_and_rotational_joints(physics, self.random)
 
-    elif self.init_position == "zero":
+    elif init_position == "zero":
       physics.named.data.qpos["shoulder"] = np.array([0])
       physics.named.data.qpos["wrist"] = np.array([0])
 
     ### 160 [deg] == (8/9)π ≈ 2.79 [rad]
-    elif self.init_position == "limit_red_side":
+    elif init_position == "limit_red_side":
       physics.named.data.qpos["shoulder"] = np.array([(-8/9)*np.pi])
       physics.named.data.qpos["wrist"] = np.array([0])
 
-    elif self.init_position == "red":  # target
+    elif init_position == "red":  # target
       physics.named.data.qpos["shoulder"] = np.array([(-7/9)*np.pi])
       physics.named.data.qpos["wrist"] = np.array([(3/9)*np.pi])
 
-    elif self.init_position == "green":  # target2
+    elif init_position == "green":  # target2
       physics.named.data.qpos["shoulder"] = np.array([(-4/9)*np.pi])
       physics.named.data.qpos["wrist"] = np.array([(6/9)*np.pi])
 
-    elif self.init_position == "yellow":  # target3
+    elif init_position == "yellow":  # target3
       physics.named.data.qpos["shoulder"] = np.array([(5/9)*np.pi])
       physics.named.data.qpos["wrist"] = np.array([(3/9)*np.pi])
 
-    elif self.init_position == "limit_yellow_side":
+    elif init_position == "limit_yellow_side":
       physics.named.data.qpos["shoulder"] = np.array([(8/9)*np.pi])
       physics.named.data.qpos["wrist"] = np.array([(8/9)*np.pi])
 
-    elif self.init_position == "paper":
+    elif init_position == "paper":
       # paper...?
       # Here is the initialize process. 
       # [0.0, 1.0) [rad] == [0.0, 57.29) [deg]
@@ -154,13 +164,21 @@ class Reacher(base.Task):
 
     # Changed/added by Sugar
     # Randomize target position (red ball)
-    # True is original implementation
-    if False:
+    # True is similar to original implementation
+    if target_position is None or target_position == "default":
       angle = self.random.uniform(0, 2 * np.pi)
       radius = self.random.uniform(.05, .20)
-      physics.named.model.geom_pos['target', 'x'] = radius * np.sin(angle)
-      physics.named.model.geom_pos['target', 'y'] = radius * np.cos(angle)
-    else:
+      # physics.named.model.geom_pos['target', 'x'] = radius * np.sin(angle)
+      # physics.named.model.geom_pos['target', 'y'] = radius * np.cos(angle)
+      physics.named.model.geom_pos['target'] = radius * np.array([np.sin(angle), np.cos(angle), 0])
+      angle = self.random.uniform(0, 2 * np.pi)
+      radius = self.random.uniform(.05, .20)
+      physics.named.model.geom_pos['target2'] = radius * np.array([np.sin(angle), np.cos(angle), 0])
+      angle = self.random.uniform(0, 2 * np.pi)
+      radius = self.random.uniform(.05, .20)
+      physics.named.model.geom_pos['target3'] = radius * np.array([np.sin(angle), np.cos(angle), 0])
+
+    elif target_position == "fix":
       physics.named.model.geom_pos["target"] = np.array([-0.07108755, -0.19531144, 0])
 
     super().initialize_episode(physics)

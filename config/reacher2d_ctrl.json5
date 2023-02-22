@@ -13,9 +13,9 @@
   train: {
     data_start: 15,
     data_stop: 30,
-    batch_size: 5,
+    batch_size: 2,
     epochs: 10000,
-    learning_rate: 2e-4,
+    learning_rate: 1e-4,
     max_time_length: 100,
     device: "cuda",
     dtype: "float32",
@@ -28,12 +28,17 @@
     dtype: "float32",
   },
 
+  preprocess: {
+    // scale_x: [0, 4],
+  },
+
   ControlSuiteEnvWrap: {
     env: "reacher2d-hard",
     seed: 1,
     max_episode_length: 100,
     action_repeat: 1,
     bit_depth: 8,
+    imgsize: [64, 64],
     // action_type: "default",
     // position_wrap: "endeffector",
 

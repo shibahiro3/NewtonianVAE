@@ -21,6 +21,7 @@ import time
 import typing
 import unicodedata
 from datetime import datetime, timedelta
+from functools import wraps
 from pathlib import Path
 from posix import times_result
 from pprint import pformat
@@ -30,6 +31,7 @@ import numpy as np
 from typing_extensions import Self
 
 from mypython.numeric import MovingAverage
+from mypython.terminal import Color
 
 
 def is_number_type(x):
@@ -257,3 +259,49 @@ class initialize:
             return cls
 
         return _inner
+
+
+def function_test(func):
+    @wraps(func)
+    def wrapper(*args, **kargs):
+        Color.print(f"\n=== [Start] {func.__name__}", c=Color.orange)
+        start = time.perf_counter()
+        result = func(*args, **kargs)
+        elapsed_time = time.perf_counter() - start
+        Color.print(f"=== [End]   {func.__name__}  Elapsed: {elapsed_time:.2f}s", c=Color.green)
+        return result
+
+    return wrapper
+
+
+def human_readable_byte(b: int, bin=False) -> str:
+    # torch.Tensor: b = x.element_size() * x.numel()
+
+    assert type(b) == int
+    assert b >= 0
+
+    def _p(b, unit) -> str:
+        if bin:
+            return f"{b:.3f} {unit[0]}i{unit[1]}"
+        else:
+            return f"{b:.3f} {unit}"
+
+    if bin:
+        U = 1024
+    else:
+        U = 1000
+
+    if b < U:
+        return f"{b} B"
+
+    b /= U
+    if b < U:
+        return _p(b, "KB")
+
+    b /= U
+    if b < U:
+        return _p(b, "MB")
+
+    b /= U
+    if b < U:
+        return _p(b, "GB")

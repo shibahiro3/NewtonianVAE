@@ -20,10 +20,14 @@ result*/
 log*/
 
 # Docs #
-#############
+########
 docs/*
 !docs/generated
 
+# Others #
+##########
+pylintrc
+.pylintrc
 
 # https://github.com/numpy/numpy/blob/main/.gitignore
 

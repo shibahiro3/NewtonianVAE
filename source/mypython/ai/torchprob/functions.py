@@ -1,3 +1,4 @@
+from functools import singledispatch
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -10,35 +11,17 @@ from .distributions.base import Distribution, _eps
 from .distributions.normal import Normal
 
 
+@singledispatch
 def KLdiv(p: Distribution, q: Distribution) -> Tensor:
-    if issubclass(type(p), Normal):
-        if issubclass(type(q), Normal):
-            if config.use_original:
-                return KL_normal_normal(p.loc, p.scale, q.loc, q.scale)
-            else:
-                return torch.distributions.kl._kl_normal_normal(p, q)
+    raise NotImplementedError()
 
+
+@KLdiv.register
+def _KLdiv(p: Normal, q: Normal) -> Tensor:
+    if config.use_original:
+        return KL_normal_normal(p.loc, p.scale, q.loc, q.scale)
     else:
-        assert False, "No KLD function"
-
-
-class log:
-    """
-    log p(x | cond)
-
-    Match the look of the formula
-
-    Examples:
-        math : log (y | x)
-        impl : tp.log(prob, y).given(x).mean()
-    """
-
-    def __init__(self, p: Distribution, *x: Tensor) -> None:
-        self._p = p
-        self._x = x
-
-    def given(self, *cond_vars: Tensor, **cond_vars_k: Tensor):
-        return self._p.given(*cond_vars, **cond_vars_k).log_prob(*self._x)
+        return torch.distributions.kl._kl_normal_normal(p, q)
 
 
 def KL_normal_normal(
@@ -59,3 +42,22 @@ def KL_normal_normal(
         - 1
     )
     return 0.5 * kld_element
+
+
+class log:
+    """
+    log p(x | cond)
+
+    Match the look of the formula
+
+    Examples:
+        math : log (y | x)
+        impl : tp.log(prob, y).given(x).mean()
+    """
+
+    def __init__(self, p: Distribution, *x: Tensor) -> None:
+        self._p = p
+        self._x = x
+
+    def given(self, *cond_vars: Tensor, **cond_vars_k: Tensor):
+        return self._p.given(*cond_vars, **cond_vars_k).log_prob(*self._x)

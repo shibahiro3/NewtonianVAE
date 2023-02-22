@@ -175,8 +175,7 @@ def creator(
     weight_dir = Path(managed_dir, "weight")
     weight_dir.mkdir(parents=True, exist_ok=True)
 
-    ModelType = getattr(model_place, model_name)
-    model: nn.Module = ModelType(**model_params)
+    model: nn.Module = getattr(model_place, model_name)(**model_params)
 
     if resume:
         print('You chose "resume". Select a model to load.')
@@ -205,8 +204,7 @@ def load(root: str, model_place):
     saved_params = paramsmanager.Params(params_path)
     Color.print("params path:", params_path)
 
-    ModelType = getattr(model_place, saved_params.model)
-    model: nn.Module = ModelType(**saved_params.model_params)
+    model: nn.Module = getattr(model_place, saved_params.model)(**saved_params.model_params)
     model.load_state_dict(torch.load(weight_path))
     return model, manage_dir, weight_path, saved_params
 
@@ -215,8 +213,7 @@ def load_direct(weight_path, model_place):
     weight_path = Path(weight_path)
     manage_dir = weight_path.parent.parent
     params = paramsmanager.Params(Path(manage_dir, "params_saved.json5"))
-    ModelType = getattr(model_place, params.model)
-    model: nn.Module = ModelType(**params.model_params)
+    model: nn.Module = getattr(model_place, params.model)(**params.model_params)
     model.load_state_dict(torch.load(weight_path))
     return model, params
 

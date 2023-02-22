@@ -81,27 +81,11 @@ class SimpleBatchData(BatchIdx):
         return self.y[mask].to(self.device), self.x[mask].to(self.device)
 
 
-def preprocess_x(x, coef=0.1):
-    return x * coef
-
-
-def preprocess_y(y, coef=0.1):
-    return y * coef
-
-
-def postprocess_x(x, coef=0.1):
-    return x / coef
-
-
-def postprocess_y(y, coef=0.1):
-    return y / coef
-
-
 def main():
 
     N, K, D = 2000, 5, 2
     batch_size = 200
-    epochs = 4000
+    epochs = 2000
     device = torch.device("cpu")
     # device = torch.device("cuda")
 
@@ -113,27 +97,29 @@ def main():
     X, Y = Y, X
 
     print("Data scale")
-    print(f"{X.min().item():+.4f}, {X.max().item():+.4f}")
-    print(f"{Y.min().item():+.4f}, {Y.max().item():+.4f}")
+    print("Y:", f"{Y.min().item():+.4f}, {Y.max().item():+.4f}")
+    print("X:", f"{X.min().item():+.4f}, {X.max().item():+.4f}")
 
-    # # ============================================================
-    # # Check data
-    # fig, axes = plt.subplots(nrows=1, ncols=2, squeeze=False)
-    # ax = axes[0][0]
-    # ax.set_xlabel("X[0]")
-    # ax.set_ylabel("Y[0]")
-    # ax.scatter(X[:, 0], Y[:, 0], alpha=0.2, label="Original")
-    # ax = axes[0][1]
-    # ax.set_xlabel("X[1]")
-    # ax.set_ylabel("Y[1]")
-    # ax.scatter(X[:, 1], Y[:, 1], alpha=0.2, label="Original")
-    # mpu.legend_reduce(fig)
-    # plt.show()
-    # # ============================================================
+    whatever = False
+    if whatever:
+        # Check data
+        fig, axes = plt.subplots(nrows=1, ncols=2, squeeze=False)
+        ax = axes[0][0]
+        ax.set_xlabel("X[0]")
+        ax.set_ylabel("Y[0]")
+        ax.scatter(X[:, 0], Y[:, 0], alpha=0.2, label="Original")
+        ax = axes[0][1]
+        ax.set_xlabel("X[1]")
+        ax.set_ylabel("Y[1]")
+        ax.scatter(X[:, 1], Y[:, 1], alpha=0.2, label="Original")
+        mpu.legend_reduce(fig)
+        plt.show()
 
-    dataloader = SimpleBatchData(preprocess_y(Y), preprocess_x(X), batch_size, device)
+    datascaler_y = tp.Scaler(Y.mean(dim=0), Y.std(dim=0))
+    datascaler_x = tp.Scaler(X.mean(dim=0), X.std(dim=0))
+    dataloader = SimpleBatchData(datascaler_y.pre(Y), datascaler_x.pre(X), batch_size, device)
 
-    prob = MDN(D=D, K=K, n_hidden=30)
+    prob = MDN(D=D, K=K, n_hidden=20)
     prob.to(device)
 
     optimizer = torch.optim.Adam(prob.parameters())
@@ -166,6 +152,7 @@ def main():
     print()
     # ============================================================
 
+    plt.title("Loss")
     plt.plot(record_Loss)
     plt.show()
 
@@ -173,8 +160,8 @@ def main():
     _X1_test = torch.linspace(X[:, 1].min(), X[:, 1].max(), N)
     X_test = torch.stack([_X0_test, _X1_test]).T.to(device)
 
-    Y_sampled = prob.given(preprocess_x(X_test)).sample()
-    Y_sampled = postprocess_y(Y_sampled)
+    Y_sampled = prob.given(datascaler_x.pre(X_test)).sample()
+    Y_sampled = datascaler_y.post(Y_sampled)
 
     X_test = to_np(X_test)
     Y_sampled = to_np(Y_sampled)

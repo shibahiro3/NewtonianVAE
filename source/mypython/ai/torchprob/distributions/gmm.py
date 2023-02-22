@@ -142,6 +142,18 @@ class GMM(Distribution):
         self._mu_pvt_ = None
         self._sigma_pvt_ = None
 
+    @property
+    def param_pi(self):
+        return self._pi_pvt_
+
+    @property
+    def param_mu(self):
+        return self._mu_pvt_
+
+    @property
+    def param_sigma(self):
+        return self._sigma_pvt_
+
     @staticmethod
     def func_log(x: Tensor, pi: Tensor, mu: Tensor, sigma: Tensor) -> Tensor:
         r"""

@@ -68,11 +68,15 @@
     imgsize: [64, 64], // (H, W)
     // action_type: "default",
     // position_wrap: "endeffector",
+    task_settings: {
+      "init_position" : "default",
+      "target_position" : "default"
+    }
   },
 
   path: {
-    data_dir: "environments/reacher2d/data",
-    saves_dir: "environments/reacher2d/saves",
-    results_dir: "environments/reacher2d/results",
+    data_dir: "environments/reacher2d/datav2",
+    saves_dir: "environments/reacher2d/savesv2",
+    results_dir: "environments/reacher2d/resultsv2",
   },
 }

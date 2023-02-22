@@ -19,14 +19,14 @@ class Distribution(nn.Module):
 
         # self._Theta = ...  # Parameters of the distribution
 
-    def forward(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> ParamsReturnType:
-        """Compute Θ of p(･ | Θ) from cond_vars and cond_vars_k"""
+    def forward(self, *cond_vars, **cond_vars_k) -> ParamsReturnType:
+        """Compute Θ of p(x | Θ) from cond_vars and cond_vars_k"""
         raise NotImplementedError()
 
     def __call__(self, *args, **kwargs) -> ParamsReturnType:
         return super().__call__(*args, **kwargs)
 
-    def given(self, *cond_vars: Tensor, **cond_vars_k: Tensor) -> Self:
+    def given(self, *cond_vars, **cond_vars_k) -> Self:
         """__call__(forward) is called and the parameters of the distribution are saved"""
         raise NotImplementedError()
         return self
@@ -66,6 +66,10 @@ class Distribution(nn.Module):
     @property
     def scale(self) -> Tensor:
         raise NotImplementedError()
+
+    # @property
+    # def param_*(self) -> Tensor:
+    #   Parameters specific to each distribution (Public)
 
 
 def to_optional_tensor(x: Union[None, int, float, Tensor]) -> Optional[Tensor]:

@@ -8,7 +8,6 @@
       dim_x: 2,
       fix_abc: [0, 0, 1],
       // fix_abc: null,
-      activation: "ReLU",
     },
 
     transition: {
@@ -30,11 +29,7 @@
       dim_x: 2,
       std: 1,
       // std: null,
-      model: "VisualDecoder64",
-      model_kwargs: {
-        dim_middle: 1024,
-        activation: "ReLU",
-      },
+      model: "SpatialBroadcastDecoder64",
     },
   },
 
@@ -47,9 +42,9 @@
     max_time_length: 100,
     device: "cuda",
     dtype: "float32",
-    // kl_annealing: true,
+    kl_annealing: true,
     save_per_epoch: 20,
-    check_value: false, // if false, a little faster
+    check_value: false,
   },
 
   eval: {
@@ -60,19 +55,22 @@
   },
 
   ControlSuiteEnvWrap: {
-    env: "reacher2d-hard",
+    env: "point_mass-easy",
     seed: 1,
     max_episode_length: 100,
     action_repeat: 1,
     bit_depth: 8,
-    imgsize: [64, 64], // (H, W)
-    // action_type: "default",
-    // position_wrap: "endeffector",
+    action_type: "random_walk",
+    imgsize: [64, 64],
+    task_settings: {
+      target_position: "random"
+    },
+    camera_id: 1
   },
 
   path: {
-    data_dir: "environments/reacher2d/data",
-    saves_dir: "environments/reacher2d/saves",
-    results_dir: "environments/reacher2d/results",
+    data_dir: "environments/point_mass_move/data",
+    saves_dir: "environments/point_mass_move/saves",
+    results_dir: "environments/point_mass_move/results",
   },
 }

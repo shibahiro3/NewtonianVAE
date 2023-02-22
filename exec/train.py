@@ -23,20 +23,20 @@ parser = argparse.ArgumentParser(
 """if you use "--visual tensorboard":
   1. Another terminal: $ tensorboard --logdir="log_tb"
   2. Open the output URL (http://localhost:6006/) in a browser
-  3. $ python train.py --visual tensorboard
+  3. $ python train.py -c ... --visual tensorboard
 
 if you use "--visual visdom":
   1. Another terminal: $ python -m visdom.server -port 8097
   2. Open the output URL (http://localhost:8097) in a browser
-  3. $ python train.py --visual visdom
+  3. $ python train.py -c ... --visual visdom
 
 Examples:
-  $ python train.py --config config/reacher2d.json5
-  $ python train.py --config config/point_mass.json5
-  $ python train.py --config config/reacher2d.json5 --visual visdom
+  $ python train.py -c config/reacher2d.json5
+  $ python train.py -c config/point_mass.json5
+  $ python train.py -c config/reacher2d.json5 --visual visdom
 """,
 )
-parser.add_argument("--config", type=str, required=True, **argset.config)
+parser.add_argument("-c", "--config", type=str, required=True, **argset.config)
 parser.add_argument("--resume", action="store_true", help="Load the model and resume learning")
 parser.add_argument("--visual", type=str, choices=["tensorboard", "visdom"])
 args = parser.parse_args()

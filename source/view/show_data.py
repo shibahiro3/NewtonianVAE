@@ -116,6 +116,9 @@ def main(
             ax = axes.observation
             ax.set_title(r"$\mathbf{I}_t$")
             ax.imshow(obs2img(observation[self.t, self.episode_cnt]))
+            ax.set_xlabel(f"{observation.shape[-1]} px")
+            ax.set_ylabel(f"{observation.shape[-2]} px")
+            ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
             # ============================================================
             ax = axes.position

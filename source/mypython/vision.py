@@ -1,6 +1,4 @@
 """
-import mypython.img_util as imu
-
 cv2.imread : (*, H, W, BGR) (0 to 255)
 cnn : (*, RGB, H, W) (0 to 1) (floatにしないとcnnは受け入れない)
 """
@@ -18,13 +16,18 @@ from torch import Tensor
 
 _NT = Union[np.ndarray, Tensor]
 
+# Color order
+def reverseRGB(imgs: _NT) -> _NT:
+    return imgs[..., [2, 1, 0]]
 
-def cv2plt(imgs):
-    """
-    in  (*, H, W, BGR)
-    out (*, H, W, RGB)
-    """
-    return BGR2RGB(imgs)
+
+# OpenCV: BGR (cv2.imread, cv2.imshow)
+# matplotlib: RGB (plt.imshow)
+# H, W order : same
+RGB2BGR = reverseRGB
+BGR2RGB = reverseRGB
+cv2plt = BGR2RGB
+plt2cv = RGB2BGR
 
 
 def plt2cnn(imgs: _NT, in_size=None, out_size=None) -> Tensor:
@@ -116,14 +119,6 @@ def _CHW_HWC_axis(x: _NT, axes) -> _NT:
         return x.transpose(axes)
     else:
         assert False
-
-
-def BGR2RGB(imgs: _NT) -> _NT:
-    return imgs[..., [2, 1, 0]]
-
-
-def RGB2BGR(imgs: _NT) -> _NT:
-    return BGR2RGB(imgs)
 
 
 def clip(x, min, max):

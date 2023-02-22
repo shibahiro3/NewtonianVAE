@@ -67,7 +67,6 @@ def reconstruction(
 
     testloader = SequenceDataLoader(
         root=Path(path_data, "episodes"),
-        names=["action", "observation", "delta"],  # <<
         start=params.eval.data_start,
         stop=params.eval.data_stop,
         batch_size=episodes,
@@ -81,8 +80,8 @@ def reconstruction(
     del saved_params
     # ======================== end of load =======================
 
-    action, observation, delta = next(testloader)
-    delta.unsqueeze_(-1)
+    batchdata = next(testloader)
+    batchdata["delta"].unsqueeze_(-1)
 
     all_steps = T * episodes
 
@@ -160,9 +159,9 @@ def reconstruction(
         def init(self):
 
             self.action, self.observation, self.delta = (
-                action[:, [self.episode_cnt]],
-                observation[:, [self.episode_cnt]],
-                delta[:, [self.episode_cnt]],
+                batchdata["action"][:, [self.episode_cnt]],
+                batchdata["camera"][:, [self.episode_cnt]],
+                batchdata["delta"][:, [self.episode_cnt]],
             )
 
             self.model.init_LOG()

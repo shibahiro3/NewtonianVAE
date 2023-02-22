@@ -90,20 +90,20 @@ class PControl(tp.GMM):
     def pi(self, x_t: Tensor) -> Tensor:
         """
         Returns:
-            pi: (BS, N)
+            pi: (B, N)
         """
         pi = self.pi_model(x_t)
         return pi
 
     def forward(self, x_t: Tensor):
         """
-        x_t: shape (BS, dim_x)
+        x_t: shape (B, dim_x)
         """
         pi = self.pi(x_t)
         # Color.print(pi.shape, c=Color.red)
 
         x_t = x_t.unsqueeze(-2)
-        mu = self.K_n * (self.x_goal_n - x_t)  # (BS, N, dim_x)
+        mu = self.K_n * (self.x_goal_n - x_t)  # (B, N, dim_x)
         sigma = self.std_function(self.std)
         return pi, mu, sigma
 

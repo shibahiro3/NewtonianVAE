@@ -20,10 +20,10 @@ parser = argparse.ArgumentParser(
     formatter_class=RawTextHelpFormatter,
     description=
 """Examples:
-  $ python train_control.py --config config/reacher2d.json5 --config-ctrl config/reacher2d_ctrl.json5
+  $ python train_control.py -c config/reacher2d.json5 --config-ctrl config/reacher2d_ctrl.json5
 """,
 )
-parser.add_argument("--config", type=str, required=True, **argset.config)
+parser.add_argument("-c", "--config", type=str, required=True, **argset.config)
 parser.add_argument("--config-ctrl", type=str, required=True)
 args = parser.parse_args()
 # fmt: on

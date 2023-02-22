@@ -5,17 +5,22 @@ import time
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Union
+from typing import Any, Dict, Union
 
 import numpy as np
 import torch
-from torch import nn, optim
+from torch import Tensor, nn, optim
 
 import models.core
 import mypython.ai.torchprob as tp
 import tool.util
 from models.core import NewtonianVAEFamily
-from mypython.ai.util import SequenceDataLoader, print_module_params, reproduce
+from mypython.ai.util import (
+    SequenceDataLoader,
+    print_module_params,
+    reproduce,
+    show_model_info,
+)
 from mypython.pyutil import RemainingTime, s2dhms_str
 from mypython.terminal import Color, Prompt
 from tool import paramsmanager
@@ -29,6 +34,7 @@ def train(
     vh=VisualHandlerBase(),
 ):
     torch.set_grad_enabled(True)
+    # torch.autograd.detect_anomaly()
 
     params = paramsmanager.Params(config)
 
@@ -43,7 +49,6 @@ def train(
 
     trainloader = SequenceDataLoader(
         root=Path(params.path.data_dir, "episodes"),
-        names=["action", "observation", "delta"],
         start=params.train.data_start,
         stop=params.train.data_stop,
         batch_size=params.train.batch_size,
@@ -67,14 +72,12 @@ def train(
 
     params.path.resume_weight = resume_weight_path
     params.pid = os.getpid()
-    params.save(Path(managed_dir, "params_saved.json5"))
+    params.save_train(Path(managed_dir, "params_saved.json5"))
 
     vh.title = managed_dir.stem
     vh.call_end_init()
 
-    record_Loss = []
-    record_NLL = []
-    record_KL = []
+    record_losses: Dict[str, list] = {}
 
     Preferences.put(managed_dir, "running", True)
 
@@ -82,13 +85,13 @@ def train(
         Preferences.remove(managed_dir, "running")
 
         if len(list(weight_dir.glob("*"))) > 0:
-            np.save(Path(managed_dir, "LOG_Loss.npy"), record_Loss)
-            np.save(Path(managed_dir, "LOG_NLL.npy"), record_NLL)
-            np.save(Path(managed_dir, "LOG_KL.npy"), record_KL)
+            np.savez(Path(managed_dir, "Losses.npz"), **record_losses)
         else:
             shutil.rmtree(managed_dir)
 
         print("\nEnd of train")
+
+    show_model_info(model, verbose=False)
 
     try:
         tp.config.check_value = params.train.check_value  # if False, A little bit faster
@@ -108,15 +111,16 @@ def train(
                 else:
                     model.cell.kl_beta = 1
 
-            for action, observation, delta in trainloader:
-                delta.unsqueeze_(-1)
+            for batchdata in trainloader:
+                batchdata["delta"].unsqueeze_(-1)
                 # print(action.shape)
                 # print(observation.shape)
                 # print(delta.shape)
 
-                E, E_ll, E_kl = model(action=action, observation=observation, delta=delta)
+                L, losses = model(batchdata)
+                L: Tensor
+                losses: Dict[str, float]
 
-                L = -E
                 optimizer.zero_grad()
                 L.backward()
                 # print_module_params(model, True)
@@ -131,30 +135,29 @@ def train(
                 # === show progress ===
 
                 L = L.cpu().item()
-                E_ll = -E_ll.cpu().item()
-                E_kl = E_kl.cpu().item()
 
-                record_Loss.append(L)
-                record_NLL.append(E_ll)
-                record_KL.append(E_kl)
+                now_losses = {"Loss": L, **losses}
 
-                vh.plot(L, E_ll, E_kl, epoch)
+                for k in now_losses.keys():
+                    if k not in record_losses.keys():
+                        record_losses[k] = []
+                    record_losses[k].append(now_losses[k])
+
+                vh.plot({"Epoch": epoch, **now_losses})
                 if not vh.is_running:
                     vh.call_end()
+                    time.sleep(0.1)
                     end_process()
                     return
 
                 remaining.update()
                 Prompt.print_one_line(
-                    (
-                        f"Epoch: {epoch} | "
-                        f"Loss: {L:.4f} | "
-                        f"NLL: {E_ll:.4f} | "
-                        f"KL: {E_kl:.4f} | "
-                        f"Elapsed: {s2dhms_str(remaining.elapsed)} | "
-                        f"Remaining: {s2dhms_str(remaining.time)} | "
-                        f"ETA: {remaining.eta} "
-                    )
+                    f"Epoch: {epoch} | "
+                    + " | ".join([f"{k}: {v:.4f}" for k, v in now_losses.items()])
+                    + " | "
+                    + f"Elapsed: {s2dhms_str(remaining.elapsed)} | "
+                    + f"Remaining: {s2dhms_str(remaining.time)} | "
+                    + f"ETA: {remaining.eta} "
                 )
 
             if epoch % params.train.save_per_epoch == 0:

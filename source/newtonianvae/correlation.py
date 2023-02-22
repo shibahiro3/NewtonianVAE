@@ -60,13 +60,15 @@ def correlation(
 
     class Ax:
         def __init__(self) -> None:
-            gs = GridSpec(nrows=2, ncols=3)
+            dim = 3
+            gs = GridSpec(nrows=2, ncols=1 + dim)
             v1 = Seq()
             # self.physical = fig.add_subplot(gs[0, 0])
             self.latent_map = fig.add_subplot(gs[0:2, 0])
 
             self.p0l0 = fig.add_subplot(gs[0, 1])
             self.p1l1 = fig.add_subplot(gs[0, 2])
+            self.p2l2 = fig.add_subplot(gs[0, 3])
 
             self.p0l1 = fig.add_subplot(gs[1, 1])
             self.p1l0 = fig.add_subplot(gs[1, 2])
@@ -100,7 +102,6 @@ def correlation(
 
     testloader = SequenceDataLoader(
         root=Path(path_data, "episodes"),
-        names=["action", "observation", "delta", "position"],
         start=params.eval.data_start,
         stop=params.eval.data_stop,
         batch_size=episodes,
@@ -112,29 +113,44 @@ def correlation(
     del saved_params
     # ======================== end of load =======================
 
-    action, observation, delta, position = next(testloader)
-    delta.unsqueeze_(-1)
-    position = position.detach().cpu()
+    batchdata = next(testloader)
+    batchdata["delta"].unsqueeze_(-1)
+    position = batchdata["position"].detach().cpu()
+    # position = batchdata["relative_position"].detach().cpu()
 
     print("Calculating...")
-    model(action=action, observation=observation, delta=delta)
+    model(batchdata)
     model.LOG2numpy()
 
-    # (BS, T, D)
+    # (B, T, D)
     latent_map = swap01(model.LOG_x)
     physical = swap01(position)
 
     corr_p0l0 = np.corrcoef(
-        physical.reshape(-1, model.cell.dim_x)[:, 0], latent_map.reshape(-1, model.cell.dim_x)[:, 0]
+        physical.reshape(-1, model.cell.dim_x)[:, 0],
+        latent_map.reshape(-1, model.cell.dim_x)[:, 0],
     )[0, 1]
     corr_p1l1 = np.corrcoef(
-        physical.reshape(-1, model.cell.dim_x)[:, 1], latent_map.reshape(-1, model.cell.dim_x)[:, 1]
+        physical.reshape(-1, model.cell.dim_x)[:, 1],
+        latent_map.reshape(-1, model.cell.dim_x)[:, 1],
     )[0, 1]
+
+    corr_p2l2 = None
+    if model.cell.dim_x >= 3:
+        corr_p2l2 = np.corrcoef(
+            physical.reshape(-1, model.cell.dim_x)[:, 2],
+            latent_map.reshape(-1, model.cell.dim_x)[:, 2],
+        )[0, 1]
+
+    # ===
+
     corr_p0l1 = np.corrcoef(
-        physical.reshape(-1, model.cell.dim_x)[:, 0], latent_map.reshape(-1, model.cell.dim_x)[:, 1]
+        physical.reshape(-1, model.cell.dim_x)[:, 0],
+        latent_map.reshape(-1, model.cell.dim_x)[:, 1],
     )[0, 1]
     corr_p1l0 = np.corrcoef(
-        physical.reshape(-1, model.cell.dim_x)[:, 1], latent_map.reshape(-1, model.cell.dim_x)[:, 0]
+        physical.reshape(-1, model.cell.dim_x)[:, 1],
+        latent_map.reshape(-1, model.cell.dim_x)[:, 0],
     )[0, 1]
     print("Done")
 
@@ -177,6 +193,18 @@ def correlation(
     for i in range(episodes):
         ax.plot(x[i], y[i], color=color[i])
     label.set_axes_P1L1(ax, lmax)
+
+    # ============================================================
+    if model.cell.dim_x >= 3:
+        x = physical[..., 2]
+        y = latent_map[..., 2]
+
+        ax = axes.p2l2
+        ax.set_title(f"Correlation = {corr_p2l2:.4f}")
+
+        for i in range(episodes):
+            ax.plot(x[i], y[i], color=color[i])
+        label.set_axes_P2L2(ax, lmax)
 
     # ============================================================
     x = physical[..., 0]

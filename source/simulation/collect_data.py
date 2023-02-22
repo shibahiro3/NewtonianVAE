@@ -1,11 +1,15 @@
 import shutil
 import sys
 import time
+from collections import ChainMap
 from pathlib import Path
+from typing import Dict, List, Sequence, Type, Union, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.typing as npt
 from matplotlib.gridspec import GridSpec
+from torch import Tensor
 
 import mypython.plotutil as mpu
 import mypython.vision as mv
@@ -27,18 +31,16 @@ except:
 
 class Collector:
     def __init__(self) -> None:
-        self.action = []
-        self.observation = []
-        self.delta = []
-        self.position = []
+        self.data = {}
+
+    def capture(self, data):
+        pass
 
     def save(self, path_dir):
         path_dir = Path(path_dir)
         path_dir.mkdir(parents=True, exist_ok=True)
-        np.save(Path(path_dir, "action.npy"), self.action)
-        np.save(Path(path_dir, "observation.npy"), self.observation)
-        np.save(Path(path_dir, "delta.npy"), self.delta)
-        np.save(Path(path_dir, "position.npy"), self.position)
+        # for k, v in self.data.items():
+        #     np.save(Path(path_dir, f"{k}.npy"), self.action)
 
 
 def main(
@@ -50,12 +52,12 @@ def main(
 ):
     plt.rcParams.update(
         {
-            "figure.figsize": (10.14, 4.05),
+            "figure.figsize": (11.63, 3.89),
             "figure.subplot.left": 0.05,
             "figure.subplot.right": 0.95,
             "figure.subplot.bottom": 0,
             "figure.subplot.top": 1,
-            "figure.subplot.wspace": 0.3,
+            "figure.subplot.wspace": 0.4,
         }
     )
 
@@ -103,14 +105,28 @@ def main(
 
         class Ax:
             def __init__(self) -> None:
-                gs = GridSpec(nrows=1, ncols=3)
+                observations = env.reset()
+                # print(observations.keys())
+                n_cam = len([s for s in observations.keys() if s.startswith("camera")])
+                # print(n_cam)
+
+                gs = GridSpec(nrows=1, ncols=n_cam + 2)
                 self.action = fig.add_subplot(gs[0, 0])
-                self.observation = fig.add_subplot(gs[0, 1])
-                self.position = fig.add_subplot(gs[0, 2])
+                self.cameras: List[plt.Axes] = []
+                for i in range(1, 1 + n_cam):
+                    self.cameras.append(fig.add_subplot(gs[0, i]))
+
+                if env.domain == "point_mass_3d":
+                    self.position = fig.add_subplot(gs[0, n_cam + 1], projection="3d")
+                else:
+                    self.position = fig.add_subplot(gs[0, n_cam + 1])
+                # self.position = fig.add_subplot(gs[0, n_cam + 1])
 
             def clear(self):
-                for ax in self.__dict__.values():
+                self.action.clear()
+                for ax in self.cameras:
                     ax.clear()
+                # self.position.clear()
 
         axes = Ax()
 
@@ -129,11 +145,16 @@ def main(
 
             mod = frame_cnt % T
             if mod == 0:
-                self.collector = Collector()
-
                 env.reset()
+
+                self.collector = Collector()
+                self.episode_data = {}
+
                 self.t = 0
                 self.episode_cnt = frame_cnt // T + mod
+
+                if env.domain == "point_mass_3d" and watch == "plt":
+                    axes.position.clear()
 
             # ======================================================
 
@@ -142,16 +163,37 @@ def main(
             ### core ###
             action = env.sample_random_action()
             # action = env.zeros_action()
-            observation, _, done, position = env.step(action)
+            observations, done = env.step(action)
 
-            # print("===")
-            # print("action shape:     ", tuple(action.shape))  # (2,)
-            # print("observation shape:", tuple(observation.shape))  # (3, 64, 64)
-            # print("position shape:   ", position.shape)  # (2,)
-            self.collector.action.append(action.numpy())
-            self.collector.observation.append(observation.numpy())
-            self.collector.delta.append(0.1)
-            self.collector.position.append(position)
+            step_data = observations
+            step_data["action"] = action
+            step_data["delta"] = 0.1
+            step_data["relative_position"] = step_data["position"] - step_data["target_position"]
+
+            for k, v in step_data.items():
+                if type(v) == Tensor:
+                    step_data[k] = v.detach().cpu().numpy()
+
+            for k, v in step_data.items():
+                if not k in self.episode_data:
+                    self.episode_data[k] = [v]
+                else:
+                    self.episode_data[k].append(v)
+
+            # camera = observations["camera0"]
+            # camera1 = observations["camera1"]
+            #
+            # position = observations["relative_position"]
+
+            # ### see
+            # print(f"===== {self.t} =====")
+            # print(f"=== num: {len(step_data)}")
+            # for k, v in step_data.items():
+            #     if type(v) == np.ndarray or type(v) == Tensor:
+            #         print(k, v.shape)
+            #     else:
+            #         print(k, v, f"({v.__class__.__name__})")
+
             ############
 
             if watch == "render":
@@ -179,39 +221,79 @@ def main(
                     ax.set_xticklabels([r"$\mathbf{u}[1]$ (shoulder)", r"$\mathbf{u}[2]$ (wrist)"])
                 elif env.domain == "point_mass" and env.task == "easy":
                     ax.set_xticklabels([r"$\mathbf{u}[1]$ (x)", r"$\mathbf{u}[2]$ (y)"])
+                elif env.domain == "point_mass_3d" and env.task == "easy":
+                    ax.set_xticklabels(
+                        [r"$\mathbf{u}[1]$ (x)", r"$\mathbf{u}[2]$ (y)", r"$\mathbf{u}[3]$ (z)"]
+                    )
 
                 # ==================================================
-                ax = axes.observation
-                ax.set_title("$\mathbf{I}_t$")
-                ax.imshow(obs2img(observation))
+                _i = 0
+                for k, v in observations.items():
+                    if k.startswith("camera"):
+                        ax = axes.cameras[_i]
+                        ax.set_title("$\mathbf{I}_t$" f" ({k})")
+                        ax.imshow(obs2img(v))
+                        ax.set_xlabel(f"{v.shape[-1]} px")
+                        ax.set_ylabel(f"{v.shape[-2]} px")
+                        ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+                        _i += 1
 
                 # ==================================================
                 ax = axes.position
                 ax.set_title("Position")
+                position = observations["position"]
+
                 if env.domain == "reacher2d" and env.position_wrap == "None":
+                    axes.position.clear()
                     ax.set_ylim(-np.pi, np.pi)
                     ax.bar(range(len(position)), position, color=dim_colors, width=0.5)
                     mpu.Axis_aspect_2d(ax, 1)
                     ax.set_xlabel("Angle")
                     ax.set_xticks(range(len(position)))
                     ax.set_xticklabels([r"$\theta_1$ (shoulder)", r"$\theta_2$ (wrist)"])
+
                 elif (
                     env.domain == "reacher2d" and env.position_wrap == "endeffector"
                 ) or env.domain == "point_mass":
+                    axes.position.clear()
                     ax.set_xlabel("x")
                     ax.set_ylabel("y")
                     ax.plot(position[0], position[1], marker="o", ms=10, color="orange")
                     mpu.cartesian_coordinate(ax, 0.35)  # dm_control wall: 0.3
 
-            if done and not save_anim:
-                print(f"episode: {self.episode_cnt+1}, T = {self.t}")
+                elif env.domain == "point_mass_3d":
+                    ax.set_xlabel("x")
+                    ax.set_ylabel("y")
+                    ax.set_zlabel("z")
+                    ax.plot(
+                        position[0],
+                        position[1],
+                        position[2],
+                        marker="o",
+                        ms=3,
+                        color="orange",
+                    )
+                    wall = 0.3
+                    ax.set_xlim(-wall, wall)
+                    ax.set_ylim(-wall, wall)
+                    ax.set_zlim(-wall, wall)
 
-                if watch is None:
-                    episode_dir = Path(data_path, "episodes", f"{self.episode_cnt}")
-                    self.collector.save(episode_dir)
-                    Color.print("saved", c=Color.green)
                 else:
-                    Color.print("not saved", c=Color.coral)
+                    axes.position.clear()
+                    ax.bar(range(len(position)), position, color=dim_colors, width=0.5)
+                    mpu.Axis_aspect_2d(ax, 1)
+
+            if done and not save_anim:
+                if watch is None:
+                    episodes_dir = Path(data_path, "episodes")
+                    episodes_dir.mkdir(parents=True, exist_ok=True)
+                    np.savez(Path(episodes_dir, f"{self.episode_cnt}.npz"), **self.episode_data)
+
+                    info = Color.green + "saved" + Color.reset
+                else:
+                    info = Color.coral + "not saved" + Color.reset
+
+                Prompt.print_one_line(f"episode: {self.episode_cnt+1}, T = {self.t}  {info} ")
 
     p = AnimPack()
 
@@ -229,6 +311,8 @@ def main(
     else:
         for frame_cnt in range(T * episodes):
             p.anim_func(frame_cnt)
+
+    print()
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@
       dim_x: 2,
       dim_middle: 1024,
       std_function: "softplus",
-      model: "VisualEncoder64",
+      model: "VisualEncoder256",
       model_kwargs: {
         activation: "ReLU",
       },
@@ -30,7 +30,7 @@
       dim_x: 2,
       std: 1,
       // std: null,
-      model: "VisualDecoder64",
+      model: "VisualDecoder256",
       model_kwargs: {
         dim_middle: 1024,
         activation: "ReLU",
@@ -41,7 +41,7 @@
   train: {
     data_start: 0,
     data_stop: 1000,
-    batch_size: 20,
+    batch_size: 8,
     epochs: 300,
     learning_rate: 3e-4,
     max_time_length: 100,
@@ -64,15 +64,15 @@
     seed: 1,
     max_episode_length: 100,
     action_repeat: 1,
-    bit_depth: 8,
-    imgsize: [64, 64], // (H, W)
+    bit_depth: 5,
+    imgsize: [256, 256], // (H, W)
     // action_type: "default",
     // position_wrap: "endeffector",
   },
 
   path: {
-    data_dir: "environments/reacher2d/data",
-    saves_dir: "environments/reacher2d/saves",
-    results_dir: "environments/reacher2d/results",
+    data_dir: "environments/reacher2d/data_highres",
+    saves_dir: "environments/reacher2d/saves_highres",
+    results_dir: "environments/reacher2d/results_highres",
   },
 }

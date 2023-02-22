@@ -51,13 +51,13 @@ These should be run under the [exec](exec) directory.
 Example:
 
 ```bash
-python create_data.py --config config/reacher2d.json5
+python create_data.py -c config/reacher2d.json5
 ```
 
 If you want to see what kind of data you are looking for:
 
 ```bash
-python create_data.py --config config/reacher2d.json5 --watch plt
+python create_data.py -c config/reacher2d.json5 --watch plt
 ```
 
 ### Train
@@ -65,7 +65,7 @@ python create_data.py --config config/reacher2d.json5 --watch plt
 Example:
 
 ```bash
-python train.py --config config/reacher2d.json5
+python train.py -c config/reacher2d.json5
 ```
 
 ### Correlation
@@ -73,13 +73,13 @@ python train.py --config config/reacher2d.json5
 Example:
 
 ```bash
-python correlation.py --config config/reacher2d.json5 --env-domain reacher2d
+python correlation.py -c config/reacher2d.json5 --env-domain reacher2d
 ```
 
 ![Result](media/2023-01-03_01-35-40_W300_correlation.png)
 
 ```bash
-python correlation.py --config config/point_mass.json5 --env-domain point_mass
+python correlation.py -c config/point_mass.json5 --env-domain point_mass
 ```
 
 ![Result](media/2023-01-03_17-53-03_W300_correlation.png)
@@ -93,7 +93,7 @@ You can give the target image in the source code and see how it behaves.
 Example:
 
 ```bash
-python control_pure.py --config config/reacher2d.json5 --episodes 3 --format gif --save-anim
+python control_pure.py -c config/reacher2d.json5 --episodes 3 --format gif --save-anim
 ```
 
 ![Result](media/2023-01-03_01-35-40_W300_control_pure_V2.gif)

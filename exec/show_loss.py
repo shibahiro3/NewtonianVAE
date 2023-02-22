@@ -12,7 +12,7 @@ from argparse import RawTextHelpFormatter
 from pprint import pprint
 
 import argset
-from source.newtonianvae import show_loss
+from source.view import show_loss
 
 # fmt: off
 parser = argparse.ArgumentParser(
@@ -20,11 +20,11 @@ parser = argparse.ArgumentParser(
     formatter_class=RawTextHelpFormatter,
     description=
 """Examples:
-  $ python show_loss.py --config config/reacher2d.json5
-  $ python show_loss.py --config config/point_mass.json5
+  $ python show_loss.py -c config/reacher2d.json5
+  $ python show_loss.py -c config/point_mass.json5
 """,
 )
-parser.add_argument("--config", type=str, required=True, **argset.config)
+parser.add_argument("-c", "--config", type=str, required=True, **argset.config)
 parser.add_argument("--start-iter", type=int, default=100, metavar="NUM", help="Number of initial iterations to draw Loss")
 parser.add_argument("--format", type=str, default=["svg", "pdf", "png"], nargs="*", **argset.format_file)
 args = parser.parse_args()

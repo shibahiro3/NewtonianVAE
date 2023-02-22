@@ -20,10 +20,10 @@ parser = argparse.ArgumentParser(
     formatter_class=RawTextHelpFormatter,
     description=
 """Examples:
-  $ python correlation.py --config config/reacher2d.json5 --env-domain reacher2d
+  $ python correlation.py -c config/reacher2d.json5 --env-domain reacher2d
 """
 )
-parser.add_argument("--config", type=str, required=True, **argset.config)
+parser.add_argument("-c", "--config", type=str, required=True, **argset.config)
 parser.add_argument("--episodes", type=int, default=50)
 parser.add_argument("--env-domain", type=str, metavar="ENV", help="Example: reacher2d, point_mass")
 parser.add_argument("--fix-xmap-size", type=float, metavar="S", help="xmap size")

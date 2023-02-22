@@ -1,13 +1,19 @@
 import random
+from functools import singledispatch
 from pathlib import Path
 from pprint import pprint
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn, optim
+
+from mypython.pyutil import human_readable_byte
+from mypython.terminal import Color
+
+from . import nnio
 
 _NT = Union[np.ndarray, Tensor]
 
@@ -47,8 +53,13 @@ def find_function(function_name: str) -> Callable[[Tensor], Tensor]:
 
 
 def swap01(x: _NT) -> _NT:
-    # assert x.ndim >= 3
-    axis = (1, 0) + tuple(range(2, x.ndim))
+    if x.ndim >= 3:
+        axis = (1, 0) + tuple(range(2, x.ndim))
+    elif x.ndim == 2:
+        axis = (1, 0)
+    else:
+        assert False
+
     if type(x) == np.ndarray:
         return x.transpose(axis)
     elif type(x) == Tensor:
@@ -67,17 +78,42 @@ def to_np(x) -> np.ndarray:
         return np.array(x)
 
 
+def show_model_info(model: nn.Module, verbose: bool = False):
+    print("model:", model.__class__)
+
+    _param = list(model.parameters())
+    if len(_param) == 0:
+        Color.print("  This model has no parameters.", c=Color.coral)
+        return
+
+    print("  dtype:", _param[0].dtype)
+    print("  device:", _param[0].device)
+
+    b_all = 0
+    for name, param in model.named_parameters():
+        b = param.element_size() * param.numel()
+        b_all += b
+
+        if verbose:
+            if param.requires_grad:
+                print(" ", name, human_readable_byte(b))
+            else:
+                Color.print(" ", name, human_readable_byte(b), c=Color.red)
+
+    print("  total size:", human_readable_byte(b_all))
+
+
 class BatchIdx:
     def __init__(self, start: int, stop: int, batch_size: int):
         assert stop - start >= batch_size
 
         self.N = stop - start
-        self.BS = batch_size
+        self.B = batch_size
         self.indexes = np.arange(start=start, stop=stop)
         self._reset()
 
     def __len__(self):
-        return int(np.ceil(self.N / self.BS))
+        return int(np.ceil(self.N / self.B))
 
     def __iter__(self):
         return self
@@ -89,7 +125,7 @@ class BatchIdx:
             self._reset()
             raise StopIteration()
 
-        mask = self.indexes[self.i * self.BS : (self.i + 1) * self.BS]
+        mask = self.indexes[self.i * self.B : (self.i + 1) * self.B]
         return mask
 
     def _reset(self):
@@ -106,27 +142,19 @@ class SequenceDataLoader(BatchIdx):
     def __init__(
         self,
         root: Union[str, Path],
-        names: list,
         start: int,
         stop: int,
         batch_size: int,
-        dtype: torch.dtype,
+        dtype: torch.dtype = torch.float32,
         device=torch.device("cpu"),
         show_selected_index=False,
     ):
         """
         root: directory path of data
             root
-            ├── 0
-            │   ├── names[0].npy
-            │   ├── names[1].npy
-            │   ├── names[2].npy
-            │   ...
-            ├── 1
-            │   ├── names[0].npy
-            │   ├── names[1].npy
-            │   ├── names[2].npy
-            │   ...
+            ├── 0.npz
+            ├── 1.npz
+            ├── 2.npz
             ...
 
         """
@@ -136,7 +164,6 @@ class SequenceDataLoader(BatchIdx):
         self.root = root
         self.device = device
         self.dtype = dtype
-        self.names = names
         self.show_selected_index = show_selected_index
 
     def __next__(self):
@@ -151,15 +178,14 @@ class SequenceDataLoader(BatchIdx):
         return self._seq_load(
             root=self.root,
             indexes=mask,
-            names=self.names,
             dtype=self.dtype,
             device=self.device,
         )
 
     @staticmethod
     def _seq_load(
-        root, indexes, dtype, names: list, batch_first=False, device=torch.device("cpu")
-    ) -> List[Tensor]:
+        root, indexes, dtype, batch_first=False, device=torch.device("cpu")
+    ) -> Dict[str, Tensor]:
         """"""
 
         """
@@ -169,22 +195,20 @@ class SequenceDataLoader(BatchIdx):
             (T, N, *)
         """
 
-        batch_data: List[List[Tensor]] = []
-        for _ in range(len(names)):
-            batch_data.append([])
-
-        def _inner_load(i, name):
-            return torch.from_numpy(np.load(Path(root, f"{i}", name))).to(dtype).to(device)
-
+        batch_data = {}
         for i in indexes:
-            for j in range(len(names)):
-                batch_data[j].append(_inner_load(i, names[j] + ".npy"))
+            for k, v in np.load(Path(root, f"{i}.npz")).items():
+                v = torch.from_numpy(v).to(dtype).to(device)
+                if not k in batch_data:
+                    batch_data[k] = [v]
+                else:
+                    batch_data[k].append(v)
 
-        for j in range(len(names)):
-            batch_data[j] = torch.stack(batch_data[j])
-
-        if not batch_first:
-            for j in range(len(names)):
-                batch_data[j] = swap01(batch_data[j])
+        for k, v in batch_data.items():
+            batch_data[k] = torch.stack(v)
+            v = torch.stack(v)
+            if not batch_first:
+                v = swap01(v)
+            batch_data[k] = v
 
         return batch_data

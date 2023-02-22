@@ -13,6 +13,12 @@ from .base import Distribution, ProbParamsValueError, _eps, to_optional_tensor
 
 
 class Bernoulli(Distribution):
+    r""""""
+
+    """
+    Bern(x | μ) = Bern(x | cond_vars)
+    """
+
     # torch.distributions.Bernoulli
 
     ParamsReturnType = Tensor
@@ -71,6 +77,10 @@ class Bernoulli(Distribution):
     @property
     def scale(self) -> Tensor:
         return torch.sqrt(self._mu_pvt_ * (1 - self._mu_pvt_))
+
+    @property
+    def param_mu(self) -> Tensor:
+        return self._mu_pvt_
 
     @staticmethod
     def func_log(x: Tensor, mu: Tensor) -> Tensor:

@@ -24,22 +24,6 @@ from tool import paramsmanager
 from tool.util import Preferences
 
 
-def preprocess_x(x, coef=1):
-    return x * coef
-
-
-def preprocess_u(u, coef=0.2):
-    return u * coef
-
-
-def postprocess_x(x, coef=1):
-    return x / coef
-
-
-def postprocess_u(u, coef=0.2):
-    return u / coef
-
-
 def train(
     config: str,
     config_ctrl: str,
@@ -92,7 +76,7 @@ def train(
 
     params_ctrl.path.used_nvae_weight = weight_path
     params_ctrl.pid = os.getpid()
-    params_ctrl.save(Path(managed_dir, "params_saved.json5"))
+    params_ctrl.save_train_ctrl(Path(managed_dir, "params_saved.json5"))
 
     record_Loss = []
 
@@ -110,6 +94,18 @@ def train(
 
     time_prev = time.perf_counter()
 
+    s_u = params_ctrl.preprocess.scale_u
+    if s_u is not None:
+        scaler_u = tp.Scaler(*s_u)
+    else:
+        scaler_u = tp.Scaler()
+
+    s_x = params_ctrl.preprocess.scale_x
+    if s_x is not None:
+        scaler_x = tp.Scaler(*s_x)
+    else:
+        scaler_x = tp.Scaler()
+
     try:
         tp.config.check_value = params_ctrl.train.check_value  # if False, A little bit faster
         remaining = RemainingTime(max=params_ctrl.train.epochs * len(trainloader), size=50)
@@ -122,15 +118,16 @@ def train(
                 u_t = action
                 x_t = model.cell.q_encoder.given(observation).sample()
 
+                u_t = scaler_u.pre(u_t)
+                x_t = scaler_x.pre(x_t)
+
                 # print("=================")
-                # print(u_t.shape)
-                # print(x_t.shape)
-                # print(u_t.min().item(), u_t.max().item())
-                # print(x_t.min().item(), x_t.max().item())
+                # print("u:", u_t.shape)
+                # print("x:", x_t.shape)
+                # print("u:", u_t.min().item(), u_t.max().item())
+                # print("x:", x_t.min().item(), x_t.max().item())
 
-                u_t = preprocess_u(u_t)
-                x_t = preprocess_x(x_t)
-
+                # -log P(u_t | x_t)  Eq. (12)
                 L = -tp.log(p_pctrl, u_t).given(x_t).mean()
 
                 optimizer.zero_grad()

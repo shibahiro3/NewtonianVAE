@@ -1,3 +1,5 @@
+from typing import Any, Dict, List
+
 import numpy as np
 import visdom
 from torch.utils.tensorboard import SummaryWriter
@@ -11,10 +13,13 @@ class TensorBoardVisualHandler(VisualHandlerBase):
 
         self.step = 0
 
-    def plot(self, L, E_ll, E_kl, epoch):
-        self.writer.add_scalar("Loss", L, self.step)
-        self.writer.add_scalar("NLL", E_ll, self.step)
-        self.writer.add_scalar("KL", E_kl, self.step)
+    def plot(self, d: Dict[str, Any]):
+        for k, v in d.items():
+            if "Loss" not in k:
+                continue
+
+            self.writer.add_scalar(k, v, self.step)
+
         self.step += 1
 
 
@@ -24,26 +29,17 @@ class VisdomVisualHandler(VisualHandlerBase):
 
         self.step = 0
 
-    def plot(self, L, E_ll, E_kl, epoch):
-        self.vis.line(
-            np.array([L]),
-            X=np.array([self.step]),
-            update="append",
-            win="Loss",
-            opts={"title": "Loss"},
-        )
-        self.vis.line(
-            np.array([E_ll]),
-            X=np.array([self.step]),
-            update="append",
-            win="NLL",
-            opts={"title": "NLL"},
-        )
-        self.vis.line(
-            np.array([E_kl]),
-            X=np.array([self.step]),
-            update="append",
-            win="KL",
-            opts={"title": "KL"},
-        )
+    def plot(self, d: Dict[str, Any]):
+        for k, v in d.items():
+            if "Loss" not in k:
+                continue
+
+            self.vis.line(
+                np.array([v]),
+                X=np.array([self.step]),
+                update="append",
+                win=k,
+                opts={"title": k},
+            )
+
         self.step += 1

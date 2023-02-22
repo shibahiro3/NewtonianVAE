@@ -6,7 +6,7 @@ x_tp1  == x_{t+1}
 x_tp2  == x_{t+2}
 """
 
-from typing import Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -19,6 +19,7 @@ from mypython.ai.util import find_function, swap01, to_np
 from mypython.terminal import Color
 
 from .cell import (
+    MNVAECell,
     NewtonianVAECell,
     NewtonianVAEDerivationCell,
     NewtonianVAEV2Cell,
@@ -35,7 +36,7 @@ class NewtonianVAEBase(nn.Module):
         return super().__call__(*args, **kwargs)
 
     def init_LOG(self):
-        # (T, BS, D)
+        # (T, B, D)
 
         self.LOG_x = []
         self.LOG_x_mean = []
@@ -78,7 +79,7 @@ class NewtonianVAEDerivationBase(NewtonianVAEBase):
         super().__init__()
 
     def init_LOG(self):
-        # (T, BS, D)
+        # (T, B, D)
 
         self.LOG_x = []
         self.LOG_x_mean = []
@@ -191,10 +192,10 @@ class NewtonianVAE(NewtonianVAEBase):
         for t in range(T):
             u_tn1, I_t = action[t], observation[t]
 
-            _, BS, D = action.shape  # _ : T
+            _, B, D = action.shape  # _ : T
 
             if t == 0:
-                v_t = torch.zeros(size=(BS, D), device=action.device, dtype=action.dtype)
+                v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
                 x_t = self.cell.q_encoder.given(I_t).rsample()
                 I_dec = self.cell.p_decoder.given(x_t).decode()
 
@@ -301,10 +302,10 @@ class NewtonianVAEDerivation(NewtonianVAEDerivationBase):
         for t in range(T):
             u_tn1, I_t = action[t], observation[t]
 
-            _, BS, D = action.shape  # _ : T
+            _, B, D = action.shape  # _ : T
 
             if t == 0:
-                v_t = torch.zeros(size=(BS, D), device=action.device, dtype=action.dtype)
+                v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
                 x_t = self.cell.q_encoder.given(I_t).rsample()
                 I_dec = torch.full_like(I_t, torch.nan)
 
@@ -312,8 +313,8 @@ class NewtonianVAEDerivation(NewtonianVAEDerivationBase):
                 v_tn1 = v_t
 
                 if self.is_save:
-                    self.LOG_xhat_mean.append(np.full((BS, self.cell.dim_xhat), np.nan))
-                    self.LOG_xhat_std.append(np.full((BS, self.cell.dim_xhat), np.nan))
+                    self.LOG_xhat_mean.append(np.full((B, self.cell.dim_xhat), np.nan))
+                    self.LOG_xhat_std.append(np.full((B, self.cell.dim_xhat), np.nan))
 
             else:
                 output = self.cell(I_t=I_t, x_tn1=x_tn1, u_tn1=u_tn1, v_tn1=v_tn1, dt=delta[t])
@@ -428,11 +429,11 @@ class NewtonianVAEV2(NewtonianVAEBase):
         for t in range(T):
             u_tn1, I_t = action[t], observation[t]
 
-            _, BS, D = action.shape  # _ : T
+            _, B, D = action.shape  # _ : T
 
             if t == 0:
                 x_q_t = self.cell.q_encoder.given(I_t).rsample()
-                v_t = torch.zeros(size=(BS, D), device=action.device, dtype=action.dtype)
+                v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
                 I_dec = self.cell.p_decoder.given(x_q_t).decode()
 
                 x_q_tn1 = x_q_t
@@ -549,18 +550,18 @@ class NewtonianVAEV2Derivation(NewtonianVAEDerivationBase):
         for t in range(T):
             u_tn1, I_t = action[t], observation[t]
 
-            _, BS, D = action.shape  # _ : T
+            _, B, D = action.shape  # _ : T
 
             if t == 0:
                 x_q_t = self.cell.q_encoder.given(I_t).rsample()
-                v_t = torch.zeros(size=(BS, D), device=action.device, dtype=action.dtype)
+                v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
                 I_dec = torch.full_like(I_t, torch.nan)
 
                 x_q_tn1 = x_q_t
 
                 if self.is_save:
-                    self.LOG_xhat_mean.append(np.full((BS, self.cell.dim_xhat), np.nan))
-                    self.LOG_xhat_std.append(np.full((BS, self.cell.dim_xhat), np.nan))
+                    self.LOG_xhat_mean.append(np.full((B, self.cell.dim_xhat), np.nan))
+                    self.LOG_xhat_std.append(np.full((B, self.cell.dim_xhat), np.nan))
 
             elif t == 1:
                 x_q_t = self.cell.q_encoder.given(I_t).rsample()
@@ -619,3 +620,90 @@ NewtonianVAEFamily = Union[
     NewtonianVAEV2,
     NewtonianVAEV2Derivation,
 ]
+
+
+class MNVAE(NewtonianVAEBase):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__()
+
+        self.cell = MNVAECell(*args, **kwargs)
+
+    def __call__(self, *args, **kwargs) -> Tuple[Tensor, Dict[str, float]]:
+        return super().__call__(*args, **kwargs)
+
+    def forward(self, batchdata: Dict[str, Tensor]):
+        """"""
+
+        action = batchdata["action"]
+        delta = batchdata["delta"]
+        camera0 = batchdata["camera0"]
+        camera1 = batchdata["camera1"]
+
+        T = len(action)
+
+        self.init_LOG()
+
+        E_sum: Tensor = 0  # = Nagative ELBO
+
+        image_losses = 0
+        KL_loss: Tensor = 0
+
+        for t in range(T):
+            u_tn1 = action[t]
+            I_t = [camera0[t], camera1[t]]
+
+            _, B, D = action.shape  # _ : T
+
+            if t == 0:
+                x_q_t = self.cell.q_encoder.given(I_t).rsample()
+                v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
+                # I_dec = self.cell.p_decoder.given(x_q_t).decode()
+
+                x_q_tn1 = x_q_t
+
+            elif t == 1:
+                x_q_t = self.cell.q_encoder.given(I_t).rsample()
+                v_t = (x_q_t - x_q_tn1) / delta[t]
+                # I_dec = self.cell.p_decoder.given(x_q_t).decode()
+
+            else:
+                output = self.cell(
+                    I_t=I_t,
+                    x_q_tn1=x_q_tn1,
+                    x_q_tn2=x_q_tn2,
+                    u_tn1=u_tn1,
+                    dt=delta[t],
+                )
+
+                E_sum += output.E
+                image_losses += np.array(output.image_losses)
+                KL_loss += output.KL_loss
+
+                x_q_t = output.x_q_t
+                v_t = output.v_t
+                # I_dec = self.cell.p_decoder.decode()
+
+            x_q_tn2 = x_q_tn1
+            x_q_tn1 = x_q_t
+
+            # ##### DEBUG:
+            # print(f"time: {t}")
+            # tp_debug.check_dist_model(self.cell)
+
+            if self.is_save:
+                self.LOG_x.append(to_np(x_q_t))
+                self.LOG_v.append(to_np(v_t))
+                # self.LOG_I_dec.append(to_np(I_dec))
+                self.LOG_x_mean.append(to_np(self.cell.q_encoder.loc))
+
+        E = E_sum / T
+        L = -E
+
+        image_losses /= T
+        losses = {}
+        for i in range(len(image_losses)):
+            losses[f"camera{i} Loss"] = image_losses[i]
+
+        losses["KL Loss"] = KL_loss / T
+
+        return L, losses

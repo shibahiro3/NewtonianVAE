@@ -3,25 +3,33 @@
 
   NewtonianVAEV2: {
     regularization: false,
+
     velocity: {
       dim_x: 2,
       fix_abc: [0, 0, 1],
       // fix_abc: null,
     },
+
     transition: {
       std: 0.001,
       // std: null,
     },
+
     encoder: {
       dim_x: 2,
       dim_middle: 1024,
       std_function: "softplus",
+      model: "VisualEncoder64",
+      model_kwargs: {
+        activation: "ReLU",
+      },
     },
+
     decoder: {
       dim_x: 2,
-      decoder_type: "SpatialBroadcastDecoder64",
       std: 1,
       // std: null,
+      model: "SpatialBroadcastDecoder64",
     },
   },
 
@@ -43,7 +51,7 @@
     device: "cuda",
     dtype: "float32",
     data_start: 1000,
-    data_stop: 1050,
+    data_stop: 1100,
   },
 
   ControlSuiteEnvWrap: {
@@ -53,6 +61,11 @@
     action_repeat: 1,
     bit_depth: 8,
     action_type: "random_walk",
+    imgsize: [64, 64],
+    task_settings: {
+      target_size: 0.015,
+      target_position: "default",
+    },
   },
 
   path: {

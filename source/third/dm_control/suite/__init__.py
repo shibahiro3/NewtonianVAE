@@ -44,6 +44,7 @@ from dm_control.suite import walker
 # Changed/added by Sugar
 from third.dm_control.suite import reacher2d
 from third.dm_control.suite import point_mass
+from third.dm_control.suite import point_mass_3d
 
 # Find all domains imported.
 _DOMAINS = {name: module for name, module in locals().items()

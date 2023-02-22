@@ -48,8 +48,8 @@
     <!-- Target -->
     <geom name="target" pos="0 0 .01" material="target" type="sphere" size=".05"/>
     
-    <geom name="target2" pos="0.11276311 -0.04104242 0" material="target" type="sphere" size=".02" rgba="0.2 0.7 0 1"/>
-    <geom name="target3" pos="-0.1336009 0.15921935 0" material="target" type="sphere" size=".02" rgba="0.7 0.7 0 1"/>
+    <geom name="target2" pos="0.11276311 -0.04104242 0" material="target" type="sphere" size=".05" rgba="0.2 0.7 0 1"/>
+    <geom name="target3" pos="-0.1336009 0.15921935 0" material="target" type="sphere" size=".05" rgba="0.7 0.7 0 1"/>
   </worldbody>
 
   <actuator>

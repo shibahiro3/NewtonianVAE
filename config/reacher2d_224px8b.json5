@@ -20,20 +20,26 @@
       dim_x: 2,
       dim_middle: 1024,
       std_function: "softplus",
-      model: "VisualEncoder64",
+      model: "ResNet",
       model_kwargs: {
-        activation: "ReLU",
+        version: "resnet18",
+        weights: null,
+        // weights: "IMAGENET1K_V1"
       },
     },
 
     decoder: {
       dim_x: 2,
       std: 1,
-      // std: null,
-      model: "VisualDecoder64",
+      // model: "VisualDecoder224",
+      // model_kwargs: {
+      //   dim_middle: 1024,
+      //   activation: "ReLU",
+      // },
+      model: "ResNetDecoder",
       model_kwargs: {
-        dim_middle: 1024,
-        activation: "ReLU",
+        img_size: 224,
+        Ch: [3, 32, 32, 32, 32, 32],
       },
     },
   },
@@ -41,7 +47,7 @@
   train: {
     data_start: 0,
     data_stop: 1000,
-    batch_size: 20,
+    batch_size: 1, // 10 -> torch.cuda.OutOfMemoryError
     epochs: 300,
     learning_rate: 3e-4,
     max_time_length: 100,
@@ -65,14 +71,14 @@
     max_episode_length: 100,
     action_repeat: 1,
     bit_depth: 8,
-    imgsize: [64, 64], // (H, W)
+    imgsize: [224, 224], // (H, W)
     // action_type: "default",
     // position_wrap: "endeffector",
   },
 
   path: {
-    data_dir: "environments/reacher2d/data",
-    saves_dir: "environments/reacher2d/saves",
-    results_dir: "environments/reacher2d/results",
+    data_dir: "environments/reacher2d/data_224px8b",
+    saves_dir: "environments/reacher2d/saves_224px8b",
+    results_dir: "environments/reacher2d/results_224px8b",
   },
 }

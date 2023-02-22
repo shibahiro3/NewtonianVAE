@@ -9,7 +9,8 @@ r"""
 """
 
 from numbers import Real
-from typing import Callable, Optional, Tuple, Union
+from pprint import pprint
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -17,8 +18,10 @@ import torch.nn.functional as F
 from torch import NumberType, Tensor, nn
 
 import mypython.ai.torchprob as tp
-from mypython.ai.util import find_function
+from mypython.ai.util import find_function, swap01
 from mypython.terminal import Color
+
+from . import encdec
 
 
 class ABCf(nn.Module):
@@ -65,17 +68,20 @@ class ABCf(nn.Module):
     def __init__(
         self,
         dim_x: int,
+        activation: str = "ReLU",
     ) -> None:
         super().__init__()
 
+        Activation = getattr(nn, activation)
+
         self.func = nn.Sequential(
             nn.Linear(dim_x * 3, dim_x),
-            nn.ReLU(),
+            Activation(),
             # === 2 hidden layer
             nn.Linear(dim_x, dim_x),
-            nn.ReLU(),
+            Activation(),
             nn.Linear(dim_x, dim_x),
-            nn.ReLU(),
+            Activation(),
             # ===
             nn.Linear(dim_x, dim_x * 3),
         )
@@ -99,11 +105,12 @@ class Velocity(nn.Module):
         self,
         dim_x: int,
         fix_abc: Union[None, Tuple[NumberType, NumberType, NumberType]] = None,
+        activation: str = "ReLU",
     ) -> None:
         super().__init__()
 
         if fix_abc is None:
-            self.func_abc = ABCf(dim_x)
+            self.func_abc = ABCf(dim_x, activation)
         else:
             assert len(fix_abc) == 3
             self.func_abc = None
@@ -181,21 +188,20 @@ class Encoder(tp.Normal):
         self,
         dim_x: int,
         dim_middle: int,
-        std_function: Union[str, Callable[[Tensor], Tensor]],
+        model: str,
+        std_function: str = "softplus",
+        model_kwargs={},
     ) -> None:
         super().__init__()
+
+        self.fc = getattr(encdec, model)(dim_middle, **model_kwargs)
+        self.mean = nn.Linear(dim_middle, dim_x)
+        self.std = nn.Linear(dim_middle, dim_x)
 
         self.dim_x = dim_x
 
         # nn.Exp() does't exist
-        if type(std_function) == str:
-            self.std_function = find_function(std_function)
-        else:
-            self.std_function = std_function
-
-        self.fc = VisualEncoder64(dim_output=dim_middle)
-        self.mean = nn.Linear(dim_middle, dim_x)
-        self.std = nn.Linear(dim_middle, dim_x)
+        self.std_function = find_function(std_function)
 
     def forward(self, I_t: Tensor):
         """"""
@@ -217,17 +223,18 @@ class Decoder(tp.Normal):
         We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.
     """
 
-    def __init__(self, dim_x: int, decoder_type: str, std: Optional[Real]) -> None:
+    def __init__(
+        self,
+        dim_x: int,
+        std: Optional[Real],
+        model: str,
+        model_kwargs={},
+    ) -> None:
         super().__init__()
 
-        self.dim_x = dim_x
+        self.dec = getattr(encdec, model)(dim_x, **model_kwargs)
 
-        if decoder_type == "VisualDecoder64":
-            self.dec = VisualDecoder64(dim_x, 1024)
-        elif decoder_type == "SpatialBroadcastDecoder64":
-            self.dec = SpatialBroadcastDecoder64(dim_x)
-        else:
-            assert False
+        self.dim_x = dim_x
 
         if std is not None:
             self.std: Tensor
@@ -261,19 +268,16 @@ class Pxhat(tp.Normal):
         dim_x: int,
         dim_xhat: int,
         dim_middle: int,
-        std_function: Union[str, Callable[[Tensor], Tensor]],
+        std_function: str = "softplus",
     ) -> None:
         super().__init__()
-
-        # nn.Exp() does't exist
-        if type(std_function) == str:
-            self.std_function = find_function(std_function)
-        else:
-            self.std_function = std_function
 
         self.fc = nn.Linear(2 * dim_x, dim_middle)
         self.mean = nn.Linear(dim_middle, dim_xhat)
         self.std = nn.Linear(dim_middle, dim_xhat)
+
+        # nn.Exp() does't exist
+        self.std_function = find_function(std_function)
 
     def forward(self, x_tn1: Tensor, u_tn1: Tensor):
         middle = torch.cat([x_tn1, u_tn1], dim=-1)
@@ -284,131 +288,88 @@ class Pxhat(tp.Normal):
         return mu, sigma
 
 
-class VisualEncoder64(nn.Module):
-    r"""
-    Inputs: x
-        * **x**: tensor of shape :math:`(*, 3, 64, 64)`
-
-    Outputs: y
-        * **y**: tensor of shape :math:`(*, \mathrm{dim\_output})`
-
-    References for implementation:
-        https://github.com/ctallec/world-models/blob/master/models/vae.py#L32
-    """
-
-    def __init__(self, dim_output: int, activation=torch.relu) -> None:
+class MultiEncoder(tp.Normal):
+    def __init__(
+        self,
+        dim_x: int,
+        modellist: dict,
+        std_function: str = "softplus",
+    ) -> None:
         super().__init__()
 
-        self.activation = activation
-        self.dim_output = dim_output
+        self.dim_x = dim_x
 
-        self.conv1 = nn.Conv2d(3, 32, 4, stride=2)
-        self.conv2 = nn.Conv2d(32, 64, 4, stride=2)
-        self.conv3 = nn.Conv2d(64, 128, 4, stride=2)
-        self.conv4 = nn.Conv2d(128, 256, 4, stride=2)
-        self.fc = nn.Identity() if dim_output == 1024 else nn.Linear(1024, dim_output)
+        sum_dim_output = 0
+        self.encoders = nn.ModuleList()
+        for m in modellist:
+            dim_output = m["dim_output"]
+            sum_dim_output += dim_output
+            self.encoders.append(
+                getattr(encdec, m["model"])(dim_output, **m.get("model_kwargs", {}))
+            )
 
-    def forward(self, x: Tensor):
+        self.mish = nn.Mish()
+        self.mean_std = nn.Linear(sum_dim_output, dim_x * 2)
+
+        # nn.Exp() does't exist
+        self.std_function = find_function(std_function)
+
+    def forward(self, I_t: List[Tensor]):
         """"""
-        x = self.activation(self.conv1(x))
-        x = self.activation(self.conv2(x))
-        x = self.activation(self.conv3(x))
-        x = self.activation(self.conv4(x))
-        x = x.reshape(-1, 1024)
-        # Identity if embedding size is 1024 else linear projection
-        y = self.fc(x)
-        return y
+
+        middles = []
+        for i, enc in enumerate(self.encoders):
+            middles.append(enc(I_t[i]))
+
+        middle = torch.cat(middles, dim=-1)
+        middle = self.mish(middle)
+        mean_std = self.mean_std(middle)
+        mu, sigma = torch.chunk(mean_std, 2, dim=-1)
+        sigma = self.std_function(sigma)
+        # sigma += torch.finfo(sigma.dtype).eps
+        return mu, sigma
 
 
-class VisualDecoder64(nn.Module):
-    r"""
-    Inputs: z
-        * **x**: tensor of shape :math:`(*, \mathrm{dim\_input})`
-
-    Outputs: y
-        * **y**: tensor of shape :math:`(*, 3, 64, 64)`
-
-    References for implementation:
-        https://github.com/ctallec/world-models/blob/master/models/vae.py#L10
+class MultiDecoder(nn.Module):
+    """
+    obsolete of std
     """
 
-    def __init__(self, dim_input: int, dim_middle: int, activation=torch.relu):
+    def __init__(
+        self,
+        dim_x: int,
+        modellist: dict,
+    ) -> None:
         super().__init__()
 
-        self.activation = activation
-        self.dim_middle = dim_middle
+        self.dim_x = dim_x
 
-        self.fc1 = nn.Linear(dim_input, dim_middle)
-        self.conv1 = nn.ConvTranspose2d(dim_middle, 128, 5, stride=2)
-        self.conv2 = nn.ConvTranspose2d(128, 64, 5, stride=2)
-        self.conv3 = nn.ConvTranspose2d(64, 32, 6, stride=2)
-        self.conv4 = nn.ConvTranspose2d(32, 3, 6, stride=2)
+        self.decoders = nn.ModuleList()
+        self.dim_inputs = []
+        for m in modellist:
+            dim_input = m["dim_input"]
+            self.dim_inputs.append(dim_input)
+            self.decoders.append(
+                getattr(encdec, m["model"])(dim_input, **m.get("model_kwargs", {}))
+            )
 
-    def forward(self, z: Tensor):
+        self.mish = nn.Mish()
+        self.fc = nn.Linear(dim_x, sum(self.dim_inputs))
+
+    def __call__(self, *args, **kwargs) -> List[Tensor]:
+        return super().__call__(*args, **kwargs)
+
+    def forward(self, x_t: Tensor):
         """"""
-        z = self.fc1(z)
-        z = z.reshape(-1, self.dim_middle, 1, 1)
-        z = self.activation(self.conv1(z))
-        z = self.activation(self.conv2(z))
-        z = self.activation(self.conv3(z))
-        y = self.conv4(z)
-        return y
 
+        middle = self.fc(x_t)
+        middle = self.mish(middle)
 
-class SpatialBroadcastDecoder64(nn.Module):
-    """
-    Inputs: z
-        * **x**: tensor of shape :math:`(N, \mathrm{dim\_input})`
+        start = 0
+        outputs = []
+        for i, dec in enumerate(self.decoders):
+            span = self.dim_inputs[i]
+            outputs.append(dec(middle[..., start : start + span]))
+            start += span
 
-    Outputs: y
-        * **y**: tensor of shape :math:`(N, 3, 64, 64)`
-
-    References:
-        Spatial Broadcast Decoder https://arxiv.org/abs/1901.07017
-
-    References for implementation:
-        https://github.com/dfdazac/vaesbd/blob/master/model.py#L6
-    """
-
-    def __init__(self, dim_input: int) -> None:
-        super().__init__()
-
-        a = np.linspace(-1, 1, 64)
-        b = np.linspace(-1, 1, 64)
-        x_grid, y_grid = np.meshgrid(a, b)
-        x_grid = torch.from_numpy(x_grid)
-        y_grid = torch.from_numpy(y_grid)
-        # Add as constant, with extra dims for N and C
-        self.x_grid: Tensor
-        self.y_grid: Tensor
-        self.register_buffer("x_grid", x_grid.reshape((1, 1) + x_grid.shape))
-        self.register_buffer("y_grid", y_grid.reshape((1, 1) + y_grid.shape))
-
-        self.dec_convs = nn.Sequential(
-            nn.Conv2d(dim_input + 2, 64, 3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(64, 64, 3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(64, 3, 3, padding=1),
-        )
-
-    def forward(self, z: Tensor):
-        N = z.size(0)
-        # View z as 4D tensor to be tiled across new H and W dimensions
-        z = z.reshape(z.shape + (1, 1))  # (N, D, 1, 1)
-
-        # Tile across to match image size
-        z = z.expand(-1, -1, 64, 64)  # (N, D, 64, 64)
-
-        # Expand grids to batches and concatenate on the channel dimension
-        z = torch.cat(
-            [
-                self.x_grid.expand(N, -1, -1, -1),
-                self.y_grid.expand(N, -1, -1, -1),
-                z,
-            ],
-            dim=1,
-        )  # (N, D+2, 64, 64)
-
-        y = self.dec_convs(z)
-        return y
+        return outputs

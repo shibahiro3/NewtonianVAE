@@ -17,28 +17,29 @@
 
 import collections
 
-from dm_control import mujoco
-from dm_control.rl import control
-from dm_control.suite import base
-from dm_control.suite import common
-from dm_control.suite.utils import randomizers
-from dm_control.utils import containers
-from dm_control.utils import rewards
 import numpy as np
 
+from dm_control import mujoco
+from dm_control.rl import control
+from dm_control.suite import base, common
+from dm_control.suite.utils import randomizers
+from dm_control.utils import containers
 from dm_control.utils import io as resources
+from dm_control.utils import rewards
 
 _DEFAULT_TIME_LIMIT = 20
 SUITE = containers.TaggedTasks()
 
+from pprint import pprint
+
 # Changed/added by Sugar
 from third.dm_control import read_model
-from pprint import pprint
+
 
 def get_model_and_assets():
   """Returns a tuple containing the model XML string and a dict of assets."""
   # return common.read_model('point_mass.xml'), common.ASSETS
-  return read_model("point_mass.xml"), common.ASSETS  # Changed/added by Sugar
+  return read_model("point_mass_3d.xml"), common.ASSETS  # Changed/added by Sugar
 
 
 @SUITE.add('benchmarking', 'easy')
@@ -126,25 +127,26 @@ class PointMass(base.Task):
     else:
       physics.named.data.qpos["root_x"] = self.init_self_pos[0]
       physics.named.data.qpos["root_y"] = self.init_self_pos[1]
+      physics.named.data.qpos["root_z"] = self.init_self_pos[2]
 
     if target_position is None or target_position == "default":
       pass
     elif target_position == "random":
-      physics.named.model.geom_pos["target"][:2] = self.target_pos
+      physics.named.model.geom_pos["target"][:3] = self.target_pos
     else:
       assert False
-    
+
     if target_size is not None:
       assert type(target_size) == float
       physics.named.model.geom_size["target"][0] = target_size
-
+    
     # print(physics.named.data.qpos)
     # print(physics.named.data.geom_xpos)
     # print(physics.named.model.geom_size)
     # print(physics.named.model.geom_pos)
     # pprint(dir(physics.named.model))
-    # physics.named.model.cam_quat["cam0"][:2] = np.array([0, 0])
     # print(physics.named.model.cam_quat)
+    # physics.named.model.cam_quat["cam0"][:2] = np.array([0, 0])
 
     ###
 
@@ -183,8 +185,11 @@ class PointMass(base.Task):
   # Changed/added by Sugar
   def _set_position(self):
     wall = 0.3
-    self.init_self_pos = self.random.uniform(-wall/2, wall/2, size=2)
+    self.init_self_pos = self.random.uniform(-wall/2, wall/2, size=3)
+    self.init_self_pos[2] = self.random.uniform(wall*0.3, wall*0.75)
+    # self.init_self_pos[2] = self.random.uniform(wall*0.8, wall*1)
     r = self.random.uniform(-0.1, 0.1)
     theta = self.random.uniform(0, 2*np.pi)
-    self.target_pos = self.init_self_pos + r * np.array([np.cos(theta), np.sin(theta)])
+    phi = self.random.uniform(0, 2*np.pi)
+    self.target_pos = self.init_self_pos + r * np.array([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])
     # self.target_pos = self.random.uniform(-wall, wall, size=2)
