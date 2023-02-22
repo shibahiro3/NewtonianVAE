@@ -113,9 +113,6 @@ def train(
 
             for batchdata in trainloader:
                 batchdata["delta"].unsqueeze_(-1)
-                # print(action.shape)
-                # print(observation.shape)
-                # print(delta.shape)
 
                 L, losses = model(batchdata)
                 L: Tensor

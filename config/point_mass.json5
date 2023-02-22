@@ -27,8 +27,6 @@
 
     decoder: {
       dim_x: 2,
-      std: 1,
-      // std: null,
       model: "SpatialBroadcastDecoder64",
     },
   },

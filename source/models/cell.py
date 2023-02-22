@@ -156,6 +156,7 @@ class NewtonianVAEV2CellBase(NewtonianVAECellBase):
         E_kl: Tensor
         x_q_t: Tensor  # Use for training
         v_t: Tensor
+        I_t_rec: Tensor
 
     def __call__(self, *args, **kwargs) -> Pack:
         return super().__call__(*args, **kwargs)
@@ -172,7 +173,14 @@ class NewtonianVAEV2Cell(NewtonianVAEV2CellBase):
         v_tn1 = (x_q_tn1 - x_q_tn2) / dt
         v_t = self.f_velocity(x_q_tn1, u_tn1, v_tn1, dt)
         x_p_t = self.p_transition.given(x_q_tn1, v_t, dt).rsample()
-        E_ll = self.img_reduction(tp.log(self.p_decoder, I_t).given(x_p_t))
+
+        # E_ll = self.img_reduction(tp.log(self.p_decoder, I_t).given(x_p_t))
+        ### log p(It | x_p_t)
+        I_t_rec = self.p_decoder(x_p_t)
+        # log Normal Dist.: -0.5 * (((x - mu) / sigma) ** 2 ...
+        E_ll = -self.img_reduction(F.mse_loss(I_t_rec, I_t, reduction="none"))
+        ###
+
         E_kl = self.vec_reduction(tp.KLdiv(self.q_encoder.given(I_t), self.p_transition))
         E = E_ll - self.kl_beta * E_kl
 
@@ -187,6 +195,7 @@ class NewtonianVAEV2Cell(NewtonianVAEV2CellBase):
             E_ll=E_ll.detach(),
             E_kl=E_kl.detach(),
             v_t=v_t.detach(),
+            I_t_rec=I_t_rec.detach(),
         )
 
 
@@ -328,6 +337,7 @@ class MNVAECell(nn.Module):
         v_t = self.f_velocity(x_q_tn1, u_tn1, v_tn1, dt)
         x_p_t = self.p_transition.given(x_q_tn1, v_t, dt).rsample()
 
+        ### log p(It | x_p_t)
         I_t_recs = self.p_decoder(x_p_t)
         image_losses = []
         recs = 0
@@ -336,6 +346,7 @@ class MNVAECell(nn.Module):
             loss = self.img_reduction(F.mse_loss(I_t_recs[i], I_t[i], reduction="none"))
             recs -= loss
             image_losses.append(loss.item())
+        ###
 
         E_kl = self.vec_reduction(tp.KLdiv(self.q_encoder.given(I_t), self.p_transition))
         E = recs - self.kl_beta * E_kl

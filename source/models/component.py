@@ -194,11 +194,10 @@ class Encoder(tp.Normal):
     ) -> None:
         super().__init__()
 
-        self.fc = getattr(encdec, model)(dim_middle, **model_kwargs)
-        self.mean = nn.Linear(dim_middle, dim_x)
-        self.std = nn.Linear(dim_middle, dim_x)
-
         self.dim_x = dim_x
+
+        self.fc = getattr(encdec, model)(dim_middle, **model_kwargs)
+        self.mean_std = nn.Linear(dim_middle, dim_x * 2)
 
         # nn.Exp() does't exist
         self.std_function = find_function(std_function)
@@ -206,18 +205,21 @@ class Encoder(tp.Normal):
     def forward(self, I_t: Tensor):
         """"""
         middle = self.fc(I_t)
-        mu = self.mean(middle)
-        sigma = self.std_function(self.std(middle))
+        middle = self.mean_std(middle)
+        mu, sigma = torch.chunk(middle, 2, dim=-1)
+        sigma = self.std_function(sigma)
         # sigma += torch.finfo(sigma.dtype).eps
         return mu, sigma
 
 
-class Decoder(tp.Normal):
+class Decoder(nn.Module):
     r"""
     .. math::
         \begin{array}{ll}
             p(\I_t \mid \x_{t}) \hspace{5mm} \text{or} \hspace{5mm} p(\I_t \mid \xhat_{t})
         \end{array}
+
+    obsolete : std
 
     References in paper:
         We use Gaussian p(It | xt) and q(xt | It) parametrized by a neural network throughout.
@@ -226,31 +228,19 @@ class Decoder(tp.Normal):
     def __init__(
         self,
         dim_x: int,
-        std: Optional[Real],
         model: str,
         model_kwargs={},
     ) -> None:
         super().__init__()
 
-        self.dec = getattr(encdec, model)(dim_x, **model_kwargs)
-
         self.dim_x = dim_x
 
-        if std is not None:
-            self.std: Tensor
-            self.register_buffer("std", torch.tensor(std))
-            self.std_function = lambda x: x
-        else:
-            # σ is not σ_t, so σ should not depend on x_t.
-            self.std = nn.Parameter(torch.randn(1))
-            self.std_function = F.softplus
+        self.dec = getattr(encdec, model)(dim_x, **model_kwargs)
 
     def forward(self, x_t: Tensor):
         """"""
-        mu = self.dec(x_t)
-        sigma = self.std_function(self.std)
-        # print(sigma.item())
-        return mu, sigma
+        out = self.dec(x_t)
+        return out
 
 
 class Pxhat(tp.Normal):
@@ -332,7 +322,7 @@ class MultiEncoder(tp.Normal):
 
 class MultiDecoder(nn.Module):
     """
-    obsolete of std
+    obsolete : std
     """
 
     def __init__(

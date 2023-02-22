@@ -415,9 +415,6 @@ class NewtonianVAEV2(NewtonianVAEBase):
 
         self.cell = NewtonianVAEV2Cell(*args, **kwargs)
 
-    def forward(self, action: Tensor, observation: Tensor, delta: Tensor):
-        """"""
-
     def forward(self, batchdata: Dict[str, Tensor]):
         """"""
 
@@ -442,14 +439,14 @@ class NewtonianVAEV2(NewtonianVAEBase):
             if t == 0:
                 x_q_t = self.cell.q_encoder.given(I_t).rsample()
                 v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
-                I_dec = self.cell.p_decoder.given(x_q_t).decode()
+                I_dec = self.cell.p_decoder(x_q_t)
 
                 x_q_tn1 = x_q_t
 
             elif t == 1:
                 x_q_t = self.cell.q_encoder.given(I_t).rsample()
                 v_t = (x_q_t - x_q_tn1) / delta[t]
-                I_dec = self.cell.p_decoder.given(x_q_t).decode()
+                I_dec = self.cell.p_decoder(x_q_t)
 
             else:
                 output = self.cell(
@@ -462,7 +459,7 @@ class NewtonianVAEV2(NewtonianVAEBase):
 
                 x_q_t = output.x_q_t
                 v_t = output.v_t
-                I_dec = self.cell.p_decoder.decode()
+                I_dec = output.I_t_rec
 
             x_q_tn2 = x_q_tn1
             x_q_tn1 = x_q_t
