@@ -324,6 +324,7 @@ class MNVAECell(nn.Module):
         v_t: Tensor
         image_losses: list
         KL_loss: float
+        I_t_recs: list
 
     def __call__(self, *args, **kwargs) -> Pack:
         return super().__call__(*args, **kwargs)
@@ -362,4 +363,5 @@ class MNVAECell(nn.Module):
             v_t=v_t.detach(),
             image_losses=image_losses,
             KL_loss=E_kl.item(),
+            I_t_recs=I_t_recs,
         )

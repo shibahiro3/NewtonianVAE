@@ -120,10 +120,10 @@ def correlation(
 
     print("Calculating...")
     model(batchdata)
-    model.LOG2numpy()
+    model.convert_cache(type_to="numpy")
 
     # (B, T, D)
-    latent_map = swap01(model.LOG_x)
+    latent_map = swap01(model.cache["x"])
     physical = swap01(position)
 
     corr_p0l0 = np.corrcoef(

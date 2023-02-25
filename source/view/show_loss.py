@@ -49,7 +49,7 @@ def main(
     keys = list(losses.keys())
     fig, axes = plt.subplots(1, len(keys))
     mpu.get_figsize(fig)
-    fig.suptitle("Minimize -ELBO = Loss = NLL (= Negative log-likelihood = Recon.) + KL")
+    fig.suptitle("Loss")
 
     color = "dodgerblue"
     alpha = 0.5
@@ -63,11 +63,12 @@ def main(
         data = losses[k][start_idx:]
         smooth = pd.DataFrame(data).ewm(span=span).mean()
         axes[i].set_title(k)
-        # axes[i].set_xlabel("Iterations")
         axes[i].plot(range(start_idx, steps), data, color=color, alpha=alpha)
         axes[i].plot(range(start_idx, steps), smooth, color=color, lw=2)
         axes[i].set_xticks([start_idx, steps])
         # sns.lineplot(...)
+
+    fig.text(0.5, 0.03, "Iterations", ha="center", va="center", fontsize=14)
 
     if params_path.results_dir is not None:
         save_path = Path(params_path.results_dir, f"{manage_dir.stem}_loss")

@@ -41,7 +41,7 @@
     device: "cuda",
     dtype: "float32",
     kl_annealing: true,
-    save_per_epoch: 20,
+    save_per_epoch: 1,
     check_value: false,
   },
 

@@ -117,6 +117,9 @@ def train(
                 L, losses = model(batchdata)
                 L: Tensor
                 losses: Dict[str, float]
+                for k in losses.keys():
+                    if type(losses[k]) == Tensor:
+                        losses[k] = losses[k].cpu().item()
 
                 optimizer.zero_grad()
                 L.backward()

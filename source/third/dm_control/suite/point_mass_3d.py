@@ -147,7 +147,7 @@ class PointMass(base.Task):
     # pprint(dir(physics.named.model))
     # print(physics.named.model.cam_quat)
     # physics.named.model.cam_quat["cam0"][:2] = np.array([0, 0])
-
+    # physics.named.model.cam_quat["fixed"] = np.array([0.707, 0.707, 0, 0])
     ###
 
     if self._randomize_gains:
@@ -162,6 +162,12 @@ class PointMass(base.Task):
       physics.model.wrap_prm[[0, 1]] = dir1
       physics.model.wrap_prm[[2, 3]] = dir2
     super().initialize_episode(physics)
+
+  def before_step(self, action, physics):
+    # print(physics.named.model.cam_quat["camera_2"])
+    # physics.named.model.cam_quat["fixed"] = np.array([0.707, 0.707, 0, 0])
+
+    super().before_step(action, physics)
 
   def get_observation(self, physics):
     """Returns an observation of the state."""

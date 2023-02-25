@@ -12,7 +12,7 @@ from argparse import RawTextHelpFormatter
 from pprint import pprint
 
 import argset
-from source.newtonianvae import reconstruct
+from source.newtonianvae import reconstruct, reconstruct2
 
 # fmt: off
 parser = argparse.ArgumentParser(
@@ -33,4 +33,4 @@ args = parser.parse_args()
 # fmt: on
 
 
-reconstruct.reconstruction(**vars(args))
+reconstruct2.reconstruction(**vars(args))

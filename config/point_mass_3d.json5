@@ -15,8 +15,8 @@
       // std: null,
     },
 
-    // 1つの画像でも3次元情報が含まれているはず
-    // 単眼カメラによる深度推定があるように。
+    // dim_input, dim_output が3は無理っぽい
+    // 最初KLデカイ状態(e+6)が続く
 
     encoder: {
       dim_x: 3,
@@ -24,14 +24,14 @@
       modellist: [
         {
           model: "VisualEncoder64",
-          dim_output: 3,
+          dim_output: 32,
           model_kwargs: {
             activation: "ReLU",
           },
         },
         {
           model: "VisualEncoder64",
-          dim_output: 3,
+          dim_output: 32,
           model_kwargs: {
             activation: "ReLU",
           },
@@ -44,11 +44,11 @@
       modellist: [
         {
           model: "SpatialBroadcastDecoder64",
-          dim_input: 3,
+          dim_input: 32,
         },
         {
           model: "SpatialBroadcastDecoder64",
-          dim_input: 3,
+          dim_input: 32,
         },
       ],
     },
@@ -57,7 +57,8 @@
   train: {
     data_start: 0,
     data_stop: 1000,
-    batch_size: 20,
+    // batch_size: 20,
+    batch_size: 10,
     epochs: 300,
     learning_rate: 3e-4,
     max_time_length: 100,

@@ -12,7 +12,7 @@ from argparse import RawTextHelpFormatter
 from pprint import pprint
 
 import argset
-from source.newtonianvae import correlation
+from source.newtonianvae import correlation, correlation2
 
 # fmt: off
 parser = argparse.ArgumentParser(
@@ -32,4 +32,4 @@ args = parser.parse_args()
 # fmt: on
 
 
-correlation.correlation(**vars(args))
+correlation2.correlation(**vars(args))

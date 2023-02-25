@@ -124,12 +124,50 @@ class Seq:
 
 
 class Seq2:
-    def __init__(self, size: int, ratio_index: Tuple[int, int], start=0, lazy=False) -> None:
-        """| a, b | a, b | ..."""
+    def __init__(self, size: int, a_b: Tuple[int, int], start=0, lazy=False) -> None:
+        """| a, b | a, b | ...
 
-        _gcd = math.gcd(*ratio_index)
-        _a = ratio_index[0] // _gcd
-        _b = ratio_index[1] // _gcd
+        For row and col index
+
+        Example:
+            r = Seq2(3, (7, 2))
+            print(r.a, r.b)  # 0 7
+            print(r.a, r.b)  # 9 16
+            print(r.a, r.b)  # 18 25
+            print(r.a, r.b)  # 27 34
+            print(r.length)  # 25
+
+            r = Seq2(3, (6, 2))
+            print(r.a, r.b)  # 0 3
+            print(r.a, r.b)  # 4 7
+            print(r.a, r.b)  # 8 11
+            print(r.a, r.b)  # 12 15
+            print(r.length)  # 11
+
+            r = Seq2(3, (4, 0))
+            print(r.a, r.b)  # 0 4
+            print(r.a, r.b)  # 4 8
+            print(r.a, r.b)  # 8 12
+            print(r.length)  # 12
+
+            r = Seq2(3, (7, 3), lazy=True)
+            print(r.a, r.b)  # 0 7
+            print(r.a, r.b)  # 0 7
+            r.update()
+            print(r.a, r.b)  # 10 17
+            print(r.a, r.b)  # 10 17
+            r.update()
+            print(r.a, r.b)  # 20 27
+            print(r.a, r.b)  # 20 27
+        """
+
+        if a_b[0] == 0 or a_b[1] == 0:
+            _a = a_b[0]
+            _b = a_b[1]
+        else:
+            _gcd = math.gcd(*a_b)
+            _a = a_b[0] // _gcd
+            _b = a_b[1] // _gcd
 
         self._start = start
         self._step_a = _a
@@ -138,10 +176,7 @@ class Seq2:
         self._length = (_a + _b) * (size - 1) + _a
         self._lazy = lazy
 
-        if not self._lazy:
-            self._i = start - _b
-        else:
-            self._i = start
+        self.reset()
 
     @property
     def a(self):
@@ -157,7 +192,7 @@ class Seq2:
             self._i += self._step_a
             return self._i
         else:
-            return self._i + self._step_a
+            return self._i + self._step_a + self._step_b
 
     @property
     def length(self):
@@ -166,6 +201,10 @@ class Seq2:
     @property
     def size(self):
         return self._size
+
+    @property
+    def start(self):
+        return self._start
 
     def update(self):
         self._i += self._step_a + self._step_b
@@ -186,6 +225,9 @@ class Seq2:
             e._i = e._start - e._step_b
 
         return length
+
+    def reset(self):
+        self._i = self._start - self._step_b
 
 
 class RemainingTime:

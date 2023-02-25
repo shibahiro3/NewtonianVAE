@@ -26,101 +26,74 @@ from .cell import (
     NewtonianVAEV2DerivationCell,
 )
 
+CacheType = Dict[str, Union[list, Tensor, np.ndarray]]
 
-class NewtonianVAEBase(nn.Module):
+
+class BaseWithCache(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.is_save = True
 
-    def __call__(self, *args, **kwargs) -> Tuple[Tensor, Tensor, Tensor]:
+        self._cache: CacheType = {}
+
+    def __call__(self, *args, **kwargs) -> Tuple[Tensor, Dict[str, float]]:
         return super().__call__(*args, **kwargs)
 
-    def init_LOG(self):
-        # (T, B, D)
+    @property
+    def cache(self):
+        return self._cache
 
-        self.LOG_x = []
-        self.LOG_x_mean = []
-        self.LOG_v = []
-        self.LOG_I_dec = []
+    def init_cache(self) -> None:
+        self._cache = {}
 
-    def LOG2numpy(self, batch_first=False, squeezeN1=False):
+    def convert_cache(self, type_to="list", treat_batch=None, verbose=False) -> CacheType:
         """
-        if batch_first is True:
-            (N, T, *)
-        else:
-            (T, N, *)
-        """
-
-        self.LOG_x = np.array(self.LOG_x)
-        self.LOG_x_mean = np.array(self.LOG_x_mean)
-        self.LOG_v = np.array(self.LOG_v)
-        self.LOG_I_dec = np.array(self.LOG_I_dec)
-
-        if squeezeN1:
-            self.LOG_x = self.LOG_x.squeeze(1)
-            self.LOG_x_mean = self.LOG_x_mean.squeeze(1)
-            self.LOG_v = self.LOG_v.squeeze(1)
-            self.LOG_I_dec = self.LOG_I_dec.squeeze(1)
-
-        elif batch_first:
-            self.LOG_x = swap01(self.LOG_x)
-            self.LOG_x_mean = swap01(self.LOG_x_mean)
-            self.LOG_v = swap01(self.LOG_v)
-            self.LOG_I_dec = swap01(self.LOG_I_dec)
-
-        # Color.print(self.LOG_x.shape)
-        # Color.print(self.LOG_x_mean.shape)
-        # Color.print(self.LOG_v.shape)
-        # Color.print(self.LOG_I_dec.shape)
-
-
-class NewtonianVAEDerivationBase(NewtonianVAEBase):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def init_LOG(self):
-        # (T, B, D)
-
-        self.LOG_x = []
-        self.LOG_x_mean = []
-        self.LOG_v = []
-        self.LOG_I_dec = []
-        self.LOG_xhat_mean = []
-        self.LOG_xhat_std = []
-
-    def LOG2numpy(self, batch_first=False, squeezeN1=False):
-        """
-        if batch_first is True:
-            (N, T, *)
-        else:
-            (T, N, *)
+        return_type: "list" or "torch" or "numpy"
+        treat_batch: None or "first" or "squeeze"
+            None : (T, B, D)
+            "first" : (B, T, D)
+            "squeeze" : (T, D)  Valid only when batch size is 1
         """
 
-        self.LOG_x = np.array(self.LOG_x)
-        self.LOG_x_mean = np.array(self.LOG_x_mean)
-        self.LOG_v = np.array(self.LOG_v)
-        self.LOG_I_dec = np.array(self.LOG_I_dec)
-        self.LOG_xhat_mean = np.array(self.LOG_xhat_mean)
-        self.LOG_xhat_std = np.array(self.LOG_xhat_std)
+        def _verbose():
+            if verbose:
+                for k, v in self._cache.items():
+                    s = f"{k}: {v.__class__.__name__} "
+                    if type(v) == list:
+                        s += f"len={len(v)}"
+                    else:
+                        s += f"{v.shape}"
+                    print(s)
 
-        if squeezeN1:
-            self.LOG_x = self.LOG_x.squeeze(1)
-            self.LOG_x_mean = self.LOG_x_mean.squeeze(1)
-            self.LOG_v = self.LOG_v.squeeze(1)
-            self.LOG_I_dec = self.LOG_I_dec.squeeze(1)
-            self.LOG_xhat_mean = self.LOG_xhat_mean.squeeze(1)
-            self.LOG_xhat_std = self.LOG_xhat_std.squeeze(1)
+        if type_to == "list":
+            _verbose()
+            return self._cache
 
-        elif batch_first:
-            self.LOG_x = swap01(self.LOG_x)
-            self.LOG_x_mean = swap01(self.LOG_x_mean)
-            self.LOG_v = swap01(self.LOG_v)
-            self.LOG_I_dec = swap01(self.LOG_I_dec)
-            self.LOG_xhat_mean = swap01(self.LOG_xhat_mean)
-            self.LOG_xhat_std = swap01(self.LOG_xhat_std)
+        for k in self._cache.keys():
+            if not type(self._cache[k][0]) == Tensor:
+                raise TypeError(f'"{k}" of cache type: {type(self._cache[k])}')
+
+            if type_to == "torch":
+                self._cache[k] = torch.stack(self._cache[k])
+            elif type_to == "numpy":
+                self._cache[k] = torch.stack(self._cache[k]).detach().cpu().numpy()
+            else:
+                assert False
+
+            if treat_batch is None:
+                pass
+            elif treat_batch == "first":
+                self._cache[k] = swap01(self._cache[k])
+            elif treat_batch == "squeeze":
+                self._cache[k] = self._cache[k].squeeze(1)
+            else:
+                assert False
+
+        _verbose()
+        return self._cache
 
 
-class NewtonianVAE(NewtonianVAEBase):
+class NewtonianVAE(BaseWithCache):
     r"""Computes ELBO based on formula (11).
 
     Computes according to the following formula:
@@ -183,7 +156,7 @@ class NewtonianVAE(NewtonianVAEBase):
 
         T = len(action)
 
-        self.init_LOG()
+        self.init_cache()
 
         E_sum: Tensor = 0  # = Nagative ELBO
         E_ll_sum: Tensor = 0  # Not use for training
@@ -231,7 +204,7 @@ class NewtonianVAE(NewtonianVAEBase):
         return E, E_ll, E_kl
 
 
-class NewtonianVAEDerivation(NewtonianVAEDerivationBase):
+class NewtonianVAEDerivation(BaseWithCache):
     r"""Computes ELBO based on formula (23).
 
     Computes according to the following formula:
@@ -340,10 +313,6 @@ class NewtonianVAEDerivation(NewtonianVAEDerivationBase):
                 self.LOG_I_dec.append(to_np(I_dec))
                 self.LOG_x_mean.append(to_np(self.cell.q_encoder.loc))
 
-        # self.LOG2numpy()
-        assert len(self.LOG_x) == len(self.LOG_xhat_mean)
-        assert len(self.LOG_x) == len(self.LOG_xhat_std)
-
         E = E_sum / T
         E_ll = E_ll_sum / T
         E_kl = E_kl_sum / T
@@ -351,7 +320,7 @@ class NewtonianVAEDerivation(NewtonianVAEDerivationBase):
         return E, E_ll, E_kl
 
 
-class NewtonianVAEV2(NewtonianVAEBase):
+class NewtonianVAEV2(BaseWithCache):
     r"""Computes ELBO based on formula (11).
 
     Computes according to the following formula:
@@ -414,17 +383,18 @@ class NewtonianVAEV2(NewtonianVAEBase):
         super().__init__()
 
         self.cell = NewtonianVAEV2Cell(*args, **kwargs)
+        self.camera_key = "camera0"
 
     def forward(self, batchdata: Dict[str, Tensor]):
         """"""
 
         action = batchdata["action"]
         delta = batchdata["delta"]
-        camera0 = batchdata["camera0"]
+        camera = batchdata[self.camera_key]
 
         T = len(action)
 
-        self.init_LOG()
+        self.init_cache()
 
         E_sum: Tensor = 0  # = Nagative ELBO
         E_ll_sum: Tensor = 0
@@ -432,7 +402,7 @@ class NewtonianVAEV2(NewtonianVAEBase):
 
         for t in range(T):
             u_tn1 = action[t]
-            I_t = camera0[t]
+            I_t = camera[t]
 
             _, B, D = action.shape  # _ : T
 
@@ -469,22 +439,31 @@ class NewtonianVAEV2(NewtonianVAEBase):
             # tp_debug.check_dist_model(self.cell)
 
             if self.is_save:
-                self.LOG_x.append(to_np(x_q_t))
-                self.LOG_v.append(to_np(v_t))
-                self.LOG_I_dec.append(to_np(I_dec))
-                self.LOG_x_mean.append(to_np(self.cell.q_encoder.loc))
+                self._cache["x"].append(x_q_t)
+                self._cache["x_mean"].append(self.cell.q_encoder.loc)
+                self._cache["x_std"].append(self.cell.q_encoder.scale)
+                self._cache["v"].append(v_t)
+                self._cache[self.camera_key].append(I_dec)
 
         E = E_sum / T
         L = -E
 
         losses = {
-            "camera0 Loss": -E_ll_sum / T,
+            f"{self.camera_key} Loss": -E_ll_sum / T,
             "KL Loss": E_kl_sum / T,
         }
         return L, losses
 
+    def init_cache(self) -> None:
+        super().init_cache()
+        self._cache["x"] = []
+        self._cache["x_mean"] = []
+        self._cache["x_std"] = []
+        self._cache["v"] = []
+        self._cache[self.camera_key] = []
 
-class NewtonianVAEV2Derivation(NewtonianVAEDerivationBase):
+
+class NewtonianVAEV2Derivation(BaseWithCache):
     r"""Computes ELBO based on formula (23).
 
     Computes according to the following formula:
@@ -549,7 +528,7 @@ class NewtonianVAEV2Derivation(NewtonianVAEDerivationBase):
 
         T = len(action)
 
-        self.init_LOG()
+        self.init_cache()
 
         E_sum: Tensor = 0  # = Nagative ELBO
         E_ll_sum: Tensor = 0
@@ -611,10 +590,6 @@ class NewtonianVAEV2Derivation(NewtonianVAEDerivationBase):
                 self.LOG_I_dec.append(to_np(I_dec))
                 self.LOG_x_mean.append(to_np(self.cell.q_encoder.loc))
 
-        # self.LOG2numpy()
-        assert len(self.LOG_x) == len(self.LOG_xhat_mean)
-        assert len(self.LOG_x) == len(self.LOG_xhat_std)
-
         E = E_sum / T
         E_ll = E_ll_sum / T
         E_kl = E_kl_sum / T
@@ -630,7 +605,7 @@ NewtonianVAEFamily = Union[
 ]
 
 
-class MNVAE(NewtonianVAEBase):
+class MNVAE(BaseWithCache):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
 
@@ -649,7 +624,7 @@ class MNVAE(NewtonianVAEBase):
 
         T = len(action)
 
-        self.init_LOG()
+        self.init_cache()
 
         E_sum: Tensor = 0  # = Nagative ELBO
 
@@ -665,14 +640,14 @@ class MNVAE(NewtonianVAEBase):
             if t == 0:
                 x_q_t = self.cell.q_encoder.given(I_t).rsample()
                 v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
-                # I_dec = self.cell.p_decoder.given(x_q_t).decode()
+                I_t_recs = self.cell.p_decoder(x_q_t)
 
                 x_q_tn1 = x_q_t
 
             elif t == 1:
                 x_q_t = self.cell.q_encoder.given(I_t).rsample()
                 v_t = (x_q_t - x_q_tn1) / delta[t]
-                # I_dec = self.cell.p_decoder.given(x_q_t).decode()
+                I_t_recs = self.cell.p_decoder(x_q_t)
 
             else:
                 output = self.cell(
@@ -689,7 +664,7 @@ class MNVAE(NewtonianVAEBase):
 
                 x_q_t = output.x_q_t
                 v_t = output.v_t
-                # I_dec = self.cell.p_decoder.decode()
+                I_t_recs = output.I_t_recs
 
             x_q_tn2 = x_q_tn1
             x_q_tn1 = x_q_t
@@ -699,19 +674,29 @@ class MNVAE(NewtonianVAEBase):
             # tp_debug.check_dist_model(self.cell)
 
             if self.is_save:
-                self.LOG_x.append(to_np(x_q_t))
-                self.LOG_v.append(to_np(v_t))
-                # self.LOG_I_dec.append(to_np(I_dec))
-                self.LOG_x_mean.append(to_np(self.cell.q_encoder.loc))
+                self._cache["x"].append(x_q_t)
+                self._cache["x_mean"].append(self.cell.q_encoder.loc)
+                self._cache["x_std"].append(self.cell.q_encoder.scale)
+                self._cache["v"].append(v_t)
+                self._cache["camera0"].append(I_t_recs[0])
+                self._cache["camera1"].append(I_t_recs[1])
 
         E = E_sum / T
         L = -E
 
         image_losses /= T
-        losses = {}
-        for i in range(len(image_losses)):
-            losses[f"camera{i} Loss"] = image_losses[i]
-
-        losses["KL Loss"] = KL_loss / T
-
+        losses = {
+            "camera0 Loss": image_losses[0],
+            "camera1 Loss": image_losses[1],
+            "KL Loss": KL_loss / T,
+        }
         return L, losses
+
+    def init_cache(self):
+        super().init_cache()
+        self._cache["x"] = []
+        self._cache["x_mean"] = []
+        self._cache["x_std"] = []
+        self._cache["v"] = []
+        self._cache["camera0"] = []
+        self._cache["camera1"] = []
