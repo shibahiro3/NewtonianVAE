@@ -21,9 +21,10 @@ parser = argparse.ArgumentParser(
     formatter_class=RawTextHelpFormatter,
     description=
 """if you use "--visual tensorboard":
-  1. Another terminal: $ tensorboard --logdir="log_tb"
+  1. Another terminal: $ tensorboard --logdir="../log_tb"  # In exec/
   2. Open the output URL (http://localhost:6006/) in a browser
   3. $ python train.py -c ... --visual tensorboard
+  Tips: Tensorboard Window > Gear icon (upper right on top bar) > ✔ Reload data
 
 if you use "--visual visdom":
   1. Another terminal: $ python -m visdom.server -port 8097
@@ -46,7 +47,9 @@ args = parser.parse_args()
 if args.visual is None:
     vh = visualhandler.VisualHandlerBase()
 elif args.visual == "tensorboard":
-    vh = visualhandler.TensorBoardVisualHandler(log_dir="log_tb")
+    vh = visualhandler.TensorBoardVisualHandler(
+        log_dir="log_tb"
+    )  # flush_secs is not working on my PC
 elif args.visual == "visdom":
     vh = visualhandler.VisdomVisualHandler(port=8097)
 

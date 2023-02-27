@@ -3,7 +3,7 @@ import shutil
 import sys
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Union
 
@@ -21,8 +21,9 @@ from mypython.ai.util import (
     reproduce,
     show_model_info,
 )
-from mypython.pyutil import RemainingTime, s2dhms_str
+from mypython.pyutil import MovingAverageTime, RemainingTime, s2dhms_str
 from mypython.terminal import Color, Prompt
+from mypython.valuewriter import ValueWriter
 from tool import paramsmanager
 from tool.util import Preferences, creator, dtype_device
 from view.visualhandlerbase import VisualHandlerBase
@@ -56,6 +57,16 @@ def train(
         device=device,
     )
 
+    # Hold-out Validation
+    validloader = SequenceDataLoader(
+        root=Path(params.path.data_dir, "episodes"),
+        start=params.valid.data_start,
+        stop=params.valid.data_stop,
+        batch_size=params.valid.batch_size,
+        dtype=dtype,
+        device=device,
+    )
+
     model, managed_dir, weight_dir, resume_weight_path = creator(
         root=params.path.saves_dir,
         model_place=models.core,
@@ -79,24 +90,23 @@ def train(
 
     record_losses: Dict[str, list] = {}
 
-    Preferences.put(managed_dir, "running", True)
+    # TODO: enhance exception
+    # Preferences.put(managed_dir, "running", True)
 
-    def end_process():
-        Preferences.remove(managed_dir, "running")
-
-        if len(list(weight_dir.glob("*"))) > 0:
-            np.savez(Path(managed_dir, "Losses.npz"), **record_losses)
-        else:
-            shutil.rmtree(managed_dir)
-
-        print("\nEnd of train")
+    batch_train_writer = ValueWriter(Path(managed_dir, "batch train"))
+    epoch_train_writer = ValueWriter(Path(managed_dir, "epoch train"))
+    epoch_valid_writer = ValueWriter(Path(managed_dir, "epoch valid"))
 
     show_model_info(model, verbose=False)
 
     try:
         tp.config.check_value = params.train.check_value  # if False, A little bit faster
-        remaining = RemainingTime(max=params.train.epochs * len(trainloader))
+
+        time_start_learning = time.perf_counter()
+        time_first_training = MovingAverageTime(5)
+        time_epoch_training = MovingAverageTime(1)
         for epoch in range(1, params.train.epochs + 1):
+            time_start_epoch = time.perf_counter()
 
             if params.train.kl_annealing:
                 # Paper:
@@ -111,63 +121,137 @@ def train(
                 else:
                     model.cell.kl_beta = 1
 
-            for batchdata in trainloader:
-                batchdata["delta"].unsqueeze_(-1)
+            epoch_losses_all = {"train": {}, "valid": {}}
+            for phase in ["train", "valid"]:
+                epoch_losses = {}
 
-                L, losses = model(batchdata)
-                L: Tensor
-                losses: Dict[str, float]
-                for k in losses.keys():
-                    if type(losses[k]) == Tensor:
-                        losses[k] = losses[k].cpu().item()
+                if phase == "train":
+                    dataloader = trainloader
+                    model.train()
+                else:
+                    dataloader = validloader
+                    model.eval()
 
-                optimizer.zero_grad()
-                L.backward()
-                # print_module_params(model, True)
+                for batchdata in dataloader:
+                    batchdata["delta"].unsqueeze_(-1)
 
-                if params.train.grad_clip_norm is not None:
-                    nn.utils.clip_grad_norm_(
-                        model.parameters(), params.train.grad_clip_norm, norm_type=2
+                    L, losses = model(batchdata)
+                    L: Tensor
+                    losses: Dict[str, float]
+                    for k in losses.keys():
+                        if type(losses[k]) == Tensor:
+                            losses[k] = losses[k].cpu().item()
+
+                    if phase == "train":
+                        optimizer.zero_grad()
+                        L.backward()
+                        # print_module_params(model, True)
+                        if params.train.grad_clip_norm is not None:
+                            nn.utils.clip_grad_norm_(
+                                model.parameters(), params.train.grad_clip_norm, norm_type=2
+                            )
+                        optimizer.step()
+
+                    # === show progress ===
+
+                    L = L.cpu().item()
+
+                    now_losses = {"Loss": L, **losses}
+                    for k in now_losses.keys():
+                        if k not in record_losses.keys():
+                            record_losses[k] = []
+                        record_losses[k].append(now_losses[k])
+
+                    for k in now_losses.keys():
+                        if not k in epoch_losses:
+                            epoch_losses[k] = now_losses[k]
+                        else:
+                            epoch_losses[k] += now_losses[k]
+
+                    if phase == "train":
+                        for k, v in now_losses.items():
+                            batch_train_writer.write(k, v)
+
+                    vh.plot(dict(mode="now", ephoch=epoch, losses=now_losses, phase=phase))
+
+                    if not vh.is_running:
+                        vh.call_end()
+                        time.sleep(0.1)
+                        # end_process()
+                        return
+
+                    bt_msg = (
+                        f"{phase} | Epoch: {epoch} | "
+                        + " | ".join([f"{k}: {v:.4f}" for k, v in now_losses.items()])
+                        + " | "
+                        + f"Elapsed: {s2dhms_str(time.perf_counter() - time_start_learning)} "
                     )
 
-                optimizer.step()
+                    if epoch == 1:
+                        if phase == "train":
+                            remaining = (
+                                time_first_training.update()
+                                * params.train.epochs
+                                * len(trainloader)
+                            )
 
-                # === show progress ===
+                        bt_msg += (
+                            f"| Remaining: {s2dhms_str(remaining)}+ | "
+                            + f"ETA: "
+                            + (datetime.now() + timedelta(seconds=remaining)).strftime(
+                                "%m/%d %H:%M+ "
+                            )
+                        )
 
-                L = L.cpu().item()
+                    else:
+                        remaining = time_epoch_training.get() * (params.train.epochs - epoch + 1)
+                        bt_msg += (
+                            f"| Remaining: {s2dhms_str(remaining)} | "
+                            + f"ETA: "
+                            + (datetime.now() + timedelta(seconds=remaining)).strftime(
+                                "%m/%d %H:%M "
+                            )
+                        )
 
-                now_losses = {"Loss": L, **losses}
+                    Prompt.print_one_line(bt_msg)
 
-                for k in now_losses.keys():
-                    if k not in record_losses.keys():
-                        record_losses[k] = []
-                    record_losses[k].append(now_losses[k])
+                for k, v in epoch_losses.items():
+                    epoch_losses[k] = v / len(dataloader)
 
-                vh.plot({"Epoch": epoch, **now_losses})
-                if not vh.is_running:
-                    vh.call_end()
-                    time.sleep(0.1)
-                    end_process()
-                    return
-
-                remaining.update()
-                Prompt.print_one_line(
-                    f"Epoch: {epoch} | "
-                    + " | ".join([f"{k}: {v:.4f}" for k, v in now_losses.items()])
-                    + " | "
-                    + f"Elapsed: {s2dhms_str(remaining.elapsed)} | "
-                    + f"Remaining: {s2dhms_str(remaining.time)} | "
-                    + f"ETA: {remaining.eta} "
+                ep_msg = f"{phase} | Epoch: {epoch} | " + " | ".join(
+                    [f"{k}: {v :.4f}" for k, v in epoch_losses.items()]
                 )
+                ep_msg = Prompt.del_line + ep_msg
 
-            if epoch % params.train.save_per_epoch == 0:
-                torch.save(model.state_dict(), Path(weight_dir, f"{epoch}.pth"))
-                print("saved")
+                if phase == "train":
+                    if epoch % params.train.save_per_epoch == 0:
+                        torch.save(model.state_dict(), Path(weight_dir, f"{epoch}.pth"))
+                        ep_msg += " saved"
+                else:
+                    ep_msg = (
+                        Color.coral
+                        + ep_msg
+                        + Color.reset
+                        + f" | Duration: {s2dhms_str(time.perf_counter() - time_start_epoch)}"
+                    )
+
+                epoch_losses_all[phase] = epoch_losses
+
+                vh.plot(dict(mode="average", epoch=epoch, losses=epoch_losses, phase=phase))
+                print(ep_msg)
+
+            for k, v in epoch_losses_all["train"].items():
+                epoch_train_writer.write(k, v)
+
+            for k, v in epoch_losses_all["valid"].items():
+                epoch_valid_writer.write(k, v)
+
+            vh.plot(dict(mode="all", epoch=epoch, losses=epoch_losses_all))
+
+            time_epoch_training.update()
 
     except KeyboardInterrupt:
         print("\nKeyboardInterrupt")
     except:
         print("=== traceback ===")
         print(traceback.format_exc())
-
-    end_process()

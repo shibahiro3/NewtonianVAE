@@ -12,7 +12,7 @@ from argparse import RawTextHelpFormatter
 from pprint import pprint
 
 import argset
-from source.newtonianvae import correlation, correlation2
+from source.newtonianvae import correlation
 
 # fmt: off
 parser = argparse.ArgumentParser(
@@ -20,16 +20,15 @@ parser = argparse.ArgumentParser(
     formatter_class=RawTextHelpFormatter,
     description=
 """Examples:
-  $ python correlation.py -c config/reacher2d.json5 --env-domain reacher2d
+  $ python correlation.py -c config/reacher2d.json5
 """
 )
 parser.add_argument("-c", "--config", type=str, required=True, **argset.config)
 parser.add_argument("--episodes", type=int, default=50)
-parser.add_argument("--env-domain", type=str, metavar="ENV", help="Example: reacher2d, point_mass")
-parser.add_argument("--fix-xmap-size", type=float, metavar="S", help="xmap size")
+parser.add_argument("--all", action='store_true', help="Show correlations for all combinations")
 parser.add_argument("--format", type=str, default=["svg", "pdf", "png"], nargs="*", **argset.format_file)
 args = parser.parse_args()
 # fmt: on
 
 
-correlation2.correlation(**vars(args))
+correlation.correlation(**vars(args))

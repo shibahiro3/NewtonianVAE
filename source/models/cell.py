@@ -27,21 +27,21 @@ class NewtonianVAECellBase(nn.Module):
 
     def __init__(
         self,
+        dim_x: int,
         regularization: bool,
-        velocity: dict,
-        transition: dict,
-        encoder: dict,
     ):
         super().__init__()
 
+        self.dim_x = dim_x
         self.regularization = regularization
+
         self.kl_beta = 1
         self.force_training = False  # for add_graph of tensorboard
 
-        self.f_velocity = Velocity(**velocity)
-        self.p_transition = Transition(**transition)
-        self.q_encoder = Encoder(**encoder)
-        self.dim_x = self.q_encoder.dim_x
+        self.f_velocity: nn.Module
+        self.p_transition: tp.Distribution
+        self.q_encoder: tp.Distribution
+        self.p_decoder: Union[nn.Module, tp.Distribution]
 
     @staticmethod
     def img_reduction(x: Tensor):
@@ -154,6 +154,7 @@ class NewtonianVAEV2CellBase(NewtonianVAECellBase):
         E: Tensor  # Use for training
         E_ll: Tensor
         E_kl: Tensor
+        beta_kl: Tensor
         x_q_t: Tensor  # Use for training
         v_t: Tensor
         I_t_rec: Tensor
@@ -163,10 +164,21 @@ class NewtonianVAEV2CellBase(NewtonianVAECellBase):
 
 
 class NewtonianVAEV2Cell(NewtonianVAEV2CellBase):
-    def __init__(self, decoder: dict, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        velocity: dict,
+        transition: dict,
+        encoder: dict,
+        decoder: dict,
+        *args,
+        **kwargs,
+    ) -> None:
         super().__init__(*args, **kwargs)
 
-        self.p_decoder = Decoder(**decoder)
+        self.f_velocity = Velocity(self.dim_x, **velocity)
+        self.p_transition = Transition(**transition)
+        self.q_encoder = Encoder(self.dim_x, **encoder)
+        self.p_decoder = Decoder(self.dim_x, **decoder)
 
     def forward(self, I_t: Tensor, x_q_tn1: Tensor, x_q_tn2: Tensor, u_tn1: Tensor, dt: Tensor):
         """"""
@@ -182,7 +194,8 @@ class NewtonianVAEV2Cell(NewtonianVAEV2CellBase):
         ###
 
         E_kl = self.vec_reduction(tp.KLdiv(self.q_encoder.given(I_t), self.p_transition))
-        E = E_ll - self.kl_beta * E_kl
+        beta_kl = self.kl_beta * E_kl
+        E = E_ll - beta_kl
 
         if self.regularization:
             E -= self.vec_reduction(tp.KLdiv(self.q_encoder, tp.Normal01))
@@ -194,6 +207,7 @@ class NewtonianVAEV2Cell(NewtonianVAEV2CellBase):
             x_q_t=x_q_t,
             E_ll=E_ll.detach(),
             E_kl=E_kl.detach(),
+            beta_kl=beta_kl.detach(),
             v_t=v_t.detach(),
             I_t_rec=I_t_rec.detach(),
         )
@@ -289,6 +303,7 @@ class MNVAECell(nn.Module):
 
     def __init__(
         self,
+        dim_x: int,
         regularization: bool,
         velocity: dict,
         transition: dict,
@@ -297,16 +312,16 @@ class MNVAECell(nn.Module):
     ) -> None:
         super().__init__()
 
+        self.dim_x = dim_x
         self.regularization = regularization
+
         self.kl_beta = 1
         self.force_training = False  # for add_graph of tensorboard
 
-        self.f_velocity = Velocity(**velocity)
-        self.q_encoder = component.MultiEncoder(**encoder)
-        self.p_decoder = component.MultiDecoder(**decoder)
+        self.f_velocity = Velocity(dim_x, **velocity)
         self.p_transition = Transition(**transition)
-
-        self.dim_x = self.q_encoder.dim_x
+        self.q_encoder = component.MultiEncoder(dim_x, **encoder)
+        self.p_decoder = component.MultiDecoder(dim_x, **decoder)
 
     @staticmethod
     def img_reduction(x: Tensor):
@@ -324,6 +339,7 @@ class MNVAECell(nn.Module):
         v_t: Tensor
         image_losses: list
         KL_loss: float
+        beta_kl: float
         I_t_recs: list
 
     def __call__(self, *args, **kwargs) -> Pack:
@@ -350,7 +366,8 @@ class MNVAECell(nn.Module):
         ###
 
         E_kl = self.vec_reduction(tp.KLdiv(self.q_encoder.given(I_t), self.p_transition))
-        E = recs - self.kl_beta * E_kl
+        beta_kl = self.kl_beta * E_kl
+        E = recs - beta_kl
 
         if self.regularization:
             E -= self.vec_reduction(tp.KLdiv(self.q_encoder, tp.Normal01))
@@ -363,5 +380,6 @@ class MNVAECell(nn.Module):
             v_t=v_t.detach(),
             image_losses=image_losses,
             KL_loss=E_kl.item(),
+            beta_kl=beta_kl.detach(),
             I_t_recs=I_t_recs,
         )

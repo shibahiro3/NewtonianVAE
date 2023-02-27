@@ -82,7 +82,7 @@ def s2dhms(sec):
 
 def s2dhms_str(sec, always_day=False):
     d, h, m, s = s2dhms(sec)
-    if d > 0:
+    if abs(d) > 0:
         return f"{d} Days {h}:{m:0>2}:{s:0>2}"
     else:
         if always_day:
@@ -277,6 +277,18 @@ class RemainingTime:
     def elapsed(self):
         """Returns: [seconds]"""
         return self._time_now - self._time_start
+
+
+class MovingAverageTime(MovingAverage):
+    def __init__(self, size):
+        super().__init__(size)
+        self.time_prev = time.perf_counter()
+
+    def update(self):
+        now = time.perf_counter()
+        ret = super().__call__(now - self.time_prev)
+        self.time_prev = now
+        return ret
 
 
 class initialize:

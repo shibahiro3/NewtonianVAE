@@ -61,13 +61,15 @@ def register_save_path(fig: Figure, path, suffixs: list):
     fig.canvas.mpl_connect("key_press_event", _save)
 
 
-def legend_reduce(fig: Figure):
+def legend_reduce(fig: Figure, *args, **kwargs):
     """The same label name is regarded as the same expression"""
     labels_handles = {}
     for ax in fig.axes:
         for h, l in zip(*ax.get_legend_handles_labels()):
             labels_handles[l] = h
-    fig.legend(handles=labels_handles.values(), labels=labels_handles.keys())
+
+    if len(labels_handles) > 0:
+        fig.legend(handles=labels_handles.values(), labels=labels_handles.keys(), *args, **kwargs)
 
 
 def anim_mode(

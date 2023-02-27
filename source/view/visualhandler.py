@@ -1,3 +1,4 @@
+from pprint import pprint
 from typing import Any, Dict, List
 
 import numpy as np
@@ -11,35 +12,47 @@ class TensorBoardVisualHandler(VisualHandlerBase):
     def __init__(self, *args, **kwargs):
         self.writer = SummaryWriter(*args, **kwargs)
 
-        self.step = 0
-
     def plot(self, d: Dict[str, Any]):
-        for k, v in d.items():
-            if "Loss" not in k:
-                continue
 
-            self.writer.add_scalar(k, v, self.step)
+        if d["mode"] == "all":
+            losses = d["losses"]
 
-        self.step += 1
+            for loss_name in losses["train"].keys():
+                self.writer.add_scalars(
+                    f"{self.title}/Epoch Loss/{loss_name}",
+                    {
+                        "train": losses["train"][loss_name],
+                        "valid": losses["valid"][loss_name],
+                    },
+                    d["epoch"],
+                )
+
+        self.writer.flush()
 
 
 class VisdomVisualHandler(VisualHandlerBase):
     def __init__(self, *args, **kwargs):
         self.vis = visdom.Visdom(*args, **kwargs)
 
-        self.step = 0
-
     def plot(self, d: Dict[str, Any]):
-        for k, v in d.items():
-            if "Loss" not in k:
-                continue
 
-            self.vis.line(
-                np.array([v]),
-                X=np.array([self.step]),
-                update="append",
-                win=k,
-                opts={"title": k},
-            )
+        if d["mode"] == "all":
+            losses = d["losses"]
 
-        self.step += 1
+            for loss_name in losses["train"].keys():
+                self.vis.line(
+                    np.array([losses["train"][loss_name]]),
+                    X=np.array([d["epoch"]]),
+                    update="append",
+                    win=loss_name,
+                    name="train",
+                    opts=dict(title=loss_name),
+                )
+                self.vis.line(
+                    np.array([losses["valid"][loss_name]]),
+                    X=np.array([d["epoch"]]),
+                    update="append",
+                    win=loss_name,
+                    name="valid",
+                    opts=dict(title=loss_name),
+                )

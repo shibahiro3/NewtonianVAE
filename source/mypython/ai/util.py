@@ -107,13 +107,17 @@ class BatchIdx:
     def __init__(self, start: int, stop: int, batch_size: int):
         assert stop - start >= batch_size
 
-        self.N = stop - start
-        self.B = batch_size
-        self.indexes = np.arange(start=start, stop=stop)
+        self._N = stop - start
+        self._B = batch_size
+        self._indexes = np.arange(start=start, stop=stop)
         self._reset()
 
+    @property
+    def datasize(self):
+        return self._N
+
     def __len__(self):
-        return int(np.ceil(self.N / self.B))
+        return int(np.ceil(self._N / self._B))
 
     def __iter__(self):
         return self
@@ -125,11 +129,11 @@ class BatchIdx:
             self._reset()
             raise StopIteration()
 
-        mask = self.indexes[self.i * self.B : (self.i + 1) * self.B]
+        mask = self._indexes[self.i * self._B : (self.i + 1) * self._B]
         return mask
 
     def _reset(self):
-        np.random.shuffle(self.indexes)
+        np.random.shuffle(self._indexes)
         self.i = -1
 
 

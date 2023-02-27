@@ -379,18 +379,18 @@ class NewtonianVAEV2(BaseWithCache):
         It is important to use :math:`\v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t` for :math:`\v_{t-1}` in :math:`\v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1})`.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, camera_name, **kwargs) -> None:
         super().__init__()
 
         self.cell = NewtonianVAEV2Cell(*args, **kwargs)
-        self.camera_key = "camera0"
+        self.camera_name = camera_name
 
     def forward(self, batchdata: Dict[str, Tensor]):
         """"""
 
         action = batchdata["action"]
         delta = batchdata["delta"]
-        camera = batchdata[self.camera_key]
+        camera = batchdata[self.camera_name]
 
         T = len(action)
 
@@ -399,6 +399,7 @@ class NewtonianVAEV2(BaseWithCache):
         E_sum: Tensor = 0  # = Nagative ELBO
         E_ll_sum: Tensor = 0
         E_kl_sum: Tensor = 0
+        beta_kl: Tensor = 0
 
         for t in range(T):
             u_tn1 = action[t]
@@ -426,6 +427,7 @@ class NewtonianVAEV2(BaseWithCache):
                 E_sum += output.E
                 E_ll_sum += output.E_ll
                 E_kl_sum += output.E_kl
+                beta_kl += output.beta_kl
 
                 x_q_t = output.x_q_t
                 v_t = output.v_t
@@ -443,14 +445,15 @@ class NewtonianVAEV2(BaseWithCache):
                 self._cache["x_mean"].append(self.cell.q_encoder.loc)
                 self._cache["x_std"].append(self.cell.q_encoder.scale)
                 self._cache["v"].append(v_t)
-                self._cache[self.camera_key].append(I_dec)
+                self._cache[self.camera_name].append(I_dec)
 
         E = E_sum / T
         L = -E
 
         losses = {
-            f"{self.camera_key} Loss": -E_ll_sum / T,
+            f"{self.camera_name} Loss": -E_ll_sum / T,
             "KL Loss": E_kl_sum / T,
+            "Beta KL Loss": beta_kl / T,
         }
         return L, losses
 
@@ -460,7 +463,7 @@ class NewtonianVAEV2(BaseWithCache):
         self._cache["x_mean"] = []
         self._cache["x_std"] = []
         self._cache["v"] = []
-        self._cache[self.camera_key] = []
+        self._cache[self.camera_name] = []
 
 
 class NewtonianVAEV2Derivation(BaseWithCache):
@@ -606,8 +609,9 @@ NewtonianVAEFamily = Union[
 
 
 class MNVAE(BaseWithCache):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, camera_names, **kwargs) -> None:
         super().__init__()
+        self.camera_names = camera_names
 
         self.cell = MNVAECell(*args, **kwargs)
 
@@ -619,8 +623,8 @@ class MNVAE(BaseWithCache):
 
         action = batchdata["action"]
         delta = batchdata["delta"]
-        camera0 = batchdata["camera0"]
-        camera1 = batchdata["camera1"]
+        camera0 = batchdata[self.camera_names[0]]
+        camera1 = batchdata[self.camera_names[1]]
 
         T = len(action)
 
@@ -630,6 +634,7 @@ class MNVAE(BaseWithCache):
 
         image_losses = 0
         KL_loss: Tensor = 0
+        beta_kl: Tensor = 0
 
         for t in range(T):
             u_tn1 = action[t]
@@ -661,6 +666,7 @@ class MNVAE(BaseWithCache):
                 E_sum += output.E
                 image_losses += np.array(output.image_losses)
                 KL_loss += output.KL_loss
+                beta_kl += output.beta_kl
 
                 x_q_t = output.x_q_t
                 v_t = output.v_t
@@ -678,8 +684,8 @@ class MNVAE(BaseWithCache):
                 self._cache["x_mean"].append(self.cell.q_encoder.loc)
                 self._cache["x_std"].append(self.cell.q_encoder.scale)
                 self._cache["v"].append(v_t)
-                self._cache["camera0"].append(I_t_recs[0])
-                self._cache["camera1"].append(I_t_recs[1])
+                for i, name in enumerate(self.camera_names):
+                    self._cache[name].append(I_t_recs[i])
 
         E = E_sum / T
         L = -E
@@ -689,6 +695,7 @@ class MNVAE(BaseWithCache):
             "camera0 Loss": image_losses[0],
             "camera1 Loss": image_losses[1],
             "KL Loss": KL_loss / T,
+            "Beta KL Loss": beta_kl / T,
         }
         return L, losses
 
@@ -698,5 +705,5 @@ class MNVAE(BaseWithCache):
         self._cache["x_mean"] = []
         self._cache["x_std"] = []
         self._cache["v"] = []
-        self._cache["camera0"] = []
-        self._cache["camera1"] = []
+        for name in self.camera_names:
+            self._cache[name] = []

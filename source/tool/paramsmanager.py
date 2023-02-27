@@ -60,11 +60,21 @@ class Train(_Converter):
 
 
 @dataclasses.dataclass
-class Eval(_Converter):
+class Valid(_Converter):
+    data_start: int
+    data_stop: int
+    batch_size: int
+
+    def __post_init__(self):
+        check_args_type(self, self.__dict__)
+
+
+@dataclasses.dataclass
+class Test(_Converter):
     device: str
     dtype: str
-    data_start: Optional[int] = None
-    data_stop: Optional[int] = None
+    data_start: int
+    data_stop: int
 
     def __post_init__(self):
         check_args_type(self, self.__dict__)
@@ -105,7 +115,8 @@ class Params(_Converter):
         self.model: str = self.raw_.get("model", None)
         self.model_params: dict = self.raw_.get(self.model, None)
         self.train = instance_or_none(Train, self.raw_.get("train", None))
-        self.eval = instance_or_none(Eval, self.raw_.get("eval", None))
+        self.valid = instance_or_none(Valid, self.raw_.get("valid", None))
+        self.test = instance_or_none(Test, self.raw_.get("test", None))
         self.preprocess = instance_or_none(Preprocess, self.raw_.get("preprocess", None))
         self.path = instance_or_none(Paths, self.raw_.get("path", None))
         self.pid = None  # os.getpid()
@@ -123,7 +134,7 @@ class Params(_Converter):
     def save_train(self, path):
         self._save(
             path=path,
-            contents=self._select(["model", self.model, "train", "path", "pid"]),
+            contents=self._select(["model", self.model, "train", "valid", "path", "pid"]),
         )
 
     def save_train_ctrl(self, path):

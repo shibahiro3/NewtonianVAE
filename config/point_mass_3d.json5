@@ -2,10 +2,11 @@
   model: "MNVAE",
 
   MNVAE: {
+    dim_x: 3,
     regularization: false,
+    camera_names: ["camera0", "camera1"],
 
     velocity: {
-      dim_x: 3,
       fix_abc: [0, 0, 1],
       // fix_abc: null,
     },
@@ -19,7 +20,6 @@
     // 最初KLデカイ状態(e+6)が続く
 
     encoder: {
-      dim_x: 3,
       std_function: "softplus",
       modellist: [
         {
@@ -40,7 +40,6 @@
     },
 
     decoder: {
-      dim_x: 3,
       modellist: [
         {
           model: "SpatialBroadcastDecoder64",
@@ -70,11 +69,17 @@
     grad_clip_norm: 1000,
   },
 
-  eval: {
+  valid: {
+    data_start: 1000,
+    data_stop: 1200,
+    batch_size: 20,
+  },
+
+  test: {
     device: "cuda",
     dtype: "float32",
-    data_start: 1000,
-    data_stop: 1100,
+    data_start: 1200,
+    data_stop: 1400,
   },
 
   ControlSuiteEnvWrap: {

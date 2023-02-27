@@ -8,7 +8,7 @@ References:
 """
 
 from . import config
-from .distributions.base import ProbParamsValueError
+from .distributions.base import Distribution, ProbParamsValueError
 from .distributions.bernoulli import Bernoulli
 from .distributions.gmm import GMM
 from .distributions.normal import Normal, Normal01

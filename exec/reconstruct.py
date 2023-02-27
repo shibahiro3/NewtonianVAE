@@ -12,7 +12,7 @@ from argparse import RawTextHelpFormatter
 from pprint import pprint
 
 import argset
-from source.newtonianvae import reconstruct, reconstruct2
+from source.newtonianvae import reconstruct
 
 # fmt: off
 parser = argparse.ArgumentParser(
@@ -21,16 +21,14 @@ parser = argparse.ArgumentParser(
     description=
 """Examples:
   $ python reconstruct.py -c config/reacher2d.json5
-  $ python reconstruct.py -c config/point_mass.json5
 """,
 )
 parser.add_argument("-c", "--config", type=str, required=True, **argset.config)
 parser.add_argument("--episodes", type=int, default=10)
-parser.add_argument("--fix-xmap-size", type=float, metavar="S", help="xmap size")
 parser.add_argument("--save-anim", action="store_true")
 parser.add_argument("--format", type=str, default="mp4", **argset.format_video)
 args = parser.parse_args()
 # fmt: on
 
 
-reconstruct2.reconstruction(**vars(args))
+reconstruct.reconstruction(**vars(args))

@@ -25,7 +25,7 @@ from tool import checker, paramsmanager
 _weight = "weight*/*"
 
 
-def select_date(root) -> Optional[Path]:
+def select_date(root, no_weight_ok=False) -> Optional[Path]:
     if not Path(root).exists():
         Color.print(f"'{root}' doesn't exist.", c=Color.red)
         return None
@@ -36,10 +36,11 @@ def select_date(root) -> Optional[Path]:
     dates = [d for d in Path(root).glob("*") if d.is_dir()]
     dates.sort()
 
-    # _weight の無いディレクトリを除去
-    for date in reversed(dates):
-        if len(list(date.glob(_weight))) == 0:
-            dates.remove(date)
+    if not no_weight_ok:
+        # _weight の無いディレクトリをパスリストから除去
+        for date in reversed(dates):
+            if len(list(date.glob(_weight))) == 0:
+                dates.remove(date)
 
     if len(dates) == 0:
         Color.print(f'"Date and time directory" doesn\'t exist in "{root}" directory.', c=Color.red)
@@ -164,10 +165,14 @@ def creator(
 ):
     """
     managed_dir (date and time)
+    ├── params_saved.json5
     ├── weight_dir
     │   ├── {epoch}.pth (weight_path)
     │   ...
-    └── params_saved.json5
+    │
+    ├── loss root
+    │   ├── ...
+    │
     """
 
     datetime_now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

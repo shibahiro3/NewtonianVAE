@@ -2,10 +2,11 @@
   model: "NewtonianVAEV2",
 
   NewtonianVAEV2: {
+    dim_x: 2,
     regularization: false,
+    camera_name: "camera0",
 
     velocity: {
-      dim_x: 2,
       fix_abc: [0, 0, 1],
       // fix_abc: null,
     },
@@ -16,7 +17,6 @@
     },
 
     encoder: {
-      dim_x: 2,
       dim_middle: 1024,
       std_function: "softplus",
       model: "VisualEncoder64",
@@ -26,7 +26,6 @@
     },
 
     decoder: {
-      dim_x: 2,
       model: "SpatialBroadcastDecoder64",
     },
   },
@@ -41,15 +40,21 @@
     device: "cuda",
     dtype: "float32",
     kl_annealing: true,
-    save_per_epoch: 1,
+    save_per_epoch: 20,
     check_value: false,
   },
 
-  eval: {
+  valid: {
+    data_start: 1000,
+    data_stop: 1200,
+    batch_size: 20,
+  },
+
+  test: {
     device: "cuda",
     dtype: "float32",
-    data_start: 1000,
-    data_stop: 1100,
+    data_start: 1200,
+    data_stop: 1400,
   },
 
   ControlSuiteEnvWrap: {
