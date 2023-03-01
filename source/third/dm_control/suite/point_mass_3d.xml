@@ -15,9 +15,12 @@
 
   <worldbody>
     <light name="light" pos="0 0 1"/>
-    <camera name="fixed" pos="0 0 .75" quat="1 0 0 0"/>
+    <camera name="top" pos="0 0 .75" quat="1 0 0 0"/>
+    
     <!-- Changed/added by Sugar -->
-    <camera name="camera_2" pos="0 -0.75 0.2" quat="0.7 0.7 -0.0005628638 0.0005633122"/>
+    <camera name="x side" pos="0 -0.75 0.2" quat="0.7 0.7 -0.0005628638 0.0005633122"/>
+    <camera name="y side" pos="-0.89  0.03  0.54" quat="-0.58257527 -0.37451267  0.39531893  0.60338152"/>
+    
     <geom name="ground" type="plane" pos="0 0 0" size=".3 .3 .1" material="grid"/>
     <geom name="wall_x" type="plane" pos="-.3 0 .02" zaxis="1 0 0"  size=".02 .3 .02" material="decoration"/>
     <geom name="wall_y" type="plane" pos="0 -.3 .02" zaxis="0 1 0"  size=".3 .02 .02" material="decoration"/>
@@ -28,7 +31,7 @@
 
     <body name="pointmass" pos="0 0 .01">
       <!-- <camera name="cam0" pos="0 -0.3 0.3" xyaxes="1 0 0 0 0.7 0.7"/> -->
-      <camera name="cam0" pos="0 0 0.5" quat="1 0 0 0"/>
+      <camera name="self" pos="0 0 0.5" quat="1 0 0 0"/>
       <joint name="root_x" type="slide"  pos="0 0 0" axis="1 0 0" />
       <joint name="root_y" type="slide"  pos="0 0 0" axis="0 1 0" />
       <joint name="root_z" type="slide"  pos="0 0 0" axis="0 0 1" />

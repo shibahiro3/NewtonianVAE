@@ -39,6 +39,7 @@ Examples:
 )
 parser.add_argument("-c", "--config", type=str, required=True, **argset.config)
 parser.add_argument("--resume", action="store_true", help="Load the model and resume learning")
+parser.add_argument("--results-per", type=int, metavar="NUM", help="Epoch to save results per epochs")
 parser.add_argument("--visual", type=str, choices=["tensorboard", "visdom"])
 args = parser.parse_args()
 # fmt: on

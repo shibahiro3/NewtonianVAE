@@ -70,7 +70,7 @@ def main(
     model.eval()
 
     path_result = tool.util.priority(params.path.results_dir, saved_params.path.results_dir)
-    env = ControlSuiteEnvWrap(**params.raw_["ControlSuiteEnvWrap"])
+    env = ControlSuiteEnvWrap(**params.raw["ControlSuiteEnvWrap"])
 
     if steps is not None:
         max_time_length = steps

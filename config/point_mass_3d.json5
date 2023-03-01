@@ -4,7 +4,7 @@
   MNVAE: {
     dim_x: 3,
     regularization: false,
-    camera_names: ["camera0", "camera1"],
+    camera_names: ["top", "x side", "y side"],
 
     velocity: {
       fix_abc: [0, 0, 1],
@@ -36,11 +36,22 @@
             activation: "ReLU",
           },
         },
+        {
+          model: "VisualEncoder64",
+          dim_output: 32,
+          model_kwargs: {
+            activation: "ReLU",
+          },
+        },
       ],
     },
 
     decoder: {
       modellist: [
+        {
+          model: "SpatialBroadcastDecoder64",
+          dim_input: 32,
+        },
         {
           model: "SpatialBroadcastDecoder64",
           dim_input: 32,
@@ -101,4 +112,15 @@
     saves_dir: "environments/point_mass_3d/saves",
     results_dir: "environments/point_mass_3d/results",
   },
+
+  reconstruction: {
+    episodes: 3,
+    format: "mp4"
+  },
+
+  correlation: {
+    episodes: 50,
+    all: true,
+    format: ["png"]
+  }
 }

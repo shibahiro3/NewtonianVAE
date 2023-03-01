@@ -80,6 +80,7 @@ def anim_mode(
     freeze_cnt=0,
     interval=33,
     save_path=None,
+    repeat=True,
 ):
     """
     Args:
@@ -107,14 +108,18 @@ def anim_mode(
         plt.show()
 
     elif mode == "anim":
-        anim = FuncAnimation(fig, anim_func, frames=frames, init_func=null, interval=interval)
+        anim = FuncAnimation(
+            fig, anim_func, frames=frames, init_func=null, interval=interval, repeat=repeat
+        )
         plt.show()
 
     elif mode == "save":
         Color.print("saving to:", save_path)
         Path(save_path).parent.mkdir(parents=True, exist_ok=True)
 
-        anim = FuncAnimation(fig, anim_func, frames=frames, init_func=null, interval=interval)
+        anim = FuncAnimation(
+            fig, anim_func, frames=frames, init_func=null, interval=interval, repeat=repeat
+        )
         anim.save(save_path)
         print("Done")
 

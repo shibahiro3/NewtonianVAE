@@ -16,6 +16,7 @@ import mypython.vision as mv
 import tool.util
 import view.plot_config
 from models.core import NewtonianVAEFamily
+from mypython import rdict
 from mypython.ai.util import SequenceDataLoader
 from mypython.pyutil import Seq, Seq2, add_version
 from mypython.terminal import Color, Prompt
@@ -33,58 +34,23 @@ except:
     pass
 
 
-def reconstruction(
-    config: str,
-    episodes: int,
-    save_anim: bool,
-    format: str,
+def reconstruction_(
+    *,
+    model: NewtonianVAEFamily,
+    batchdata: dict,  # (T, B, D)
+    save_path: Optional[str] = None,
 ):
-    if save_anim:
-        checker.large_episodes(episodes)
-
-    # =========================== load ===========================
     torch.set_grad_enabled(False)
 
-    params = paramsmanager.Params(config)
+    T = batchdata["action"].shape[0]
+    episodes = batchdata["action"].shape[1]
 
-    dtype, device = tool.util.dtype_device(
-        dtype=params.test.dtype,
-        device=params.test.device,
-    )
-
-    model, manage_dir, weight_path, saved_params = tool.util.load(
-        root=params.path.saves_dir,
-        model_place=models.core,
-    )
-    model: NewtonianVAEFamily
-    model.type(dtype)
-    model.to(device)
-    model.eval()
-    model.is_save = True
-
-    path_data = tool.util.priority(params.path.data_dir, saved_params.path.data_dir)
-    path_result = tool.util.priority(params.path.results_dir, saved_params.path.results_dir)
-
-    testloader = SequenceDataLoader(
-        root=Path(path_data, "episodes"),
-        start=params.test.data_start,
-        stop=params.test.data_stop,
-        batch_size=episodes,
-        dtype=dtype,
-        device=device,
-    )
-
-    T = saved_params.train.max_time_length
-
-    del params
-    del saved_params
-    # ======================== end of load =======================
-
-    batchdata = next(testloader)
     all_steps = T * episodes
-
     batchdata["delta"].unsqueeze_(-1)
+
+    model.eval()
     model.init_cache()
+    model.is_save = True
     model(batchdata)
     model.convert_cache(type_to="numpy")
 
@@ -104,7 +70,7 @@ def reconstruction(
     fig = plt.figure()
     mpu.get_figsize(fig)
 
-    recon_camera_key_list = sorted([k for k in model.cache.keys() if k.startswith("camera")])
+    recon_camera_key_list = model.cache["camera"].keys()
 
     class Ax:
         def __init__(self) -> None:
@@ -235,11 +201,10 @@ def reconstruction(
             mpu.Axis_aspect_2d(ax, 1)
 
             # ============================================================
-            # print(self.one_batchdata.keys())
             for i, k in enumerate(recon_camera_key_list):
                 ax = axes.observations[i]
                 ax.set_title(r"$\mathbf{I}_t$ " f"({k}, Original)")
-                ax.imshow(obs2img(batchdata[k][self.t, self.ep].squeeze(0)))
+                ax.imshow(obs2img(batchdata["camera"][k][self.t, self.ep].squeeze(0)))
                 ax.set_axis_off()
                 i += 1
 
@@ -247,7 +212,7 @@ def reconstruction(
             for i, k in enumerate(recon_camera_key_list):
                 ax = axes.recons[i]
                 ax.set_title(r"$\mathbf{I}_t$ " f"({k}, Reconstructed)")
-                ax.imshow(obs2img(self.model.cache[k][self.t, self.ep]))
+                ax.imshow(obs2img(self.model.cache["camera"][k][self.t, self.ep]))
                 ax.set_axis_off()
 
             # ============================================================
@@ -318,10 +283,8 @@ def reconstruction(
 
     p = AnimPack()
 
-    save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_reconstructed.{format}")
-    save_path = add_version(save_path)
     mpu.anim_mode(
-        "save" if save_anim else "anim",
+        "save" if save_path is not None else "anim",
         fig,
         p.anim_func,
         all_steps,
@@ -329,6 +292,58 @@ def reconstruction(
         freeze_cnt=-1,
         save_path=save_path,
     )
+
+    model.init_cache()
+    model.is_save = False
+
+
+def reconstruction(
+    config: str,
+    episodes: int,
+    save_anim: bool,
+    format: str,
+):
+    if save_anim:
+        checker.large_episodes(episodes)
+
+    params = paramsmanager.Params(config)
+
+    dtype, device = tool.util.dtype_device(
+        dtype=params.test.dtype,
+        device=params.test.device,
+    )
+
+    model, manage_dir, weight_path, saved_params = tool.util.load(
+        root=params.path.saves_dir,
+        model_place=models.core,
+    )
+    model: NewtonianVAEFamily
+    model.type(dtype)
+    model.to(device)
+
+    path_data = tool.util.priority(params.path.data_dir, saved_params.path.data_dir)
+
+    testloader = SequenceDataLoader(
+        root=Path(path_data, "episodes"),
+        start=params.test.data_start,
+        stop=params.test.data_stop,
+        batch_size=episodes,
+        dtype=dtype,
+        device=device,
+        shuffle=False,
+    )
+    batchdata = next(testloader)
+
+    if save_anim:
+        path_result = tool.util.priority(params.path.results_dir, saved_params.path.results_dir)
+        save_path = Path(
+            path_result, manage_dir.stem, f"E{weight_path.stem}_reconstructed.{format}"
+        )
+        save_path = add_version(save_path)
+    else:
+        save_path = None
+
+    reconstruction_(model=model, batchdata=batchdata, save_path=save_path)
 
     print()
 

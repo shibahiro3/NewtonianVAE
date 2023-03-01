@@ -307,32 +307,34 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
             else:
                 assert False
 
-    def _camera(self):
-        # raw (np.ndarray)
-        # (H, W, RGB) (plt)
-        camera0 = self._env.physics.render(height=480, width=480, camera_id=0)
-        camera1 = self._env.physics.render(height=480, width=480, camera_id=1)
-        return camera0, camera1
+    def _cameras(self) -> Dict[str, np.ndarray]:
+        """raw (np.ndarray)
+        (H, W, RGB) (plt)"""
+
+        cameras = {}
+        # https://github.com/deepmind/dm_control/issues/116
+        for name in self._env.physics.named.model.cam_quat.axes.row.names:
+            cameras[name] = self._env.physics.render(height=480, width=480, camera_id=name)
+        return cameras
 
     def _observations(self, state):
         observations = state.observation
-        for i, camera in enumerate(self._camera()):
-            observations[f"camera{i}"] = _images_to_observation(
-                camera, self.bit_depth, self.imgsize
-            )
+        observations["camera"] = {}
+        for k, v in self._cameras().items():
+            observations["camera"][k] = _images_to_observation(v, self.bit_depth, self.imgsize)
         return observations
 
     def render(self):
         """綺麗なまま表示する"""
         # それぞれ画像サイズが異なってもOK
-        cameras = self._camera()
-        for camera in cameras:
+        cameras = self._cameras()
+        for camera in cameras.values():
             assert camera.dtype == np.uint8
 
         space = 10
 
-        h_sum = max([camera.shape[0] for camera in cameras])
-        w_sum = sum([camera.shape[1] for camera in cameras])
+        h_sum = max([camera.shape[0] for camera in cameras.values()])
+        w_sum = sum([camera.shape[1] for camera in cameras.values()])
 
         board = np.full(
             shape=(h_sum, w_sum + space * (len(cameras) - 1), 3),
@@ -340,13 +342,13 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
             dtype=np.uint8,
         )
         H_accum, W_accum = 0, 0
-        for camera in cameras:
+        for camera in cameras.values():
             H, W = camera.shape[:2]
             board[H_accum : H_accum + H, W_accum : W_accum + W, :] = camera
             # H_accum += camera.shape[0] + space
             W_accum += camera.shape[1] + space
 
-        cv2.imshow(f"camera0 - {len(cameras)-1}", mv.plt2cv(board))
+        cv2.imshow("camera " + ", ".join(cameras.keys()), mv.plt2cv(board))
         cv2.waitKey(1)
 
     def reset(self) -> Dict[str, Union[np.ndarray, Tensor, Real]]:

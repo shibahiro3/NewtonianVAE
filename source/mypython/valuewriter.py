@@ -1,5 +1,7 @@
 import io
+import os
 import pickle
+import shutil
 import struct
 import sys
 import time
@@ -46,7 +48,7 @@ class ValueWriter:
         self.name_type = name_type.copy()
 
         self.root_core.mkdir(parents=True, exist_ok=True)
-        self.f_order = Path(root, self.order).open("wb")
+        self.f_order = open(Path(root, self.order), "wb")
         self.fs: Dict[str, io.BufferedWriter] = {}
         for name, typ in self.name_type.items():
             self._make_f(name, typ)
@@ -87,7 +89,8 @@ class ValueWriter:
     def load(root) -> Dict[str, np.ndarray]:
         root = Path(root)
 
-        names_ = Path(root, ValueWriter.order).open("rb").read()
+        with open(Path(root, ValueWriter.order), "rb") as f:
+            names_ = f.read()
         names = []
 
         i = 0
@@ -100,7 +103,8 @@ class ValueWriter:
 
         data = {}
         for name in names:
-            byte = Path(root, ValueWriter.core, name).open("rb").read()
+            with open(Path(root, ValueWriter.core, name), "rb") as f:
+                byte = f.read()
             back_idx = 4
             len_info = struct.unpack("I", byte[:back_idx])[0]
             info = pickle.loads(byte[back_idx : back_idx + len_info])
@@ -132,6 +136,8 @@ class ValueWriter:
 if __name__ == "__main__":
     # Example
 
+    root = "_hoge"
+
     vals = {
         "foo": [-53.63, 5624.146, 1944.78, -3462.7020, 652.89],
         "baraaa": [154451, 4652, -54276524, 6254, 7864],
@@ -140,7 +146,7 @@ if __name__ == "__main__":
         "piyo": np.random.randn(3),
     }
 
-    vwriter = ValueWriter("_hoge")
+    vwriter = ValueWriter(root)
     for k, vs in vals.items():
         for v in vs:
             # print(k, v)
@@ -152,6 +158,9 @@ if __name__ == "__main__":
     vwriter.write("bazz", 514)
     vwriter.write("fuga", 8888)
 
-    data = ValueWriter.load("_hoge")
+    data = ValueWriter.load(root)
     pprint(data)
     print(data.keys())
+
+    if os.path.isdir(root):
+        shutil.rmtree(root)

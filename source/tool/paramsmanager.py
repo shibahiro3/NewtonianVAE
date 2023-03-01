@@ -107,19 +107,24 @@ class Params(_Converter):
     def __init__(self, path) -> None:
         super().__init__()
 
-        self.raw_: dict = json5.load(open(path))
+        with open(path) as f:
+            self._raw: dict = json5.load(f)
 
         def instance_or_none(T, kwargs):
             return T(**kwargs) if kwargs is not None else None
 
-        self.model: str = self.raw_.get("model", None)
-        self.model_params: dict = self.raw_.get(self.model, None)
-        self.train = instance_or_none(Train, self.raw_.get("train", None))
-        self.valid = instance_or_none(Valid, self.raw_.get("valid", None))
-        self.test = instance_or_none(Test, self.raw_.get("test", None))
-        self.preprocess = instance_or_none(Preprocess, self.raw_.get("preprocess", None))
-        self.path = instance_or_none(Paths, self.raw_.get("path", None))
+        self.model: str = self._raw.get("model", None)
+        self.model_params: dict = self._raw.get(self.model, None)
+        self.train = instance_or_none(Train, self._raw.get("train", None))
+        self.valid = instance_or_none(Valid, self._raw.get("valid", None))
+        self.test = instance_or_none(Test, self._raw.get("test", None))
+        self.preprocess = instance_or_none(Preprocess, self._raw.get("preprocess", None))
+        self.path = instance_or_none(Paths, self._raw.get("path", None))
         self.pid = None  # os.getpid()
+
+    @property
+    def raw(self):
+        return self._raw
 
     def _select(self, save_keys):
         model_params = {self.model: self.model_params}
@@ -146,7 +151,7 @@ class Params(_Converter):
     def save_simenv(self, path):
         self._save(
             path=path,
-            contents={"ControlSuiteEnvWrap": self.raw_["ControlSuiteEnvWrap"]},
+            contents={"ControlSuiteEnvWrap": self.raw["ControlSuiteEnvWrap"]},
             msg="saved simenv params:",
         )
 

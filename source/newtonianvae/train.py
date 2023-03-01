@@ -5,7 +5,7 @@ import time
 import traceback
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 import torch
@@ -15,28 +15,30 @@ import models.core
 import mypython.ai.torchprob as tp
 import tool.util
 from models.core import NewtonianVAEFamily
+from mypython import rdict
 from mypython.ai.util import (
     SequenceDataLoader,
     print_module_params,
     reproduce,
     show_model_info,
 )
-from mypython.pyutil import MovingAverageTime, RemainingTime, s2dhms_str
+from mypython.pyutil import MovingAverageTime, RemainingTime, add_version, s2dhms_str
 from mypython.terminal import Color, Prompt
 from mypython.valuewriter import ValueWriter
 from tool import paramsmanager
 from tool.util import Preferences, creator, dtype_device
 from view.visualhandlerbase import VisualHandlerBase
 
+from .correlation import correlation_
+from .reconstruct import reconstruction_
+
 
 def train(
     config: str,
     resume: bool,
+    results_per: Optional[int] = None,
     vh=VisualHandlerBase(),
 ):
-    torch.set_grad_enabled(True)
-    # torch.autograd.detect_anomaly()
-
     params = paramsmanager.Params(config)
 
     if params.train.seed is None:
@@ -66,6 +68,8 @@ def train(
         dtype=dtype,
         device=device,
     )
+
+    # rdict.show(trainloader.sample_batch(), "train batch")
 
     model, managed_dir, weight_dir, resume_weight_path = creator(
         root=params.path.saves_dir,
@@ -106,6 +110,9 @@ def train(
         time_first_training = MovingAverageTime(5)
         time_epoch_training = MovingAverageTime(1)
         for epoch in range(1, params.train.epochs + 1):
+            torch.set_grad_enabled(True)
+            # torch.autograd.detect_anomaly()
+
             time_start_epoch = time.perf_counter()
 
             if params.train.kl_annealing:
@@ -206,10 +213,10 @@ def train(
                     else:
                         remaining = time_epoch_training.get() * (params.train.epochs - epoch + 1)
                         bt_msg += (
-                            f"| Remaining: {s2dhms_str(remaining)} | "
+                            f"| Remaining: {s2dhms_str(remaining)}+ | "
                             + f"ETA: "
                             + (datetime.now() + timedelta(seconds=remaining)).strftime(
-                                "%m/%d %H:%M "
+                                "%m/%d %H:%M+ "
                             )
                         )
 
@@ -249,6 +256,48 @@ def train(
             vh.plot(dict(mode="all", epoch=epoch, losses=epoch_losses_all))
 
             time_epoch_training.update()
+
+            if (results_per is not None) and (epoch % results_per == 0):
+                correlation_(
+                    model=model,
+                    batchdata=SequenceDataLoader(
+                        root=Path(params.path.data_dir, "episodes"),
+                        start=params.test.data_start,
+                        stop=params.test.data_stop,
+                        batch_size=params.raw["correlation"]["episodes"],
+                        dtype=dtype,
+                        device=device,
+                        shuffle=False,
+                    ).sample_batch(),
+                    all=params.raw["correlation"]["all"],
+                    save_path=add_version(
+                        Path(params.path.results_dir, managed_dir.stem, f"E{epoch}_correlation.png")
+                    ),
+                    show=False,
+                )
+
+                reconstruction_(
+                    model=model,
+                    batchdata=SequenceDataLoader(
+                        root=Path(params.path.data_dir, "episodes"),
+                        start=params.test.data_start,
+                        stop=params.test.data_stop,
+                        batch_size=params.raw["reconstruction"]["episodes"],
+                        dtype=dtype,
+                        device=device,
+                        shuffle=False,
+                    ).sample_batch(),
+                    save_path=add_version(
+                        Path(
+                            params.path.results_dir,
+                            managed_dir.stem,
+                            f"E{epoch}_reconstructed."
+                            + str(params.raw["reconstruction"]["format"]),
+                        )
+                    ),
+                )
+
+        print("Total Duration:", s2dhms_str(time.perf_counter() - time_start_learning))
 
     except KeyboardInterrupt:
         print("\nKeyboardInterrupt")

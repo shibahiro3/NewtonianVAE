@@ -27,6 +27,11 @@ from dm_control.utils import containers
 from dm_control.utils import io as resources
 from dm_control.utils import rewards
 
+# from mypython.receiver import Receiver
+# receiver = Receiver(port=60333, typ="pickle")
+# receiver.start()
+
+
 _DEFAULT_TIME_LIMIT = 20
 SUITE = containers.TaggedTasks()
 
@@ -163,11 +168,16 @@ class PointMass(base.Task):
       physics.model.wrap_prm[[2, 3]] = dir2
     super().initialize_episode(physics)
 
-  def before_step(self, action, physics):
-    # print(physics.named.model.cam_quat["camera_2"])
-    # physics.named.model.cam_quat["fixed"] = np.array([0.707, 0.707, 0, 0])
-
-    super().before_step(action, physics)
+  # def before_step(self, action, physics):
+  #   data = receiver.get()
+  #   print(data)
+  #   if data is not None:
+  #     physics.named.model.cam_pos["y side"] = list(data.values())[:3]
+  #     # physics.named.model.cam_quat["y side"] = list(data.values())
+    
+  #   print(physics.named.model.cam_pos["y side"])
+  #   print(physics.named.model.cam_quat["y side"])
+  #   super().before_step(action, physics)
 
   def get_observation(self, physics):
     """Returns an observation of the state."""

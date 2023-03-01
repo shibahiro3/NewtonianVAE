@@ -4,7 +4,7 @@
   NewtonianVAEV2: {
     dim_x: 2,
     regularization: false,
-    camera_name: "camera0",
+    camera_name: "top",
 
     velocity: {
       fix_abc: [0, 0, 1],

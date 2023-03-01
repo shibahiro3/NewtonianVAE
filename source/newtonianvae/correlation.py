@@ -31,56 +31,29 @@ except:
     pass
 
 
-def correlation(
-    config: str,
-    episodes: int,
+def correlation_(
+    *,
+    model: NewtonianVAEFamily,
+    batchdata: dict,  # (T, B, D)
     all: bool,
-    format: List[str],
+    save_path: Optional[str] = None,
+    format: Optional[List[str]] = None,
+    show: bool = True,
 ):
-    # =========================== load ===========================
     torch.set_grad_enabled(False)
 
-    params = paramsmanager.Params(config)
+    T = batchdata["action"].shape[0]
+    episodes = batchdata["action"].shape[1]
 
-    dtype, device = tool.util.dtype_device(
-        dtype=params.train.dtype,
-        device=params.train.device,
-    )
-
-    model, manage_dir, weight_path, saved_params = tool.util.load(
-        root=params.path.saves_dir,
-        model_place=models.core,
-    )
-    model: NewtonianVAEFamily
-    model.type(dtype)
-    model.to(device)
-    model.eval()
-    model.is_save = True
-
-    path_data = tool.util.priority(params.path.data_dir, saved_params.path.data_dir)
-    path_result = tool.util.priority(params.path.results_dir, saved_params.path.results_dir)
-
-    testloader = SequenceDataLoader(
-        root=Path(path_data, "episodes"),
-        start=params.test.data_start,
-        stop=params.test.data_stop,
-        batch_size=episodes,
-        dtype=dtype,
-        device=device,
-    )
-
-    del params
-    del saved_params
-    # ======================== end of load =======================
-
-    batchdata = next(testloader)
     batchdata["delta"].unsqueeze_(-1)
-    position = batchdata["position"].detach().cpu()
-    # position = batchdata["relative_position"].detach().cpu()
 
-    print("Calculating...")
+    model.eval()
+    model.init_cache()
+    model.is_save = True
     model(batchdata)
     model.convert_cache(type_to="numpy")
+
+    position = batchdata["position"].detach().cpu().numpy()
 
     dim = model.cache["x"].shape[-1]
 
@@ -167,7 +140,58 @@ def correlation(
                 ax.plot(x[ep], y[ep], color=color[ep])
 
     # ============================================================
-    save_path = Path(path_result, f"{manage_dir.stem}_W{weight_path.stem}_correlation.pdf")
+    if show:
+        if (save_path is not None) and (format is not None):
+            mpu.register_save_path(fig, save_path, format)
+
+        plt.show()
+    else:
+        if save_path is not None:
+            save_path: Path = Path(save_path).with_suffix(".png")
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            plt.savefig(save_path)
+            Color.print("[correlation] saved to:", save_path)
+
+
+def correlation(
+    config: str,
+    episodes: int,
+    all: bool,
+    format: List[str],
+):
+
+    params = paramsmanager.Params(config)
+
+    dtype, device = tool.util.dtype_device(
+        dtype=params.train.dtype,
+        device=params.train.device,
+    )
+
+    model, manage_dir, weight_path, saved_params = tool.util.load(
+        root=params.path.saves_dir,
+        model_place=models.core,
+    )
+    model: NewtonianVAEFamily
+    model.type(dtype)
+    model.to(device)
+
+    path_data = tool.util.priority(params.path.data_dir, saved_params.path.data_dir)
+
+    testloader = SequenceDataLoader(
+        root=Path(path_data, "episodes"),
+        start=params.test.data_start,
+        stop=params.test.data_stop,
+        batch_size=episodes,
+        dtype=dtype,
+        device=device,
+    )
+    batchdata = next(testloader)
+
+    # ============================================================
+    path_result = tool.util.priority(params.path.results_dir, saved_params.path.results_dir)
+    save_path = Path(path_result, manage_dir.stem, f"E{weight_path.stem}_correlation.pdf")
     # save_path = add_version(save_path)
-    mpu.register_save_path(fig, save_path, format)
-    plt.show()
+
+    correlation_(
+        model=model, batchdata=batchdata, all=all, save_path=save_path, format=format, show=True
+    )

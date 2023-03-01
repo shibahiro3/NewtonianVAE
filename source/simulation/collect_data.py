@@ -1,13 +1,16 @@
+import pickle
 import shutil
 import sys
 import time
 from collections import ChainMap
+from numbers import Number
 from pathlib import Path
 from typing import Dict, List, Sequence, Type, Union, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
+import torch
 from matplotlib.gridspec import GridSpec
 from torch import Tensor
 
@@ -15,6 +18,7 @@ import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
 import view.plot_config
+from mypython import rdict
 from mypython.terminal import Color, Prompt
 from simulation.env import ControlSuiteEnvWrap, obs2img
 from tool import checker, paramsmanager
@@ -71,7 +75,7 @@ def main(
 
     params = paramsmanager.Params(config)
 
-    env = ControlSuiteEnvWrap(**params.raw_["ControlSuiteEnvWrap"])
+    env = ControlSuiteEnvWrap(**params.raw["ControlSuiteEnvWrap"])
     T = env.max_episode_length // env.action_repeat
     all_steps = T * episodes
 
@@ -107,7 +111,7 @@ def main(
             def __init__(self) -> None:
                 observations = env.reset()
                 # print(observations.keys())
-                n_cam = len([s for s in observations.keys() if s.startswith("camera")])
+                n_cam = len([s for s in observations["camera"].keys()])
                 # print(n_cam)
 
                 gs = GridSpec(nrows=1, ncols=n_cam + 2)
@@ -170,31 +174,10 @@ def main(
             step_data["delta"] = 0.1
             step_data["relative_position"] = step_data["position"] - step_data["target_position"]
 
-            for k, v in step_data.items():
-                if type(v) == Tensor:
-                    step_data[k] = v.detach().cpu().numpy()
-
-            for k, v in step_data.items():
-                if not k in self.episode_data:
-                    self.episode_data[k] = [v]
-                else:
-                    self.episode_data[k].append(v)
-
-            # camera = observations["camera0"]
-            # camera1 = observations["camera1"]
-            #
-            # position = observations["relative_position"]
-
-            # ### see
-            # print(f"===== {self.t} =====")
-            # print(f"=== num: {len(step_data)}")
-            # for k, v in step_data.items():
-            #     if type(v) == np.ndarray or type(v) == Tensor:
-            #         print(k, v.shape)
-            #     else:
-            #         print(k, v, f"({v.__class__.__name__})")
-
-            ############
+            rdict.to_numpy(step_data, ignore_scalar=True)
+            rdict.append_a_to_b(step_data, self.episode_data)
+            # rdict.show(step_data, "step_data")
+            # rdict.show(self.episode_data, "episode_data")
 
             if watch == "render":
                 env.render()
@@ -228,15 +211,14 @@ def main(
 
                 # ==================================================
                 _i = 0
-                for k, v in observations.items():
-                    if k.startswith("camera"):
-                        ax = axes.cameras[_i]
-                        ax.set_title("$\mathbf{I}_t$" f" ({k})")
-                        ax.imshow(obs2img(v))
-                        ax.set_xlabel(f"{v.shape[-1]} px")
-                        ax.set_ylabel(f"{v.shape[-2]} px")
-                        ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
-                        _i += 1
+                for k, v in observations["camera"].items():
+                    ax = axes.cameras[_i]
+                    ax.set_title("$\mathbf{I}_t$" f" ({k})")
+                    ax.imshow(obs2img(v))
+                    ax.set_xlabel(f"{v.shape[-1]} px")
+                    ax.set_ylabel(f"{v.shape[-2]} px")
+                    ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+                    _i += 1
 
                 # ==================================================
                 ax = axes.position
@@ -284,10 +266,18 @@ def main(
                     mpu.Axis_aspect_2d(ax, 1)
 
             if done and not save_anim:
+
+                # rdict.to_numpy(self.episode_data)
+                # rdict.show(self.episode_data, "episode_data (save)")
+
                 if watch is None:
                     episodes_dir = Path(data_path, "episodes")
                     episodes_dir.mkdir(parents=True, exist_ok=True)
-                    np.savez(Path(episodes_dir, f"{self.episode_cnt}.npz"), **self.episode_data)
+
+                    rdict.to_numpy(self.episode_data)
+                    # rdict.show(self.episode_data, "episode_data (save)")
+                    with open(Path(episodes_dir, f"{self.episode_cnt}.pickle"), "wb") as f:
+                        pickle.dump(self.episode_data, f)
 
                     info = Color.green + "saved" + Color.reset
                 else:

@@ -1,8 +1,9 @@
+import pickle
 import random
 from functools import singledispatch
 from pathlib import Path
 from pprint import pprint
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,6 +11,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn, optim
 
+from mypython import rdict
 from mypython.pyutil import human_readable_byte
 from mypython.terminal import Color
 
@@ -104,12 +106,14 @@ def show_model_info(model: nn.Module, verbose: bool = False):
 
 
 class BatchIdx:
-    def __init__(self, start: int, stop: int, batch_size: int):
+    def __init__(self, start: int, stop: int, batch_size: int, shuffle=True):
         assert stop - start >= batch_size
 
         self._N = stop - start
         self._B = batch_size
         self._indexes = np.arange(start=start, stop=stop)
+        self.shuffle = shuffle
+
         self._reset()
 
     @property
@@ -132,8 +136,10 @@ class BatchIdx:
         mask = self._indexes[self.i * self._B : (self.i + 1) * self._B]
         return mask
 
-    def _reset(self):
-        np.random.shuffle(self._indexes)
+    def _reset(self) -> None:
+        if self.shuffle:
+            np.random.shuffle(self._indexes)
+
         self.i = -1
 
 
@@ -152,6 +158,7 @@ class SequenceDataLoader(BatchIdx):
         dtype: torch.dtype = torch.float32,
         device=torch.device("cpu"),
         show_selected_index=False,
+        shuffle=True,
     ):
         """
         root: directory path of data
@@ -163,7 +170,7 @@ class SequenceDataLoader(BatchIdx):
 
         """
 
-        super().__init__(start, stop, batch_size)
+        super().__init__(start, stop, batch_size=batch_size, shuffle=shuffle)
 
         self.root = root
         self.device = device
@@ -186,10 +193,15 @@ class SequenceDataLoader(BatchIdx):
             device=self.device,
         )
 
+    def sample_batch(self):
+        batchdata = next(self)
+        self._reset()
+        return batchdata
+
     @staticmethod
     def _seq_load(
         root, indexes, dtype, batch_first=False, device=torch.device("cpu")
-    ) -> Dict[str, Tensor]:
+    ) -> Dict[str, Any]:
         """"""
 
         """
@@ -200,19 +212,16 @@ class SequenceDataLoader(BatchIdx):
         """
 
         batch_data = {}
+
         for i in indexes:
-            for k, v in np.load(Path(root, f"{i}.npz")).items():
-                v = torch.from_numpy(v).to(dtype).to(device)
-                if not k in batch_data:
-                    batch_data[k] = [v]
-                else:
-                    batch_data[k].append(v)
+            with open(Path(root, f"{i}.pickle"), "rb") as f:
+                one_seq_data = pickle.load(f)
+            rdict.append_a_to_b(one_seq_data, batch_data)
 
-        for k, v in batch_data.items():
-            batch_data[k] = torch.stack(v)
-            v = torch.stack(v)
-            if not batch_first:
-                v = swap01(v)
-            batch_data[k] = v
+        rdict.to_torch(batch_data, dtype=dtype, device=device)
 
+        if not batch_first:
+            rdict.apply(batch_data, swap01)
+
+        # rdict.show(batch_data, "batch_data (inside)")
         return batch_data
