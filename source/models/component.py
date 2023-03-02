@@ -108,6 +108,7 @@ class Velocity(nn.Module):
         activation: str = "ReLU",
     ) -> None:
         super().__init__()
+        self.dim_x = dim_x
 
         if fix_abc is None:
             self.func_abc = ABCf(dim_x, activation)
@@ -187,7 +188,6 @@ class Encoder(tp.Normal):
     def __init__(
         self,
         dim_x: int,
-        dim_middle: int,
         model: str,
         std_function: str = "softplus",
         model_kwargs={},
@@ -196,8 +196,8 @@ class Encoder(tp.Normal):
 
         self.dim_x = dim_x
 
-        self.fc = getattr(encdec, model)(dim_middle, **model_kwargs)
-        self.mean_std = nn.Linear(dim_middle, dim_x * 2)
+        self.fc = getattr(encdec, model)(**model_kwargs)
+        self.mean_std = nn.Linear(model_kwargs["dim_output"], dim_x * 2)
 
         # nn.Exp() does't exist
         self.std_function = find_function(std_function)
@@ -227,15 +227,14 @@ class Decoder(nn.Module):
 
     def __init__(
         self,
-        dim_x: int,
         model: str,
         model_kwargs={},
     ) -> None:
         super().__init__()
 
-        self.dim_x = dim_x
+        self.dim_x = model_kwargs["dim_input"]
 
-        self.dec = getattr(encdec, model)(dim_x, **model_kwargs)
+        self.dec = getattr(encdec, model)(**model_kwargs)
 
     def forward(self, x_t: Tensor):
         """"""
@@ -292,11 +291,9 @@ class MultiEncoder(tp.Normal):
         sum_dim_output = 0
         self.encoders = nn.ModuleList()
         for m in modellist:
-            dim_output = m["dim_output"]
-            sum_dim_output += dim_output
-            self.encoders.append(
-                getattr(encdec, m["model"])(dim_output, **m.get("model_kwargs", {}))
-            )
+            model_ = getattr(encdec, m["model"])(**m["model_kwargs"])
+            self.encoders.append(model_)
+            sum_dim_output += m["model_kwargs"]["dim_output"]
 
         self.mish = nn.Mish()
         self.mean_std = nn.Linear(sum_dim_output, dim_x * 2)
@@ -328,23 +325,25 @@ class MultiDecoder(nn.Module):
     def __init__(
         self,
         dim_x: int,
+        split_version: str,
         modellist: dict,
     ) -> None:
         super().__init__()
+        assert split_version in ("v1", "none")
 
         self.dim_x = dim_x
 
         self.decoders = nn.ModuleList()
         self.dim_inputs = []
         for m in modellist:
-            dim_input = m["dim_input"]
-            self.dim_inputs.append(dim_input)
-            self.decoders.append(
-                getattr(encdec, m["model"])(dim_input, **m.get("model_kwargs", {}))
-            )
+            model_ = getattr(encdec, m["model"])(**m["model_kwargs"])
+            self.decoders.append(model_)
+            self.dim_inputs.append(m["model_kwargs"]["dim_input"])
 
-        self.mish = nn.Mish()
-        self.fc = nn.Linear(dim_x, sum(self.dim_inputs))
+        self.split = split_version
+        if split_version == "v1":
+            self.mish = nn.Mish()
+            self.fc = nn.Linear(dim_x, sum(self.dim_inputs))
 
     def __call__(self, *args, **kwargs) -> List[Tensor]:
         return super().__call__(*args, **kwargs)
@@ -352,14 +351,19 @@ class MultiDecoder(nn.Module):
     def forward(self, x_t: Tensor):
         """"""
 
-        middle = self.fc(x_t)
-        middle = self.mish(middle)
-
-        start = 0
         outputs = []
-        for i, dec in enumerate(self.decoders):
-            span = self.dim_inputs[i]
-            outputs.append(dec(middle[..., start : start + span]))
-            start += span
+
+        if self.split == "v1":
+            middle = self.fc(x_t)
+            middle = self.mish(middle)
+            start = 0
+            for i, dec in enumerate(self.decoders):
+                span = self.dim_inputs[i]
+                outputs.append(dec(middle[..., start : start + span]))
+                start += span
+
+        elif self.split == "none":
+            for dec in self.decoders:
+                outputs.append(dec(x_t))
 
         return outputs

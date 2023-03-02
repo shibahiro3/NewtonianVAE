@@ -2,11 +2,11 @@
   model: "MNVAE",
 
   MNVAE: {
-    dim_x: 3,
     regularization: false,
-    camera_names: ["top", "x side", "y side"],
+    camera_names: ["top", "x side"],
 
     velocity: {
+      dim_x: 3,
       fix_abc: [0, 0, 1],
       // fix_abc: null,
     },
@@ -16,30 +16,21 @@
       // std: null,
     },
 
-    // dim_input, dim_output が3は無理っぽい
-    // 最初KLデカイ状態(e+6)が続く
-
     encoder: {
+      dim_x: 3,
       std_function: "softplus",
       modellist: [
         {
           model: "VisualEncoder64",
-          dim_output: 32,
           model_kwargs: {
+            dim_output: 64,
             activation: "ReLU",
           },
         },
         {
           model: "VisualEncoder64",
-          dim_output: 32,
           model_kwargs: {
-            activation: "ReLU",
-          },
-        },
-        {
-          model: "VisualEncoder64",
-          dim_output: 32,
-          model_kwargs: {
+            dim_output: 64,
             activation: "ReLU",
           },
         },
@@ -47,18 +38,20 @@
     },
 
     decoder: {
+      dim_x: 3,
+      split_version: "v1",
       modellist: [
         {
           model: "SpatialBroadcastDecoder64",
-          dim_input: 32,
+          model_kwargs: {
+            dim_input: 64,
+          },
         },
         {
           model: "SpatialBroadcastDecoder64",
-          dim_input: 32,
-        },
-        {
-          model: "SpatialBroadcastDecoder64",
-          dim_input: 32,
+          model_kwargs: {
+            dim_input: 64,
+          },
         },
       ],
     },
@@ -74,7 +67,7 @@
     max_time_length: 100,
     device: "cuda",
     dtype: "float32",
-    kl_annealing: true,
+    kl_annealing: false,
     save_per_epoch: 20,
     check_value: false,
     grad_clip_norm: 1000,
@@ -115,12 +108,12 @@
 
   reconstruction: {
     episodes: 3,
-    format: "mp4"
+    format: "mp4",
   },
 
   correlation: {
     episodes: 50,
     all: true,
-    format: ["png"]
-  }
+    format: ["png"],
+  },
 }

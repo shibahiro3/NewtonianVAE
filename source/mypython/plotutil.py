@@ -98,8 +98,6 @@ def anim_mode(
     if mode == "save":
         assert save_path is not None
 
-    print(f"frames: {frames}")
-
     def null():
         pass
 

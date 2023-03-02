@@ -175,10 +175,10 @@ class NewtonianVAEV2Cell(NewtonianVAEV2CellBase):
     ) -> None:
         super().__init__(*args, **kwargs)
 
-        self.f_velocity = Velocity(self.dim_x, **velocity)
+        self.f_velocity = Velocity(**velocity)
         self.p_transition = Transition(**transition)
-        self.q_encoder = Encoder(self.dim_x, **encoder)
-        self.p_decoder = Decoder(self.dim_x, **decoder)
+        self.q_encoder = Encoder(**encoder)
+        self.p_decoder = Decoder(**decoder)
 
     def forward(self, I_t: Tensor, x_q_tn1: Tensor, x_q_tn2: Tensor, u_tn1: Tensor, dt: Tensor):
         """"""
@@ -303,7 +303,6 @@ class MNVAECell(nn.Module):
 
     def __init__(
         self,
-        dim_x: int,
         regularization: bool,
         velocity: dict,
         transition: dict,
@@ -312,16 +311,16 @@ class MNVAECell(nn.Module):
     ) -> None:
         super().__init__()
 
-        self.dim_x = dim_x
         self.regularization = regularization
 
         self.kl_beta = 1
         self.force_training = False  # for add_graph of tensorboard
 
-        self.f_velocity = Velocity(dim_x, **velocity)
+        self.f_velocity = Velocity(**velocity)
         self.p_transition = Transition(**transition)
-        self.q_encoder = component.MultiEncoder(dim_x, **encoder)
-        self.p_decoder = component.MultiDecoder(dim_x, **decoder)
+        self.q_encoder = component.MultiEncoder(**encoder)
+        self.p_decoder = component.MultiDecoder(**decoder)
+        self.dim_x = self.f_velocity.dim_x
 
     @staticmethod
     def img_reduction(x: Tensor):
