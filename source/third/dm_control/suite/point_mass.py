@@ -166,7 +166,9 @@ class PointMass(base.Task):
     obs = collections.OrderedDict()
     obs['position'] = physics.position()
     obs['velocity'] = physics.velocity()
+    # Changed/added by Sugar
     obs['target_position'] = self.target_pos
+    obs['relative_position'] = obs['position'] - obs['target_position']
     return obs
 
   def get_reward(self, physics):

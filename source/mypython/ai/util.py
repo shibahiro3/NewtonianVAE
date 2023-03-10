@@ -11,10 +11,9 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn, optim
 
-from mypython import rdict
-from mypython.pyutil import human_readable_byte
-from mypython.terminal import Color
-
+from .. import rdict
+from ..pyutil import human_readable_byte
+from ..terminal import Color
 from . import nnio
 
 _NT = Union[np.ndarray, Tensor]
@@ -193,9 +192,11 @@ class SequenceDataLoader(BatchIdx):
             device=self.device,
         )
 
-    def sample_batch(self):
+    def sample_batch(self, verbose=False):
         batchdata = next(self)
         self._reset()
+        if verbose:
+            rdict.show(batchdata, "sample batch")
         return batchdata
 
     @staticmethod

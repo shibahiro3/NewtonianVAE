@@ -2,13 +2,14 @@
   model: "NewtonianVAEV2",
 
   NewtonianVAEV2: {
+    camera_name: "fixed",
+    dim_x: 2,
     regularization: false,
 
     velocity: {
-      dim_x: 2,
       fix_abc: [0, 0, 1],
       // fix_abc: null,
-      activation: "ReLU",
+      // activation: "ReLU",
     },
 
     transition: {
@@ -17,19 +18,15 @@
     },
 
     encoder: {
-      dim_x: 2,
-      dim_middle: 1024,
+      dim_output: 1024,
       std_function: "softplus",
       model: "VisualEncoder64",
-      model_kwargs: {
-        activation: "ReLU",
-      },
+      // model_kwargs: {
+      //   activation: "ReLU",
+      // },
     },
 
     decoder: {
-      dim_x: 2,
-      std: 1,
-      // std: null,
       model: "VisualDecoder64",
       model_kwargs: {
         dim_middle: 1024,
@@ -52,11 +49,17 @@
     check_value: false, // if false, a little faster
   },
 
-  eval: {
+  valid: {
+    data_start: 1000,
+    data_stop: 1200,
+    batch_size: 20,
+  },
+
+  test: {
     device: "cuda",
     dtype: "float32",
-    data_start: 1000,
-    data_stop: 1050,
+    data_start: 1200,
+    data_stop: 1400,
   },
 
   ControlSuiteEnvWrap: {
@@ -74,5 +77,20 @@
     data_dir: "environments/reacher2d/data",
     saves_dir: "environments/reacher2d/saves",
     results_dir: "environments/reacher2d/results",
+  },
+
+  correlation: {
+    episodes: 50,
+    kwargs: {
+      all: true,
+      position_name: "position",
+      format: ["png"],
+    },
+  },
+
+  reconstruction: {
+    episodes: 3,
+    format: "mp4",
+    // kwargs: {},
   },
 }

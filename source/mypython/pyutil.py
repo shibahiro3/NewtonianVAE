@@ -30,8 +30,8 @@ from typing import Callable, Optional, Tuple
 import numpy as np
 from typing_extensions import Self
 
-from mypython.numeric import MovingAverage
-from mypython.terminal import Color
+from .numeric import MovingAverage
+from .terminal import Color
 
 
 def is_number_type(x):

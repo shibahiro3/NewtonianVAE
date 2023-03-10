@@ -26,6 +26,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument("-c", "--config", type=str, required=True, **argset.config)
 parser.add_argument("--episodes", type=int, default=50)
 parser.add_argument("--all", action='store_true', help="Show correlations for all combinations")
+parser.add_argument("--position-name", type=str, default="position")
 parser.add_argument("--format", type=str, default=["svg", "pdf", "png"], nargs="*", **argset.format_file)
 args = parser.parse_args()
 # fmt: on

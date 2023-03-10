@@ -11,7 +11,7 @@ from pprint import pprint
 import torch.nn.functional as F
 from torch import nn
 
-from mypython.terminal import Color
+from ..terminal import Color
 
 
 @singledispatch

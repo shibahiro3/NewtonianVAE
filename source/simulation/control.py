@@ -55,8 +55,8 @@ def main(
 
     params_ctrl = paramsmanager.Params(config_ctrl)
     dtype, device = tool.util.dtype_device(
-        dtype=params_ctrl.eval.dtype,
-        device=params_ctrl.eval.device,
+        dtype=params_ctrl.test.dtype,
+        device=params_ctrl.test.device,
     )
 
     p_pctrl, manage_dir, weight_path, saved_params_ctrl = tool.util.load(

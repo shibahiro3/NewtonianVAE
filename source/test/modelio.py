@@ -12,7 +12,7 @@ from torchsummary import summary
 
 import models.resnet_decoder as rd
 import models.resnet_original as ro
-from models import encdec, resnet2
+from models import resnet2
 from mypython.ai import nnio
 
 # from source.models.resnet import BasicBlock, Bottleneck
@@ -28,12 +28,12 @@ def img64():
     img_size = (B, 3, 64, 64)
     img = torch.randn(img_size)
 
-    enc = encdec.VisualEncoder64(dim_latent, debug=True)
+    enc = parts.VisualEncoder64(dim_latent, debug=True)
     z = enc(img)
     print("z:", z.shape)
     assert z.shape == (B, dim_latent)
 
-    dec = encdec.VisualDecoder64(dim_latent, dim_middle=1234, debug=True)
+    dec = parts.VisualDecoder64(dim_latent, dim_middle=1234, debug=True)
     dec.debug = True
     x = dec(z)
     print("x:", x.shape)
@@ -46,12 +46,12 @@ def img256():
     img_size = (B, 3, 256, 256)
     img = torch.randn(img_size)
 
-    enc = encdec.VisualEncoder256(dim_latent, debug=True)
+    enc = parts.VisualEncoder256(dim_latent, debug=True)
     z = enc(img)
     print("z:", z.shape)
     assert z.shape == (B, dim_latent)
 
-    dec = encdec.VisualDecoder256(dim_latent, dim_middle=1234, debug=True)
+    dec = parts.VisualDecoder256(dim_latent, dim_middle=1234, debug=True)
     x = dec(z)
     print("x:", x.shape)
     assert x.shape == img_size
@@ -62,15 +62,15 @@ def resnet18():
 
     img = torch.randn(B, 3, 224, 224)
 
-    enc = encdec.ResNet(dim_latent)
+    enc = parts.ResNet(dim_latent)
     summary(enc, img.shape[-3:], device="cpu")
 
-    # enc = encdec.ResNet(dim_latent, version="resnet50", weights="IMAGENET1K_V1")
+    # enc = parts.ResNet(dim_latent, version="resnet50", weights="IMAGENET1K_V1")
     z = enc(img)
     print("z:", z.shape)
     assert z.shape == (B, dim_latent)
 
-    dec = encdec.VisualDecoder224(dim_latent, dim_middle=1234, debug=True)
+    dec = parts.VisualDecoder224(dim_latent, dim_middle=1234, debug=True)
     x = dec(z)
     print("x:", x.shape)
     assert x.shape == img.shape
@@ -83,14 +83,14 @@ def decoderV2():
 
     # resnet50
     z = torch.randn((B, 48))
-    dec = encdec.VisualDecoder224V2(48)
+    dec = parts.VisualDecoder224V2(48)
     print(dec)
     x = dec(z)
     print(x.shape)
 
     # resnet18
     # z = torch.randn((B, dim_latent))
-    # dec = encdec.ResNetDecoder(BasicBlock, [2, 2, 2, 2])
+    # dec = parts.ResNetDecoder(BasicBlock, [2, 2, 2, 2])
 
 
 def res_orig():
@@ -192,7 +192,7 @@ def test11():
     print(f"{x.min().item():.4f}, {x.max().item():.4f}")
 
 
-from source.models import from_stable_diffusion
+from models import from_stable_diffusion, parts
 
 
 def test12():

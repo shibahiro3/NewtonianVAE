@@ -4,13 +4,13 @@ import sys
 sys.path.append((os.pardir + os.sep) * 1)
 
 
-from typing import Callable
+from typing import Callable, Optional
 
 import torch
 import vit_pytorch
 from torchsummary import summary
 
-from models import encdec, from_stable_diffusion
+from models import from_stable_diffusion, parts, parts2
 from mypython.ai.util import show_model_info
 from mypython.pyutil import function_test, human_readable_byte
 from mypython.terminal import Color
@@ -26,7 +26,11 @@ def IOprinter(input: torch.Tensor, output: torch.Tensor):
     print(f"O min, max: {output.min().item():.4f}, {output.max().item():.4f}")
 
 
-def IOcheck(input: torch.Tensor, output: torch.Tensor, in2out: Callable = lambda x: x):
+def IOcheck(
+    input: torch.Tensor,
+    output: torch.Tensor,
+    in2out: Callable[[int], int],
+):
     In = torch.tensor(input.shape)[-2:]
     Out = torch.tensor(output.shape)[-2:]
 
@@ -36,7 +40,7 @@ def IOcheck(input: torch.Tensor, output: torch.Tensor, in2out: Callable = lambda
 
 def common(
     model: torch.nn.Module,
-    in2out: Callable = lambda x: x,
+    in2out: Optional[Callable[[int], int]] = None,
     show=False,
     B=5,  # prime
     C=7,  # prime
@@ -48,8 +52,7 @@ def common(
     HH=256,
     WL=67,  # prime
     WH=67,  # prime
-    # device=torch.device("cpu"),
-    device=torch.device("cuda"),
+    device=torch.device("cpu"),
 ):
     model.to(device)
     show_model_info(model, verbose=False)
@@ -63,7 +66,14 @@ def common(
             if show:
                 IOprinter(input, output)
 
-            IOcheck(input, output, in2out)
+            if in2out is not None:
+                IOcheck(input, output, in2out)
+
+
+# ============================================================
+
+# device = torch.device("cpu")
+device = torch.device("cuda")
 
 
 @function_test
@@ -117,16 +127,21 @@ def simple_decoder(show=False):
 
 
 @function_test
+def unet_double_conv(show=False):
+    IC, OC = 7, 11  # prime
+    model = parts.DoubleConv(IC, OC)
+    # common(model, show=show, C=IC, in2out=lambda x: x)
+    common(model, show=show, C=IC, HL=572, HH=572, in2out=lambda x: x)
+
+
+@function_test
 def vanilla_cnn64():
     dim_latent = 13
     B = 7
     img_size = 64
-    # device = torch.device("cpu")
-    device = torch.device("cuda")
 
     img = torch.randn(B, 3, img_size, img_size).to(device)
-    model = encdec.ResNet(dim_latent, version="resnet18")
-    model.to(device)
+    model = parts.ResNet(dim_latent, version="resnet18").to(device)
 
     summary(model, img.shape[-3:], device=device)
     show_model_info(model, verbose=False)
@@ -145,12 +160,8 @@ def resnet_decoder():
     img_size = 224
     # img_size = 256
 
-    # device = torch.device("cpu")
-    device = torch.device("cuda")
-
     z = torch.randn(B, dim_latent).to(device)
-    model = encdec.ResNetDecoder(dim_latent, img_size=img_size)
-    model.to(device)
+    model = parts.ResNetDecoder(dim_latent, img_size=img_size).to(device)
 
     show_model_info(model, verbose=False)
 
@@ -168,12 +179,8 @@ def resnet_official():
     img_size = 224
     # img_size = 256
 
-    # device = torch.device("cpu")
-    device = torch.device("cuda")
-
     img = torch.randn(B, 3, img_size, img_size).to(device)
-    model = encdec.ResNet(dim_latent, version="resnet18")
-    model.to(device)
+    model = parts.ResNet(dim_latent, version="resnet18").to(device)
 
     summary(model, img.shape[-3:], device=device)
     show_model_info(model, verbose=False)
@@ -192,9 +199,6 @@ def vit():
     img_size = 224
     # img_size = 256
 
-    # device = torch.device("cpu")
-    device = torch.device("cuda")
-
     img = torch.randn(B, 3, img_size, img_size).to(device)
     model = vit_pytorch.ViT(
         image_size=img_size,
@@ -206,8 +210,7 @@ def vit():
         mlp_dim=2048,
         dropout=0.1,
         emb_dropout=0.1,
-    )
-    model.to(device)
+    ).to(device)
 
     summary(model, img.shape[-3:], device=device)
     show_model_info(model, verbose=False)
@@ -226,9 +229,6 @@ def simple_vit():
     img_size = 224
     # img_size = 256
 
-    # device = torch.device("cpu")
-    device = torch.device("cuda")
-
     img = torch.randn(B, 3, img_size, img_size).to(device)
     model = vit_pytorch.SimpleViT(
         image_size=img_size,
@@ -238,8 +238,7 @@ def simple_vit():
         depth=6,
         heads=16,
         mlp_dim=2048,
-    )
-    model.to(device)
+    ).to(device)
 
     summary(model, img.shape[-3:], device=device)
     show_model_info(model, verbose=False)
@@ -251,19 +250,43 @@ def simple_vit():
     assert z.shape == (B, dim_latent)
 
 
+@function_test
+def encoder_v1():
+    B = 7
+    img_size = 64
+    img = torch.randn(B, 3, img_size, img_size).to(device)
+    enc = parts.EncoderV1(img_channels=3).to(device)
+    x = enc(img)
+    print(x.shape)
+
+
+@function_test
+def decoder_v1():
+    B = 7
+    img = torch.randn(B, 1024, 8, 8).to(device)
+    dec = parts.DecoderV1(img_channels=3).to(device)
+    y = dec(img)
+    print(y.shape)
+
+
 if __name__ == "__main__":
-    conv311()
-    conv320()
-    conv110()
-    upsample()
-    downsample()
-    downsample_with_conv()
-    simple_decoder()
+    # unet_double_conv(True)
 
-    vanilla_cnn64()
+    # conv311()
+    # conv320()
+    # conv110()
+    # upsample()
+    # downsample()
+    # downsample_with_conv()
+    # simple_decoder()
 
-    resnet_decoder()
-    resnet_official()
+    # vanilla_cnn64()
 
-    vit()
-    simple_vit()
+    # resnet_decoder()
+    # resnet_official()
+
+    # vit()
+    # simple_vit()
+
+    encoder_v1()
+    decoder_v1()

@@ -3,6 +3,12 @@
   <include file="./common/visual.xml"/>
   <include file="./common/materials.xml"/>
 
+  <asset>
+    <texture name="texture_blue" type="2d" builtin="checker" rgb1=".1 .2 .3" 
+     rgb2=".2 .3 .4" width="300" height="300"/>
+    <material name="material_blue" texture="texture_blue" texrepeat="0 0" reflectance=".2"/>
+  </asset>
+
   <option timestep="0.02">
     <flag contact="disable"/>
   </option>
@@ -15,11 +21,23 @@
   <worldbody>
     <light name="light" pos="0 0 1"/>
     <camera name="top" pos="0 0 .75" quat="1 0 0 0"/>
+
+    <!-- === Color === -->
+
+    <!-- Normal -->
     <geom name="ground" type="plane" pos="0 0 0" size=".3 .3 .1" material="grid"/>
     <geom name="wall_x" type="plane" pos="-.3 0 .02" zaxis="1 0 0"  size=".02 .3 .02" material="decoration"/>
     <geom name="wall_y" type="plane" pos="0 -.3 .02" zaxis="0 1 0"  size=".3 .02 .02" material="decoration"/>
     <geom name="wall_neg_x" type="plane" pos=".3 0 .02" zaxis="-1 0 0"  size=".02 .3 .02" material="decoration"/>
     <geom name="wall_neg_y" type="plane" pos="0 .3 .02" zaxis="0 -1 0"  size=".3 .02 .02" material="decoration"/>
+
+    <!-- White -->
+    <!-- <geom name="ground" type="plane" pos="0 0 0" size="1 1 1"/> -->
+
+    <!-- Blue -->
+    <!-- <geom name="ground" type="plane" pos="0 0 0" size="1 1 1" material="material_blue"/> -->
+
+    <!-- === End of Color [Normal] === -->
 
     <body name="pointmass" pos="0 0 .01">
       <!-- <camera name="cam0" pos="0 -0.3 0.3" xyaxes="1 0 0 0 0.7 0.7"/> -->
@@ -31,8 +49,7 @@
       <geom name="pointmass" type="sphere" size=".03" material="self" mass=".3"/>
     </body>
 
-    <!-- Changed/added by Sugar -->
-    <!-- size=".015" -> size=".03" -->
+    <!-- <geom name="target" pos="0 0 .01" material="target" type="sphere" size=".015"/> -->
     <geom name="target" pos="0 0 .01" material="target" type="sphere" size=".03"/>
   </worldbody>
 

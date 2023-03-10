@@ -49,7 +49,7 @@ def main(
     )
 
     params_path = paramsmanager.Params(config).path
-    manage_dir = tool.util.select_date(params_path.saves_dir, no_weight_ok=True)
+    manage_dir = tool.util.select_date(params_path.saves_dir, no_weight_ok=False)
     if manage_dir is None:
         return
 

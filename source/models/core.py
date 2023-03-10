@@ -6,6 +6,7 @@ x_tp1  == x_{t+1}
 x_tp2  == x_{t+2}
 """
 
+import dataclasses
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -19,13 +20,7 @@ from mypython import rdict
 from mypython.ai.util import find_function, swap01, to_np
 from mypython.terminal import Color
 
-from .cell import (
-    MNVAECell,
-    NewtonianVAECell,
-    NewtonianVAEDerivationCell,
-    NewtonianVAEV2Cell,
-    NewtonianVAEV2DerivationCell,
-)
+from . import cell
 
 CacheType = Dict[str, Union[list, Tensor, np.ndarray]]
 
@@ -33,11 +28,15 @@ CacheType = Dict[str, Union[list, Tensor, np.ndarray]]
 class BaseWithCache(nn.Module):
     def __init__(self) -> None:
         super().__init__()
-        self.is_save = True
+        self.is_save = False
 
         self._cache: CacheType = {}
 
     def __call__(self, *args, **kwargs) -> Tuple[Tensor, Dict[str, float]]:
+        """
+        Returns:
+            Loss (Tensor), info (Dict)
+        """
         return super().__call__(*args, **kwargs)
 
     @property
@@ -138,7 +137,7 @@ class NewtonianVAE(BaseWithCache):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
 
-        self.cell = NewtonianVAECell(*args, **kwargs)
+        self.cell = cell.NewtonianVAECell(*args, **kwargs)
 
     def forward(self, action: Tensor, observation: Tensor, delta: Tensor):
         """"""
@@ -248,7 +247,7 @@ class NewtonianVAEDerivation(BaseWithCache):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
 
-        self.cell = NewtonianVAEDerivationCell(*args, **kwargs)
+        self.cell = cell.NewtonianVAEDerivationCell(*args, **kwargs)
 
     def forward(self, action: Tensor, observation: Tensor, delta: Tensor):
         """"""
@@ -368,11 +367,29 @@ class NewtonianVAEV2(BaseWithCache):
         It is important to use :math:`\v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t` for :math:`\v_{t-1}` in :math:`\v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1})`.
     """
 
-    def __init__(self, *args, camera_name: str, **kwargs) -> None:
+    def __init__(
+        self,
+        *,
+        camera_name: str,
+        dim_x: int,
+        regularization: int,
+        velocity: dict,
+        transition: dict,
+        encoder: dict,
+        decoder: dict,
+    ) -> None:
         super().__init__()
 
-        self.cell = NewtonianVAEV2Cell(*args, **kwargs)
         self.camera_name = camera_name
+
+        self.cell = cell.NewtonianVAEV2Cell(
+            dim_x=dim_x,
+            regularization=regularization,
+            velocity=velocity,
+            transition=transition,
+            encoder=encoder,
+            decoder=decoder,
+        )
 
     def forward(self, batchdata: Dict[str, Tensor]):
         """"""
@@ -456,6 +473,106 @@ class NewtonianVAEV2(BaseWithCache):
         self._cache["camera"][self.camera_name] = []
 
 
+class NewtonianVAEV3(BaseWithCache):
+    """Execution speed was not faster"""
+
+    def __init__(self, *args, camera_name: str, **kwargs) -> None:
+        super().__init__()
+
+        self.cell = cell.NewtonianVAEV3Cell(*args, **kwargs)
+        self.camera_name = camera_name
+
+    def forward(self, batchdata: Dict[str, Tensor]):
+        """"""
+
+        action = batchdata["action"]
+        d = batchdata["delta"]
+
+        T, B, D = action.shape
+
+        self.init_cache()
+
+        I = batchdata["camera"][self.camera_name]  # (T, B, C, H, W)
+        T, B, C, H, W = I.shape
+        I_ = I.reshape(-1, C, H, W)
+        q_enc = self.cell.q_encoder.given(I_)
+        x_q_loc = q_enc.loc.reshape(T, B, -1)
+        x_q_scale = q_enc.scale.reshape(T, B, -1)
+        x_q = q_enc.rsample().reshape(T, B, -1)
+
+        if self.is_save:
+            self._cache["x"] = x_q
+            self._cache["x_mean"] = x_q_loc
+            self._cache["x_std"] = x_q_scale
+
+        v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
+        x_p = []
+
+        E_kl = 0
+        for t in range(2, T):
+            u_tn1 = action[t]
+            v_tn1 = (x_q[t - 1] - x_q[t - 2]) / d[t]
+            v_t = self.cell.f_velocity(x_q[t - 1], u_tn1, v_tn1, d[t])
+            x_p_t = self.cell.p_transition.given(x_q[t - 1], v_t, d[t]).rsample()
+            x_p.append(x_p_t)
+
+            E_kl += cell.NewtonianVAECellBase.vec_reduction(
+                tp.functions.KL_normal_normal(
+                    x_q_loc[t],
+                    x_q_scale[t],
+                    self.cell.p_transition.loc,
+                    self.cell.p_transition.scale,
+                )
+            )
+
+            # if self.cell.regularization:
+
+            if self.is_save:
+                self._cache["v"].append(v_t)
+
+        # x_p = torch.stack(x_p).reshape((T-2) * B, -1)
+        x_p = torch.stack(x_p).reshape(-1, D)
+
+        I_rec = self.cell.p_decoder(x_p)
+
+        # log Normal Dist.: -0.5 * (((x - mu) / sigma) ** 2 ...
+        E_ll = -F.mse_loss(
+            I_rec, I[2:].reshape(-1, C, H, W), reduction="none"
+        )  # ((T-2)*B, C, H, W)
+        E_ll = E_ll.reshape(T - 2, B, C, H, W)
+        E_ll = cell.NewtonianVAECellBase.img_reduction(E_ll).sum()
+
+        # if self.cell.regularization:
+        #     E -= NewtonianVAECellBase.vec_reduction(tp.KLdiv(self.cell.q_encoder, tp.Normal01))
+
+        beta_kl = self.cell.kl_beta * E_kl
+        E = E_ll - beta_kl
+        L = -E / T
+
+        if self.is_save:
+            I0 = self.cell.p_decoder(x_q[0]).unsqueeze(0)
+            I1 = self.cell.p_decoder(x_q[1]).unsqueeze(0)
+            I_rec_ = torch.cat([I0, I1, I_rec.reshape(T - 2, B, C, H, W)], dim=0)  # (T, B, C, H, W)
+            self._cache["camera"][self.camera_name] = I_rec_
+
+        losses = {
+            f"{self.camera_name} Loss": -E_ll / T,
+            "KL Loss": E_kl / T,
+            "Beta KL Loss": beta_kl / T,
+        }
+        return L, losses
+
+    def init_cache(self):
+        super().init_cache()
+        self._cache["x"] = []
+        self._cache["x_mean"] = []
+        self._cache["x_std"] = []
+        self._cache["v"] = []
+
+        self._cache["camera"] = {}
+        self._cache["camera"][self.camera_name] = []
+
+
 class NewtonianVAEV2Derivation(BaseWithCache):
     r"""Computes ELBO based on formula (23).
 
@@ -514,7 +631,7 @@ class NewtonianVAEV2Derivation(BaseWithCache):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
 
-        self.cell = NewtonianVAEV2DerivationCell(*args, **kwargs)
+        self.cell = cell.NewtonianVAEV2DerivationCell(*args, **kwargs)
 
     def forward(self, action: Tensor, observation: Tensor, delta: Tensor):
         """"""
@@ -603,7 +720,7 @@ class MNVAE(BaseWithCache):
         super().__init__()
         self.camera_names = camera_names
 
-        self.cell = MNVAECell(*args, **kwargs)
+        self.cell = cell.MNVAECell(*args, **kwargs)
 
     def __call__(self, *args, **kwargs) -> Tuple[Tensor, Dict[str, float]]:
         return super().__call__(*args, **kwargs)

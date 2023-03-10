@@ -60,19 +60,87 @@ class Color:
 
 
 class Prompt:
+    del_left_line = "\x1b[1K"
+    del_right_line = "\x1b[0K"
     del_line = "\r\x1b[K"
+    # del_line = "\x1b[2K" # ダメ
+
+    def __init__(self) -> None:
+        self._prev_n_new_line = 0
+
+    # def print(self, *args, **kwargs):
+    #     self._prev_n_new_line = 0
+    #     builtins.print(*args, **kwargs)
+
+    # def print_update(self, small_obj, clip=True):
+    #     texts = str(small_obj).split("\n")
+
+    #     for _ in range(self._prev_n_new_line):
+    #         builtins.print(Prompt.del_line + self.cursor_up(1), end="")
+
+    #     self._prev_n_new_line = len(texts)
+
+    #     for i, s in enumerate(texts):
+    #         if clip:
+    #             max_len = os.get_terminal_size().columns
+    #             cnt, first_, last_ = Prompt._clip(s, max_len, max_len - 5, max_len)
+    #             if cnt > max_len:
+    #                 s = first_ + " ..."
+
+    #         builtins.print(Prompt.del_line + s)
+
+    #     # self.scroll_up(len(texts))
+
+    @staticmethod
+    def cursor_up(n: int):
+        return f"\x1b[{n}A"
+
+    @staticmethod
+    def cursor_down(n: int):
+        return f"\x1b[{n}B"
+
+    @staticmethod
+    def scroll_up(n: int):
+        builtins.print(f"\x1b[{n}T", end="")
 
     @staticmethod
     def print_one_line(small_obj, clip=True):
         text = str(small_obj)
 
         if clip:
-            max_len = os.get_terminal_size().columns
-            cnt, first_, last_ = Prompt._clip(text, max_len, max_len - 5, max_len)
-            if cnt > max_len:
-                text = first_ + " ..."
+            text = Prompt.clip(text)
 
-        builtins.print(Prompt.del_line + text, end="")
+        builtins.print(Prompt.del_line + text, end="", flush=True)
+
+    @staticmethod
+    def clip(text: str):
+        max_len = os.get_terminal_size().columns
+        cnt, first_, last_ = Prompt._clip(text, max_len, max_len - 5, max_len)
+        if cnt > max_len:
+            text = first_ + " ..."
+        return text
+
+    # @staticmethod
+    # def print_multi_line(obj, n: int, clip=True):
+    #     texts = str(obj).split("\n")
+
+    #     # builtins.print(Prompt.del_line)
+    #     for _ in range(n):
+    #         builtins.print(Prompt.del_line + Prompt.cursor_up(1), end="")
+
+    #     for i, s in enumerate(texts[:n]):
+    #         if clip:
+    #             max_len = os.get_terminal_size().columns
+    #             cnt, first_, last_ = Prompt._clip(s, max_len, max_len - 5, max_len)
+    #             if cnt > max_len:
+    #                 s = first_ + " ..."
+
+    #         builtins.print(Prompt.del_line + s)
+
+    #         # if i < n - 1:
+    #         #     builtins.print(Prompt.del_line + s)
+    #         # else:
+    #         #     builtins.print(Prompt.del_line + s, end="")
 
     @staticmethod
     def fit_terminal(text):

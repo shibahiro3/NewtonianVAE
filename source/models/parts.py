@@ -40,6 +40,7 @@ class VisualEncoder64(nn.Module):
 
     def __init__(
         self,
+        *,
         dim_output: int,
         activation: str = "ReLU",
         channels: list = [3, 32, 64, 128, 256],
@@ -104,6 +105,7 @@ class VisualDecoder64(nn.Module):
 
     def __init__(
         self,
+        *,
         dim_input: int,
         dim_middle: int,
         activation: str = "ReLU",
@@ -168,7 +170,11 @@ class SpatialBroadcastDecoder64(nn.Module):
         https://github.com/dfdazac/vaesbd/blob/master/model.py#L6
     """
 
-    def __init__(self, dim_input: int) -> None:
+    def __init__(
+        self,
+        *,
+        dim_input: int,
+    ) -> None:
         super().__init__()
 
         a = np.linspace(-1, 1, 64)
@@ -358,4 +364,111 @@ class ResNetDecoder(nn.Module):
         x = x.reshape(-1, self.dim_middle, 1, 1)
         x = self.upsample(x)
         x = self.blocks(x)
+        return x
+
+
+class DoubleConv(nn.Module):
+    """
+    same size as input
+
+    References:
+        https://github.com/milesial/Pytorch-UNet/blob/2f62e6b1c8e98022a6418d31a76f6abd800e5ae7/unet/unet_parts.py#L8
+    """
+
+    # ⌊(H + 2 * 1 - 1*(3 - 1) - 1)/1 +1⌋ = ⌊H⌋ = H
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        mid_channels: Optional[int] = None,
+        last: str = "ReLU",  # Identity, Sigmoid, ...
+        bias: bool = True,
+    ):
+
+        if last == "ReLU":
+            last_module = nn.ReLU(inplace=True)
+        else:
+            last_module = getattr(nn, last)
+
+        super().__init__()
+        if not mid_channels:
+            mid_channels = out_channels
+        self.double_conv = nn.Sequential(
+            nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1, bias=bias),
+            nn.BatchNorm2d(mid_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1, bias=bias),
+            nn.BatchNorm2d(out_channels),
+            last_module,
+        )
+
+    def forward(self, x):
+        return self.double_conv(x)
+
+
+class Down(nn.Module):
+    """Downscaling with maxpool then double conv
+    https://github.com/milesial/Pytorch-UNet/blob/2f62e6b1c8e98022a6418d31a76f6abd800e5ae7/unet/unet_parts.py#L28
+    """
+
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.maxpool_conv = nn.Sequential(nn.MaxPool2d(2), DoubleConv(in_channels, out_channels))
+
+    def forward(self, x):
+        return self.maxpool_conv(x)
+
+
+class EncoderV1(nn.Module):
+    """
+    References:
+        https://github.com/ctallec/world-models/blob/d6abd9ce97409734a766eb67ccf0d1967ba9bf0c/models/vae.py#L32
+    """
+
+    def __init__(self, img_channels: int):
+        super().__init__()
+
+        self.conv1 = nn.Conv2d(img_channels, 32, 4, stride=2)
+        self.conv2 = nn.Conv2d(32, 64, 4, stride=2)
+        self.conv3 = nn.Conv2d(64, 128, 4, stride=2)
+        self.conv4 = nn.Conv2d(128, 256, 4, stride=2)
+
+        # self.conv1.requires_grad_
+
+        # self.fc_mu = nn.Linear(2*2*256, latent_size)
+        # self.fc_logsigma = nn.Linear(2*2*256, latent_size)
+
+    def forward(self, x: Tensor):
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = self.conv4(x)
+
+        return x
+
+
+class DecoderV1(nn.Module):
+    """
+    References:
+        https://github.com/ctallec/world-models/blob/d6abd9ce97409734a766eb67ccf0d1967ba9bf0c/models/vae.py#L10
+    """
+
+    def __init__(self, img_channels: int):
+        super().__init__()
+
+        # self.fc1 = nn.Linear(latent_size, 1024)
+
+        self.deconv1 = nn.ConvTranspose2d(1024, 128, 5, stride=2)
+        self.deconv2 = nn.ConvTranspose2d(128, 64, 5, stride=2)
+        self.deconv3 = nn.ConvTranspose2d(64, 32, 6, stride=2)
+        self.deconv4 = nn.ConvTranspose2d(32, img_channels, 6, stride=2)
+
+    def forward(self, x: Tensor):
+        # x = F.relu(self.fc1(x))
+        # x = x.unsqueeze(-1).unsqueeze(-1)
+        x = F.relu(self.deconv1(x))
+        x = F.relu(self.deconv2(x))
+        x = F.relu(self.deconv3(x))
+        x = self.deconv4(x)
         return x

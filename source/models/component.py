@@ -21,7 +21,7 @@ import mypython.ai.torchprob as tp
 from mypython.ai.util import find_function, swap01
 from mypython.terminal import Color
 
-from . import encdec
+from . import parts
 
 
 class ABCf(nn.Module):
@@ -103,6 +103,7 @@ class Velocity(nn.Module):
 
     def __init__(
         self,
+        *,
         dim_x: int,
         fix_abc: Union[None, Tuple[NumberType, NumberType, NumberType]] = None,
         activation: str = "ReLU",
@@ -187,24 +188,24 @@ class Encoder(tp.Normal):
 
     def __init__(
         self,
+        *,
         dim_x: int,
+        dim_output: int,
         model: str,
-        std_function: str = "softplus",
         model_kwargs={},
+        std_function: str = "softplus",
     ) -> None:
         super().__init__()
 
-        self.dim_x = dim_x
-
-        self.fc = getattr(encdec, model)(**model_kwargs)
-        self.mean_std = nn.Linear(model_kwargs["dim_output"], dim_x * 2)
+        self.enc = getattr(parts, model)(dim_output=dim_output, **model_kwargs)
+        self.mean_std = nn.Linear(dim_output, dim_x * 2)
 
         # nn.Exp() does't exist
         self.std_function = find_function(std_function)
 
     def forward(self, I_t: Tensor):
         """"""
-        middle = self.fc(I_t)
+        middle = self.enc(I_t)
         middle = self.mean_std(middle)
         mu, sigma = torch.chunk(middle, 2, dim=-1)
         sigma = self.std_function(sigma)
@@ -227,14 +228,14 @@ class Decoder(nn.Module):
 
     def __init__(
         self,
+        *,
+        dim_input: int,
         model: str,
         model_kwargs={},
     ) -> None:
         super().__init__()
 
-        self.dim_x = model_kwargs["dim_input"]
-
-        self.dec = getattr(encdec, model)(**model_kwargs)
+        self.dec = getattr(parts, model)(dim_input=dim_input, **model_kwargs)
 
     def forward(self, x_t: Tensor):
         """"""
@@ -291,7 +292,7 @@ class MultiEncoder(tp.Normal):
         sum_dim_output = 0
         self.encoders = nn.ModuleList()
         for m in modellist:
-            model_ = getattr(encdec, m["model"])(**m["model_kwargs"])
+            model_ = getattr(parts, m["model"])(**m["model_kwargs"])
             self.encoders.append(model_)
             sum_dim_output += m["model_kwargs"]["dim_output"]
 
@@ -336,7 +337,7 @@ class MultiDecoder(nn.Module):
         self.decoders = nn.ModuleList()
         self.dim_inputs = []
         for m in modellist:
-            model_ = getattr(encdec, m["model"])(**m["model_kwargs"])
+            model_ = getattr(parts, m["model"])(**m["model_kwargs"])
             self.decoders.append(model_)
             self.dim_inputs.append(m["model_kwargs"]["dim_input"])
 

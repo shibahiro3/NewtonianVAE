@@ -1,4 +1,9 @@
 {
+  /*
+    This configuration file is out of date and cannot be used,
+    but it will make it easier to understand the meaning of the configuration file.
+  */
+
   // Class name of the model to use for training
   // Now available at: NewtonianVAE, NewtonianVAEDerivation, NewtonianVAEV2, NewtonianVAEV2Derivation
   model: "NewtonianVAEV2", // Recommended

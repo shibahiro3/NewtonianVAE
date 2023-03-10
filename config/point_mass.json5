@@ -2,14 +2,14 @@
   model: "NewtonianVAEV2",
 
   NewtonianVAEV2: {
+    camera_name: "top",
     dim_x: 2,
     regularization: false,
-    camera_name: "top",
 
     velocity: {
-      dim_x: 2,
       fix_abc: [0, 0, 1],
       // fix_abc: null,
+      // activation: "ReLU",
     },
 
     transition: {
@@ -18,20 +18,16 @@
     },
 
     encoder: {
-      dim_x: 2,
+      dim_output: 1024,
       std_function: "softplus",
       model: "VisualEncoder64",
-      model_kwargs: {
-        dim_output: 1024,
-        activation: "ReLU",
-      },
+      // model_kwargs: {
+      //   activation: "ReLU",
+      // },
     },
 
     decoder: {
       model: "SpatialBroadcastDecoder64",
-      model_kwargs: {
-        dim_input: 2,
-      },
     },
   },
 
@@ -71,8 +67,10 @@
     action_type: "random_walk",
     imgsize: [64, 64],
     task_settings: {
-      target_size: 0.015,
+      // target_size: 0.03,
+      // target_size: 0.015,
       target_position: "default",
+      // target_position: "random",
     },
   },
 
@@ -80,5 +78,20 @@
     data_dir: "environments/point_mass/data",
     saves_dir: "environments/point_mass/saves",
     results_dir: "environments/point_mass/results",
+  },
+
+  correlation: {
+    episodes: 50,
+    kwargs: {
+      all: true,
+      position_name: "position",
+      format: ["png"],
+    },
+  },
+
+  reconstruction: {
+    episodes: 3,
+    format: "mp4",
+    // kwargs: {},
   },
 }

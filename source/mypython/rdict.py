@@ -12,6 +12,8 @@ import numpy as np
 import torch
 from torch import Tensor
 
+from .terminal import Color
+
 
 def apply(d: dict, func: Callable):
     for k, v in d.items():
@@ -31,8 +33,10 @@ def is_scalar(scalar):
 
 
 def show(d: dict, name: str):
-    print(f"===== show dict [{name}] =====")
+    s = f"===== show dict [{name}] ====="
+    print(s)
     _show(d)
+    print("=" * len(s))
 
 
 def _show(d: dict, start=0):
@@ -131,7 +135,7 @@ def to_torch(d: dict, *, ignore_scalar=False, dtype=None, device=None):
 
 
 def append_a_to_b(a: dict, b: dict):
-    """Elements of a are added to b"""
+    """Elements of a are added to b (for time sequence data)"""
 
     for ak, av in a.items():
         type_av = type(av)
@@ -147,3 +151,22 @@ def append_a_to_b(a: dict, b: dict):
                 b[ak] = [av]
             else:
                 b[ak].append(av)
+
+
+def add_a_to_b(a: dict, b: dict):
+    """Elements of a are added to b (for time sequence data)"""
+
+    for ak, av in a.items():
+        type_av = type(av)
+        # print(ak, type_av)
+        if type_av == dict:
+            if not ak in b:
+                b[ak] = {}
+            add_a_to_b(av, b[ak])
+        # ==========
+
+        else:
+            if not ak in b:
+                b[ak] = av
+            else:
+                b[ak] += av
