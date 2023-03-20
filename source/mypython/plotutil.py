@@ -9,6 +9,7 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import KeyEvent
 from matplotlib.figure import Figure
+from matplotlib.gridspec import GridSpec
 
 from mypython.terminal import Color
 
@@ -30,7 +31,12 @@ def get_figsize(fig: Figure):
 
 
 def Axis_aspect_2d(ax: Axes, aspect: float):
-    """Put after ax.plot() series"""
+    """Put after ax.plot() series
+    After:
+        ax.set_xlim
+        ax.set_ylim
+        ax.margins  <- set_x(y)lim と併用不可
+    """
     xmin, xmax = ax.get_xlim()
     ymin, ymax = ax.get_ylim()
     xlen = np.abs(xmax - xmin)

@@ -16,6 +16,7 @@ References:
 """
 
 
+import itertools
 from numbers import Real
 from typing import Callable, List, Optional, Tuple, Union
 
@@ -78,6 +79,8 @@ class VisualEncoder64(nn.Module):
 
     def forward(self, x: Tensor):
         """"""
+
+        assert x.ndim == 4  # .unsqueeze(0)
 
         if self.debug:
             print(f"=== {self.__class__.__name__} ===")
@@ -421,52 +424,80 @@ class Down(nn.Module):
 
 
 class EncoderV1(nn.Module):
-    """
+    r"""
+    (N, 3, 64, 64) -> (N, dim_output)
+
     References:
         https://github.com/ctallec/world-models/blob/d6abd9ce97409734a766eb67ccf0d1967ba9bf0c/models/vae.py#L32
     """
 
-    def __init__(self, img_channels: int):
+    def __init__(self, dim_output: int, img_channels: int, freeze: str = "none"):
         super().__init__()
+
+        assert freeze in ("none", "conv", "all")
 
         self.conv1 = nn.Conv2d(img_channels, 32, 4, stride=2)
         self.conv2 = nn.Conv2d(32, 64, 4, stride=2)
         self.conv3 = nn.Conv2d(64, 128, 4, stride=2)
         self.conv4 = nn.Conv2d(128, 256, 4, stride=2)
 
-        # self.conv1.requires_grad_
+        self.fc = nn.Linear(2 * 2 * 256, dim_output)
 
-        # self.fc_mu = nn.Linear(2*2*256, latent_size)
-        # self.fc_logsigma = nn.Linear(2*2*256, latent_size)
+        def frozen_conv():
+            for m in [self.conv1, self.conv2, self.conv3, self.conv4]:
+                m.requires_grad_(False)
+
+        if freeze == "conv":
+            frozen_conv()
+
+        elif freeze == "all":
+            for m in self.parameters():
+                m.requires_grad_(False)
 
     def forward(self, x: Tensor):
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
         x = self.conv4(x)
-
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
         return x
 
 
 class DecoderV1(nn.Module):
-    """
+    r"""
+    (N, dim_input) -> (N, 3, 64, 64)
+
     References:
         https://github.com/ctallec/world-models/blob/d6abd9ce97409734a766eb67ccf0d1967ba9bf0c/models/vae.py#L10
     """
 
-    def __init__(self, img_channels: int):
+    def __init__(self, dim_input: int, img_channels: int, freeze: str = "none"):
         super().__init__()
 
-        # self.fc1 = nn.Linear(latent_size, 1024)
+        assert freeze in ("none", "conv", "all")
+
+        self.fc = nn.Linear(dim_input, 1024)
 
         self.deconv1 = nn.ConvTranspose2d(1024, 128, 5, stride=2)
         self.deconv2 = nn.ConvTranspose2d(128, 64, 5, stride=2)
         self.deconv3 = nn.ConvTranspose2d(64, 32, 6, stride=2)
         self.deconv4 = nn.ConvTranspose2d(32, img_channels, 6, stride=2)
 
+        def frozen_conv():
+            for m in [self.deconv1, self.deconv2, self.deconv3, self.deconv4]:
+                m.requires_grad_(False)
+
+        if freeze == "conv":
+            frozen_conv()
+
+        elif freeze == "all":
+            for m in self.parameters():
+                m.requires_grad_(False)
+
     def forward(self, x: Tensor):
-        # x = F.relu(self.fc1(x))
-        # x = x.unsqueeze(-1).unsqueeze(-1)
+        x = F.relu(self.fc(x))
+        x = x.unsqueeze(-1).unsqueeze(-1)
         x = F.relu(self.deconv1(x))
         x = F.relu(self.deconv2(x))
         x = F.relu(self.deconv3(x))

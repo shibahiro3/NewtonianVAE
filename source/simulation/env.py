@@ -63,6 +63,10 @@ def obs2img(x):
     """range [-0.5, 0.5] -> [0, 1]"""
     x = x + 0.5
     x = mv.clip(x, 0, 1)
+
+    # TODO:
+    # postprocess_observation
+
     x = mv.cnn2plt(x)
     return x
 
@@ -326,32 +330,11 @@ class ControlSuiteEnvWrap(ControlSuiteEnv):
 
     def render(self):
         """綺麗なまま表示する"""
-        # それぞれ画像サイズが異なってもOK
         cameras = self._cameras()
-        for camera in cameras.values():
-            assert camera.dtype == np.uint8
+        winname = "camera " + ", ".join(cameras.keys())
+        mv.show_imgs_cv(list(cameras.values()), winname, cols=4, color_order="RGB", block=False)
 
-        space = 10
-
-        h_sum = max([camera.shape[0] for camera in cameras.values()])
-        w_sum = sum([camera.shape[1] for camera in cameras.values()])
-
-        board = np.full(
-            shape=(h_sum, w_sum + space * (len(cameras) - 1), 3),
-            fill_value=255,
-            dtype=np.uint8,
-        )
-        H_accum, W_accum = 0, 0
-        for camera in cameras.values():
-            H, W = camera.shape[:2]
-            board[H_accum : H_accum + H, W_accum : W_accum + W, :] = camera
-            # H_accum += camera.shape[0] + space
-            W_accum += camera.shape[1] + space
-
-        cv2.imshow("camera " + ", ".join(cameras.keys()), mv.plt2cv(board))
-        cv2.waitKey(1)
-
-    def reset(self) -> Dict[str, Union[np.ndarray, Tensor, Real]]:
+    def reset(self):
         self.t = 0  # Reset internal timer
         state = self._env.reset()
         return self._observations(state)

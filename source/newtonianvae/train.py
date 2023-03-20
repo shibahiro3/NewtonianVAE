@@ -15,7 +15,8 @@ import models.core
 import mypython.ai.torchprob as tp
 import tool.util
 import view.plot_config
-from models.core import NewtonianVAEFamily
+from _private import unet
+from models.core import NewtonianVAEBase
 from mypython import rdict
 from mypython.ai import train as mp_train
 from mypython.ai.util import (
@@ -80,7 +81,7 @@ def train(
         model_params=params.model_params,
         resume=resume,
     )
-    model: NewtonianVAEFamily
+    model: NewtonianVAEBase
     model.type(dtype)
     model.to(device)
     model.train()
@@ -116,8 +117,38 @@ def train(
             else:
                 model.cell.kl_beta = 1
 
+    if params.others.get("use_unet", False):
+        pre_unet = unet.MobileUNet(out_channels=1).to(device)
+
+        if resume:
+            p_ = Path(
+                resume_weight_path.parent.parent,
+                "unet_with_nvae",
+                "weight",
+                resume_weight_path.name,
+            )
+            pre_unet.load_state_dict(torch.load(p_))
+        else:
+            p_ = Path(
+                params.path.saves_dir,
+                "unet",
+                "weight.pth",
+            )
+            pre_unet.load_state_dict(torch.load(p_))
+
+        # pre_unet.train()
+        pre_unet.eval()
+
     def pre_batch_fn(epoch: int, batchdata):
         batchdata["delta"].unsqueeze_(-1)
+
+        if params.others.get("use_unet", False):
+            with torch.no_grad():
+                T, B, C, H, W = batchdata["camera"]["self"].shape
+                batchdata["camera"]["self"] = unet.pre(
+                    pre_unet, batchdata["camera"]["self"].reshape(-1, C, H, W)
+                ).reshape(T, B, C, H, W)
+
         return batchdata
 
     def post_batch_fn(epoch: int):
@@ -129,6 +160,19 @@ def train(
             + Color.reset
             + Prompt.cursor_up(2)
         )
+
+    def post_epoch_fn(epoch: int):
+        if epoch % params.train.save_per_epoch == 0:
+            p_ = Path(
+                params.path.saves_dir,
+                managed_dir.stem,
+                "unet_with_nvae",
+                "weight",
+                f"{epoch}.pth",
+            )
+            p_.parent.mkdir(parents=True, exist_ok=True)
+            torch.save(pre_unet.state_dict(), p_)
+            print("save unet")
 
     def results_fn(epoch: int):
         correlation_(
@@ -184,5 +228,6 @@ def train(
         pre_epoch_fn=pre_epoch_fn,
         pre_batch_fn=pre_batch_fn,
         post_batch_fn=post_batch_fn,
+        post_epoch_fn=post_epoch_fn,
         results_fn=results_fn,
     )

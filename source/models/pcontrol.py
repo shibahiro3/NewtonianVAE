@@ -9,8 +9,6 @@ from torch import Tensor, nn
 import mypython.ai.torchprob as tp
 from mypython.terminal import Color
 
-from .cell import NewtonianVAECellFamily
-
 
 class PurePControl:
     """
@@ -23,7 +21,7 @@ class PurePControl:
         self,
         Igoal: Tensor,
         alpha: float,
-        cell: NewtonianVAECellFamily,
+        cell,
     ) -> None:
         self.alpha = alpha
         self.cell = cell

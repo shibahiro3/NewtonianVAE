@@ -70,9 +70,9 @@ class BaseWithCache(nn.Module):
         if treat_batch is None:
             pass
         elif treat_batch == "first":
-            rdict.apply(self._cache, swap01)
+            rdict.apply_(self._cache, swap01)
         elif treat_batch == "squeeze":
-            rdict.apply(self._cache, lambda x: x.squeeze(1))
+            rdict.apply_(self._cache, lambda x: x.squeeze(1))
         else:
             assert False
 
@@ -81,234 +81,26 @@ class BaseWithCache(nn.Module):
         return self._cache
 
 
-class NewtonianVAE(BaseWithCache):
-    r"""Computes ELBO based on formula (11).
-
-    Computes according to the following formula:
-
-    .. math::
-        \begin{array}{ll} \\
-            A = f(\x_{t-1}, \v_{t-1}, \u_{t-1}) \\
-            B = -\log f(\x_{t-1}, \v_{t-1}, \u_{t-1}) \\
-            C = \log f(\x_{t-1}, \v_{t-1}, \u_{t-1}) \\
-            \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
-            \x_{t} \sim p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t}) \\
-            E = \displaystyle \sum_t \left( \log p(\I_t \mid \x_t) - \KL{q(\x_t \mid \I_t)}{p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t})} \right)
-        \end{array}
-
-    where:
-
-    .. math::
-        \begin{array}{ll}
-            \v_0 = \boldsymbol{0} \\
-            \x_0 \sim q(\x_0 \mid \I_0) \\
-            p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
-            \x_{t-2} \leftarrow \x_{t-1}
-        \end{array}
-
-    During evaluation:
-
-    .. math::
-        \begin{array}{ll}
-            \v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t
-        \end{array}
-
-
-    Inputs: action, observation, dt
-        * **action**: tensor of shape :math:`(T, N, D)`
-        * **observation**: tensor of shape :math:`(T, N, C, H, W)`
-        * **dt**: tensor of shape :math:`(T)`
-
-        where:
-
-        .. math::
-            \begin{aligned}
-                N ={} & \text{batch size} \\
-                T ={} & \text{sequence length} \\
-                D ={} & \mathrm{dim}(\u) \\
-            \end{aligned}
-
-    References in paper:
-        * During inference, vt is computed as 
-          vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
-        * we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
-    """
-
-    def __init__(self, *args, **kwargs) -> None:
+class NewtonianVAEBase(BaseWithCache):
+    def __init__(self) -> None:
         super().__init__()
 
-        self.cell = cell.NewtonianVAECell(*args, **kwargs)
+        self.dim_x = 0
 
-    def forward(self, action: Tensor, observation: Tensor, delta: Tensor):
-        """"""
+    @property
+    def camera_names(self) -> List[str]:
+        raise NotImplementedError()
 
-        T = len(action)
+    def encode(self, I_t) -> Optional[Tensor]:
+        """return "position" """
+        return None
 
-        self.init_cache()
-
-        E_sum: Tensor = 0  # = Nagative ELBO
-        E_ll_sum: Tensor = 0  # Not use for training
-        E_kl_sum: Tensor = 0  # Not use for training
-
-        for t in range(T):
-            u_tn1, I_t = action[t], observation[t]
-
-            _, B, D = action.shape  # _ : T
-
-            if t == 0:
-                v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
-                x_t = self.cell.q_encoder.given(I_t).rsample()
-                I_dec = self.cell.p_decoder.given(x_t).decode()
-
-                x_tn1 = x_t
-                v_tn1 = v_t
-
-            else:
-                output = self.cell(I_t=I_t, x_tn1=x_tn1, u_tn1=u_tn1, v_tn1=v_tn1, dt=delta[t])
-
-                E_sum += output.E
-                E_ll_sum += output.E_ll
-                E_kl_sum += output.E_kl
-                x_tn1 = output.x_t
-                v_tn1 = output.v_t
-                I_dec = self.cell.p_decoder.decode()
-
-            # ##### DEBUG:
-            # print(f"time: {t}")
-            # tp_debug.check_dist_model(self.cell)
-
-            if self.is_save:
-                self.LOG_x.append(to_np(x_t))
-                self.LOG_v.append(to_np(v_t))
-                self.LOG_I_dec.append(to_np(I_dec))
-                self.LOG_x_mean.append(to_np(self.cell.q_encoder.loc))
-
-        # self.LOG2numpy()
-
-        E = E_sum / T
-        E_ll = E_ll_sum / T
-        E_kl = E_kl_sum / T
-
-        return E, E_ll, E_kl
+    def decode(self, x_t) -> Optional[Dict[str, Tensor]]:
+        """return reconstructed image"""
+        return None
 
 
-class NewtonianVAEDerivation(BaseWithCache):
-    r"""Computes ELBO based on formula (23).
-
-    Computes according to the following formula:
-
-    .. math::
-        \begin{array}{ll} \\
-            \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
-            \x_{t} \sim p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t}) \\
-            \xhat_{t} \sim p(\xhat_t \mid \x_{t-1}, \u_{t-1}) \\
-            E = \displaystyle \sum_t \left( \log p(\I_t \mid \xhat_t) - \KL{q(\x_t \mid \I_t)}{p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t})} \right)
-        \end{array}
-
-    where:
-
-    .. math::
-        \begin{array}{ll}
-            \v_0 = \boldsymbol{0} \\
-            \x_0 \sim q(\x_0 \mid \I_0) \\
-            p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
-            \v_{t} \leftarrow \v_{t-1} \\
-            \x_{t} \leftarrow \x_{t-1}
-        \end{array}
-
-    During evaluation:
-
-    .. math::
-        \begin{array}{ll}
-            \v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t
-        \end{array}
-
-
-    Inputs: action, observation, dt
-        * **action**: tensor of shape :math:`(T, N, D)`
-        * **observation**: tensor of shape :math:`(T, N, C, H, W)`
-        * **dt**: tensor of shape :math:`(T)`
-
-        where:
-
-        .. math::
-            \begin{aligned}
-                N ={} & \text{batch size} \\
-                T ={} & \text{sequence length} \\
-                D ={} & \mathrm{dim}(\u) \\
-            \end{aligned}
-
-    References in paper:
-        * During inference, vt is computed as 
-          vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
-        * we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
-    """
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__()
-
-        self.cell = cell.NewtonianVAEDerivationCell(*args, **kwargs)
-
-    def forward(self, action: Tensor, observation: Tensor, delta: Tensor):
-        """"""
-
-        T = len(action)
-
-        self.init_LOG()
-
-        E_sum: Tensor = 0  # = Nagative ELBO
-        E_ll_sum: Tensor = 0  # Not use for training
-        E_kl_sum: Tensor = 0  # Not use for training
-
-        for t in range(T):
-            u_tn1, I_t = action[t], observation[t]
-
-            _, B, D = action.shape  # _ : T
-
-            if t == 0:
-                v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
-                x_t = self.cell.q_encoder.given(I_t).rsample()
-                I_dec = torch.full_like(I_t, torch.nan)
-
-                x_tn1 = x_t
-                v_tn1 = v_t
-
-                if self.is_save:
-                    self.LOG_xhat_mean.append(np.full((B, self.cell.dim_xhat), np.nan))
-                    self.LOG_xhat_std.append(np.full((B, self.cell.dim_xhat), np.nan))
-
-            else:
-                output = self.cell(I_t=I_t, x_tn1=x_tn1, u_tn1=u_tn1, v_tn1=v_tn1, dt=delta[t])
-
-                E_sum += output.E
-                E_ll_sum += output.E_ll
-                E_kl_sum += output.E_kl
-                x_tn1 = output.x_t
-                v_tn1 = output.v_t
-                I_dec = self.cell.p_decoder.decode()
-
-                if self.is_save:
-                    self.LOG_xhat_mean.append(to_np(self.cell.p_xhat.loc))
-                    self.LOG_xhat_std.append(to_np(self.cell.p_xhat.scale))
-
-            # ##### DEBUG:
-            # print(f"time: {t}")
-            # tp_debug.check_dist_model(self.cell)
-
-            if self.is_save:
-                self.LOG_x.append(to_np(x_t))
-                self.LOG_v.append(to_np(v_t))
-                self.LOG_I_dec.append(to_np(I_dec))
-                self.LOG_x_mean.append(to_np(self.cell.q_encoder.loc))
-
-        E = E_sum / T
-        E_ll = E_ll_sum / T
-        E_kl = E_kl_sum / T
-
-        return E, E_ll, E_kl
-
-
-class NewtonianVAEV2(BaseWithCache):
+class NewtonianVAEV2(NewtonianVAEBase):
     r"""Computes ELBO based on formula (11).
 
     Computes according to the following formula:
@@ -446,11 +238,11 @@ class NewtonianVAEV2(BaseWithCache):
             # tp_debug.check_dist_model(self.cell)
 
             if self.is_save:
-                self._cache["x"].append(x_q_t)
-                self._cache["x_mean"].append(self.cell.q_encoder.loc)
-                self._cache["x_std"].append(self.cell.q_encoder.scale)
-                self._cache["v"].append(v_t)
-                self._cache["camera"][self.camera_name].append(I_dec)
+                self.cache["x"].append(x_q_t)
+                self.cache["x_mean"].append(self.cell.q_encoder.loc)
+                self.cache["x_std"].append(self.cell.q_encoder.scale)
+                self.cache["v"].append(v_t)
+                self.cache["camera"][self.camera_name].append(I_dec)
 
         E = E_sum / T
         L = -E
@@ -464,16 +256,26 @@ class NewtonianVAEV2(BaseWithCache):
 
     def init_cache(self):
         super().init_cache()
-        self._cache["x"] = []
-        self._cache["x_mean"] = []
-        self._cache["x_std"] = []
-        self._cache["v"] = []
+        self.cache["x"] = []
+        self.cache["x_mean"] = []
+        self.cache["x_std"] = []
+        self.cache["v"] = []
 
-        self._cache["camera"] = {}
-        self._cache["camera"][self.camera_name] = []
+        self.cache["camera"] = {}
+        self.cache["camera"][self.camera_name] = []
+
+    @property
+    def camera_names(self) -> List[str]:
+        return [self.camera_names]
+
+    def encode(self, I_t) -> Tensor:
+        return self.cell.q_encoder.given(I_t).rsample()
+
+    def decode(self, x_t) -> Dict[str, Dict[str, Tensor]]:
+        return {self.camera_name: self.cell.p_decoder(x_t)}
 
 
-class NewtonianVAEV3(BaseWithCache):
+class NewtonianVAEV3(NewtonianVAEBase):
     """Execution speed was not faster"""
 
     def __init__(self, *args, camera_name: str, **kwargs) -> None:
@@ -501,9 +303,9 @@ class NewtonianVAEV3(BaseWithCache):
         x_q = q_enc.rsample().reshape(T, B, -1)
 
         if self.is_save:
-            self._cache["x"] = x_q
-            self._cache["x_mean"] = x_q_loc
-            self._cache["x_std"] = x_q_scale
+            self.cache["x"] = x_q
+            self.cache["x_mean"] = x_q_loc
+            self.cache["x_std"] = x_q_scale
 
         v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
         x_p = []
@@ -528,7 +330,7 @@ class NewtonianVAEV3(BaseWithCache):
             # if self.cell.regularization:
 
             if self.is_save:
-                self._cache["v"].append(v_t)
+                self.cache["v"].append(v_t)
 
         # x_p = torch.stack(x_p).reshape((T-2) * B, -1)
         x_p = torch.stack(x_p).reshape(-1, D)
@@ -553,7 +355,7 @@ class NewtonianVAEV3(BaseWithCache):
             I0 = self.cell.p_decoder(x_q[0]).unsqueeze(0)
             I1 = self.cell.p_decoder(x_q[1]).unsqueeze(0)
             I_rec_ = torch.cat([I0, I1, I_rec.reshape(T - 2, B, C, H, W)], dim=0)  # (T, B, C, H, W)
-            self._cache["camera"][self.camera_name] = I_rec_
+            self.cache["camera"][self.camera_name] = I_rec_
 
         losses = {
             f"{self.camera_name} Loss": -E_ll / T,
@@ -564,111 +366,101 @@ class NewtonianVAEV3(BaseWithCache):
 
     def init_cache(self):
         super().init_cache()
-        self._cache["x"] = []
-        self._cache["x_mean"] = []
-        self._cache["x_std"] = []
-        self._cache["v"] = []
+        self.cache["x"] = []
+        self.cache["x_mean"] = []
+        self.cache["x_std"] = []
+        self.cache["v"] = []
 
-        self._cache["camera"] = {}
-        self._cache["camera"][self.camera_name] = []
+        self.cache["camera"] = {}
+        self.cache["camera"][self.camera_name] = []
 
 
-class NewtonianVAEV2Derivation(BaseWithCache):
-    r"""Computes ELBO based on formula (23).
+class NewtonianvVAEV4(NewtonianVAEV2):
+    def __init__(
+        self,
+        *,
+        camera_name: str,
+        dim_x: int,
+        regularization: int,
+        velocity: dict,
+        transition: dict,
+        encoder: dict,
+        decoder: dict,
+        pre_weght_path: str = None,
+        pre_mode: str = "none",
+    ) -> None:
+        super().__init__(
+            camera_name=camera_name,
+            dim_x=dim_x,
+            regularization=regularization,
+            velocity=velocity,
+            transition=transition,
+            encoder=encoder,
+            decoder=decoder,
+        )
 
-    Computes according to the following formula:
+        pre_state_dict = None
 
-    .. math::
-        \begin{array}{ll} \\
-            \x_{t-1} \sim q(\x_{t-1} \mid \I_{t-1}) \\
-            \v_{t-1} = (\x_{t-1} - \x_{t-2}) / \Delta t \\
-            A = \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
-            B = -\log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
-            C = \log \mathrm{diag}(f(\x_{t-1}, \v_{t-1}, \u_{t-1})) \\
-            \v_t = \v_{t-1} + \Delta t \cdot (A\x_{t-1} + B\v_{t-1} + C\u_{t-1}) \\
-            \xhat_{t} \sim p(\xhat_t \mid \x_{t-1}, \u_{t-1}) \\
-            ELBO = \displaystyle \sum_t \left( \log p(\I_t \mid \xhat_t) - \KL{q(\x_t \mid \I_t)}{p(\x_t \mid \x_{t-1}, \u_{t-1}; \v_{t})} \right)
-        \end{array}
+        if pre_mode != "none":
+            assert type(pre_weght_path) == str
 
-    where:
+            pre_state_dict = torch.load(pre_weght_path)
 
-    .. math::
-        \begin{array}{ll}
-            p(\x_t \mid \x_{t-1}, \u_{t-1}) = \mathcal{N}(\x_t \mid \x_{t-1} + \Delta t \cdot \v_t, \sigma^2) \\
-            \x_{t-2} \leftarrow \x_{t-1}
-        \end{array}
+        self.cell = cell.NewtonianVAEV4Cell(pre_state_dict)
 
-    The initial values follow the formula below:
 
-    .. math::
-        \begin{array}{ll}
-            \v_0 = \boldsymbol{0} \\
-            \x_0 \sim q(\x_0 \mid \I_0)
-        \end{array}
-
-    LOG_x is collected about :math:`\x_{t} \sim q(\x_t \mid \I_t)`.
-
-    Inputs: action, observation, dt
-        * **action**: tensor of shape :math:`(T, N, D)`
-        * **observation**: tensor of shape :math:`(T, N, C, H, W)`
-        * **dt**: tensor of shape :math:`(T)`
-
-        where:
-
-        .. math::
-            \begin{aligned}
-                N ={} & \text{batch size} \\
-                T ={} & \text{sequence length} \\
-                D ={} & \mathrm{dim}(\u) \\
-            \end{aligned}
-
-    References in paper:
-        * During inference, vt is computed as 
-          vt = (xt − xt−1)/∆t, with xt ∼ q(xt|It) and xt−1 ∼ q(xt−1|It−1).
-        * we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
-    """
-
-    def __init__(self, *args, **kwargs) -> None:
+class NVAEDecoderFree(BaseWithCache):
+    def __init__(
+        self,
+        *,
+        camera_name: str,
+        dim_x: int,
+        regularization: int,
+        velocity: dict,
+        transition: dict,
+        encoder: dict,
+    ) -> None:
         super().__init__()
 
-        self.cell = cell.NewtonianVAEV2DerivationCell(*args, **kwargs)
+        self.camera_name = camera_name
 
-    def forward(self, action: Tensor, observation: Tensor, delta: Tensor):
+        self.cell = cell.NVAEDecoderFreeCell(
+            dim_x=dim_x,
+            regularization=regularization,
+            velocity=velocity,
+            transition=transition,
+            encoder=encoder,
+        )
+
+    def forward(self, batchdata: Dict[str, Tensor]):
         """"""
+
+        action = batchdata["action"]
+        delta = batchdata["delta"]
 
         T = len(action)
 
         self.init_cache()
 
         E_sum: Tensor = 0  # = Nagative ELBO
-        E_ll_sum: Tensor = 0
         E_kl_sum: Tensor = 0
+        beta_kl: Tensor = 0
 
         for t in range(T):
-            u_tn1, I_t = action[t], observation[t]
+            u_tn1 = action[t]
+            I_t = batchdata["camera"][self.camera_name][t]
 
             _, B, D = action.shape  # _ : T
 
             if t == 0:
                 x_q_t = self.cell.q_encoder.given(I_t).rsample()
                 v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
-                I_dec = torch.full_like(I_t, torch.nan)
 
                 x_q_tn1 = x_q_t
-
-                if self.is_save:
-                    self.LOG_xhat_mean.append(np.full((B, self.cell.dim_xhat), np.nan))
-                    self.LOG_xhat_std.append(np.full((B, self.cell.dim_xhat), np.nan))
 
             elif t == 1:
                 x_q_t = self.cell.q_encoder.given(I_t).rsample()
                 v_t = (x_q_t - x_q_tn1) / delta[t]
-                xhat_t = self.cell.p_xhat.given(x_q_tn1, u_tn1).rsample()
-                I_dec = self.cell.p_decoder.given(xhat_t).decode()
-
-                if self.is_save:
-                    self.LOG_xhat_mean.append(to_np(self.cell.p_xhat.loc))
-                    self.LOG_xhat_std.append(to_np(self.cell.p_xhat.scale))
 
             else:
                 output = self.cell(
@@ -676,16 +468,12 @@ class NewtonianVAEV2Derivation(BaseWithCache):
                 )
 
                 E_sum += output.E
-                E_ll_sum += output.E_ll
+
                 E_kl_sum += output.E_kl
+                beta_kl += output.beta_kl
 
                 x_q_t = output.x_q_t
                 v_t = output.v_t
-                I_dec = self.cell.p_decoder.decode()
-
-                if self.is_save:
-                    self.LOG_xhat_mean.append(to_np(self.cell.p_xhat.loc))
-                    self.LOG_xhat_std.append(to_np(self.cell.p_xhat.scale))
 
             x_q_tn2 = x_q_tn1
             x_q_tn1 = x_q_t
@@ -695,32 +483,36 @@ class NewtonianVAEV2Derivation(BaseWithCache):
             # tp_debug.check_dist_model(self.cell)
 
             if self.is_save:
-                self.LOG_x.append(to_np(x_q_t))
-                self.LOG_v.append(to_np(v_t))
-                self.LOG_I_dec.append(to_np(I_dec))
-                self.LOG_x_mean.append(to_np(self.cell.q_encoder.loc))
+                self.cache["x"].append(x_q_t)
+                self.cache["x_mean"].append(self.cell.q_encoder.loc)
+                self.cache["x_std"].append(self.cell.q_encoder.scale)
+                self.cache["v"].append(v_t)
 
         E = E_sum / T
-        E_ll = E_ll_sum / T
-        E_kl = E_kl_sum / T
+        L = -E
 
-        return E, E_ll, E_kl
+        losses = {
+            "KL Loss": E_kl_sum / T,
+            "Beta KL Loss": beta_kl / T,
+        }
+        return L, losses
+
+    def init_cache(self):
+        super().init_cache()
+        self.cache["x"] = []
+        self.cache["x_mean"] = []
+        self.cache["x_std"] = []
+        self.cache["v"] = []
 
 
-NewtonianVAEFamily = Union[
-    NewtonianVAE,
-    NewtonianVAEDerivation,
-    NewtonianVAEV2,
-    NewtonianVAEV2Derivation,
-]
-
-
-class MNVAE(BaseWithCache):
+class MNVAE(NewtonianVAEBase):
     def __init__(self, *args, camera_names: list, **kwargs) -> None:
         super().__init__()
-        self.camera_names = camera_names
+
+        self._camera_names = camera_names
 
         self.cell = cell.MNVAECell(*args, **kwargs)
+        self.dim_x = self.cell.dim_x
 
     def __call__(self, *args, **kwargs) -> Tuple[Tensor, Dict[str, float]]:
         return super().__call__(*args, **kwargs)
@@ -743,7 +535,7 @@ class MNVAE(BaseWithCache):
 
         for t in range(T):
             u_tn1 = action[t]
-            I_t = [batchdata["camera"][name][t] for name in self.camera_names]
+            I_t = [batchdata["camera"][name][t] for name in self._camera_names]
 
             _, B, D = action.shape  # _ : T
 
@@ -785,12 +577,12 @@ class MNVAE(BaseWithCache):
             # tp_debug.check_dist_model(self.cell)
 
             if self.is_save:
-                self._cache["x"].append(x_q_t)
-                self._cache["x_mean"].append(self.cell.q_encoder.loc)
-                self._cache["x_std"].append(self.cell.q_encoder.scale)
-                self._cache["v"].append(v_t)
-                for i, name in enumerate(self.camera_names):
-                    self._cache["camera"][name].append(I_t_recs[i])
+                self.cache["x"].append(x_q_t)
+                self.cache["x_mean"].append(self.cell.q_encoder.loc)
+                self.cache["x_std"].append(self.cell.q_encoder.scale)
+                self.cache["v"].append(v_t)
+                for i, name in enumerate(self._camera_names):
+                    self.cache["camera"][name].append(I_t_recs[i])
 
         E = E_sum / T
         L = -E
@@ -798,7 +590,7 @@ class MNVAE(BaseWithCache):
         image_losses /= T
 
         losses = {}
-        for i, k in enumerate(self.camera_names):
+        for i, k in enumerate(self._camera_names):
             losses[f"camera {k} Loss"] = image_losses[i]
 
         losses.update(
@@ -811,11 +603,25 @@ class MNVAE(BaseWithCache):
 
     def init_cache(self):
         super().init_cache()
-        self._cache["x"] = []
-        self._cache["x_mean"] = []
-        self._cache["x_std"] = []
-        self._cache["v"] = []
+        self.cache["x"] = []
+        self.cache["x_mean"] = []
+        self.cache["x_std"] = []
+        self.cache["v"] = []
 
-        self._cache["camera"] = {}
-        for name in self.camera_names:
-            self._cache["camera"][name] = []
+        self.cache["camera"] = {}
+        for name in self._camera_names:
+            self.cache["camera"][name] = []
+
+    @property
+    def camera_names(self):
+        return self._camera_names
+
+    def encode(self, I_t: List[Tensor]) -> Tensor:
+        return self.cell.q_encoder.given(I_t).rsample()
+
+    def decode(self, x_t: Tensor) -> Dict[str, Tensor]:
+        I_t_recs = self.cell.p_decoder(x_t)
+        dec = {}
+        for i, name in enumerate(self._camera_names):
+            dec[name] = I_t_recs[i]
+        return dec

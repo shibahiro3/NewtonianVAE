@@ -5,13 +5,18 @@ import time
 import traceback
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import seaborn as sns
 import torch
+from matplotlib.gridspec import GridSpec
+from matplotlib.ticker import MaxNLocator
 from torch import Tensor, nn, optim
 
+from .. import plotutil as mpu
 from .. import rdict
 from ..ai.util import BatchIdx
 from ..pyutil import MovingAverageTime, RemainingTime, add_version, s2dhms_str
@@ -40,7 +45,8 @@ class VisualHandlerBase:
         return True
 
 
-BatchDataType = Dict[str, Any]
+# BatchDataType = Dict[str, Any]
+BatchDataType = Any
 
 
 class BaseModel(nn.Module):
@@ -66,17 +72,17 @@ def train(
     trainloader: BatchIdx,
     validloader: BatchIdx,
     epochs: int,
-    managed_dir: str,
+    managed_dir: Union[str, Path],
     save_per_epoch: int,
     #
     grad_clip_norm: Optional[float] = None,
     results_per: Optional[int] = None,
     vh=VisualHandlerBase(),
-    pre_epoch_fn: Callable[[int], None] = None,
-    pre_batch_fn: Callable[[int, BatchDataType], BatchDataType] = None,
-    post_batch_fn: Callable[[int], None] = None,
-    post_epoch_fn: Callable[[int], None] = None,
-    results_fn: Callable[[int], None] = None,
+    pre_epoch_fn: Optional[Callable[[int], None]] = None,
+    pre_batch_fn: Optional[Callable[[int, BatchDataType], BatchDataType]] = None,
+    post_batch_fn: Optional[Callable[[int], None]] = None,
+    post_epoch_fn: Optional[Callable[[int], None]] = None,
+    results_fn: Optional[Callable[[int], None]] = None,
 ) -> None:
     """
     pre_epoch_fn(epoch)
@@ -113,9 +119,6 @@ def train(
         for epoch in range(1, epochs + 1):
             time_start_epoch = time.perf_counter()
 
-            torch.set_grad_enabled(True)
-            # torch.autograd.detect_anomaly()
-
             if callable(pre_epoch_fn):
                 pre_epoch_fn(epoch)
 
@@ -124,9 +127,12 @@ def train(
                 epoch_losses = {}
 
                 if phase == "train":
+                    torch.set_grad_enabled(True)
+                    # torch.autograd.detect_anomaly()
                     dataloader = trainloader
                     model.train()
                 else:
+                    torch.set_grad_enabled(False)
                     dataloader = validloader
                     model.eval()
 
@@ -247,6 +253,7 @@ def train(
             if (results_per is not None) and (epoch % results_per == 0) and callable(results_fn):
                 results_fn(epoch)
 
+        print(Prompt.cursor_down(2))
         print("Total Duration:", s2dhms_str(time.perf_counter() - time_start_learning))
 
     except KeyboardInterrupt:
@@ -256,3 +263,81 @@ def train(
         print(Prompt.cursor_down(2))
         print("=== traceback ===")
         print(traceback.format_exc())
+
+
+def show_loss(
+    *,
+    manage_dir: Union[str, Path],
+    results_dir: Union[str, Path],
+    start_iter: int = 1,
+    format: List[str] = ["pdf", "png"],
+    mode: str = "epoch",
+):
+    assert start_iter > 0
+    assert mode in ("batch", "epoch")
+
+    # plt.rcParams.update(
+    #     {
+    #         "figure.figsize": (11.39, 3.9),
+    #         "figure.subplot.left": 0.05,
+    #         "figure.subplot.right": 0.98,
+    #         "figure.subplot.bottom": 0.15,
+    #         "figure.subplot.top": 0.85,
+    #         "figure.subplot.wspace": 0.4,
+    #     }
+    # )
+
+    manage_dir = Path(manage_dir)
+
+    if mode == "batch":
+        losses = ValueWriter.load(Path(manage_dir, "batch train"))
+    elif mode == "epoch":
+        losses = ValueWriter.load(Path(manage_dir, "epoch train"))
+        losses_valid = ValueWriter.load(Path(manage_dir, "epoch valid"))
+    else:
+        assert False
+
+    keys = list(losses.keys())
+    fig, axes = plt.subplots(1, len(keys))
+    mpu.get_figsize(fig)
+    fig.suptitle("Loss")
+
+    alpha = 0.5
+    start_idx = start_iter - 1
+
+    def plot_axes(losses_, ax: plt.Axes, k, color, label=None):
+        steps = len(losses_[k])
+        assert start_idx < steps
+        span = (steps - start_idx) // 30
+        if span < 1:
+            span = 1
+
+        data = losses_[k][start_idx:]
+        smooth = pd.DataFrame(data).ewm(span=span).mean()
+        R = range(start_iter, steps + 1)
+        ax.set_title(k)
+        ax.plot(R, data, color=color, alpha=alpha)
+        ax.plot(R, smooth, color=color, lw=2, label=label)
+        # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax.set_xticks(np.linspace(start_iter, steps, 5, dtype=int))  # OK: len(data) < 5
+        ax.grid(ls=":")
+
+    if mode == "batch":
+        for i, k in enumerate(keys):
+            plot_axes(losses, axes[i], k, color="dodgerblue")
+        fig.text(0.5, 0.03, "Iterations", ha="center", va="center", fontsize=14)
+
+    elif mode == "epoch":
+        for i, k in enumerate(keys):
+            plot_axes(losses, axes[i], k, color="dodgerblue", label="train")
+            plot_axes(losses_valid, axes[i], k, color="orange", label="valid")
+        axes[-1].legend()
+        fig.text(0.5, 0.03, "Epochs", ha="center", va="center", fontsize=14)
+
+    # mpu.legend_reduce(fig, loc="lower right")
+
+    if results_dir is not None:
+        save_path = Path(results_dir, f"{manage_dir.stem}_{mode}_loss")
+        mpu.register_save_path(fig, save_path, format)
+
+    plt.show()

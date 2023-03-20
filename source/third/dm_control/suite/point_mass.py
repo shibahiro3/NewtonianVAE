@@ -167,7 +167,8 @@ class PointMass(base.Task):
     obs['position'] = physics.position()
     obs['velocity'] = physics.velocity()
     # Changed/added by Sugar
-    obs['target_position'] = self.target_pos
+    # obs['target_position'] = self.target_pos
+    obs['target_position'] = physics.named.model.geom_pos["target"][:len(physics.position())]
     obs['relative_position'] = obs['position'] - obs['target_position']
     return obs
 

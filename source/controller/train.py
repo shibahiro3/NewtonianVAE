@@ -15,7 +15,7 @@ import models.core
 import models.pcontrol
 import mypython.ai.torchprob as tp
 import tool.util
-from models.core import NewtonianVAEFamily
+from models.core import NewtonianVAEBase
 from models.pcontrol import PControl
 from mypython.ai.util import SequenceDataLoader, print_module_params, reproduce
 from mypython.pyutil import RemainingTime, s2dhms_str
@@ -56,7 +56,7 @@ def train(
         root=paramsmanager.Params(config).path.saves_dir,
         model_place=models.core,
     )
-    model: NewtonianVAEFamily
+    model: NewtonianVAEBase
     model.type(dtype)
     model.to(device)
     model.eval()

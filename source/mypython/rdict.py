@@ -15,14 +15,49 @@ from torch import Tensor
 from .terminal import Color
 
 
-def apply(d: dict, func: Callable):
+def apply_(d: dict, func: Callable):
+    """Inplace"""
+
     for k, v in d.items():
         if type(v) == dict:
-            apply(v, func)
+            apply_(v, func)
         # ==========
 
         else:
             d[k] = func(v)
+
+
+def apply(d: dict, func: Callable):
+    d_ = {}
+    _apply(d, d_, func)
+    return d_
+
+
+def _apply(d: dict, d_: dict, func: Callable):
+
+    for k, v in d.items():
+        if type(v) == dict:
+            d_[k] = None
+            _apply(v, d_[k], func)
+        # ==========
+
+        else:
+            d_[k] = func(v)
+
+
+# feed key chain list
+# def _apply_k(d: dict, func: Callable):
+
+
+# def apply_k(d: dict, func: Callable):
+
+#     for k, v in d.items():
+#         if type(v) == dict:
+#             apply(v, func)
+#         # ==========
+
+#         else:
+#             d[k] = func(v)
 
 
 def is_scalar(scalar):
@@ -76,13 +111,17 @@ def to_numpy(d: dict, *, ignore_scalar=False):
             d[k] = v.detach().cpu().numpy()
 
         elif type_v == list:
-            type_v0 = type(v[0])
-            if type_v0 == np.ndarray:
-                d[k] = np.stack(v)
-            elif type_v0 == Tensor:
-                d[k] = torch.stack(v).detach().cpu().numpy()
-            else:  # float, ...
-                d[k] = np.array(v)
+            if len(v) > 0:
+                type_v0 = type(v[0])
+                if type_v0 == np.ndarray:
+                    d[k] = np.stack(v)
+                elif type_v0 == Tensor:
+                    d[k] = torch.stack(v).detach().cpu().numpy()
+                else:  # float, ...
+                    # print(type_v0)
+                    d[k] = np.array(v)
+            else:
+                d[k] = np.array(v)  # empty
 
         elif is_scalar(v):
             if not ignore_scalar:

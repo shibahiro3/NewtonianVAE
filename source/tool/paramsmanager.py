@@ -122,6 +122,9 @@ class Params(_Converter):
         self.path = instance_or_none(Paths, self._raw.get("path", None))
         self.pid = None  # os.getpid()
 
+        # (saved_)params.others.get(..., defalut)
+        self.others: dict = self._raw.get("others", {})
+
     @property
     def raw(self):
         return self._raw
@@ -139,7 +142,7 @@ class Params(_Converter):
     def save_train(self, path):
         self._save(
             path=path,
-            contents=self._select(["model", self.model, "train", "valid", "path", "pid"]),
+            contents=self._select(["model", self.model, "train", "valid", "path", "pid", "others"]),
         )
 
     def save_train_ctrl(self, path):

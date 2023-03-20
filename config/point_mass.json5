@@ -2,9 +2,9 @@
   model: "NewtonianVAEV2",
 
   NewtonianVAEV2: {
-    camera_name: "top",
     dim_x: 2,
     regularization: false,
+    camera_name: "top",
 
     velocity: {
       fix_abc: [0, 0, 1],
@@ -20,13 +20,26 @@
     encoder: {
       dim_output: 1024,
       std_function: "softplus",
-      model: "VisualEncoder64",
+
+      // model: "VisualEncoder64",
       // model_kwargs: {
       //   activation: "ReLU",
+      // },
+
+      model: "ResNet",
+      // model_kwargs: {
+      //   version: "resnet18",
+      //   // version: "resnet34",
       // },
     },
 
     decoder: {
+      // model: "VisualDecoder64",
+      // model_kwargs: {
+      //   dim_middle: 1024,
+      //   activation: "ReLU",
+      // },
+
       model: "SpatialBroadcastDecoder64",
     },
   },

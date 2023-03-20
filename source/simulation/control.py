@@ -20,8 +20,7 @@ import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
 import view.plot_config
-from models.cell import CellWrap
-from models.core import NewtonianVAEFamily
+from models.core import NewtonianVAEBase
 from models.pcontrol import PControl
 from mypython.ai.util import to_np
 from mypython.pyutil import Seq, Seq2, add_version, initialize
@@ -71,7 +70,7 @@ def main(
     model, _ = tool.util.load_direct(
         weight_path=saved_params_ctrl.path.used_nvae_weight, model_place=models.core
     )
-    model: NewtonianVAEFamily
+    model: NewtonianVAEBase
     model.type(dtype)
     model.to(device)
     model.eval()
@@ -139,7 +138,7 @@ class Pack(RecoderBase):
 def calculate(
     saved_params_ctrl: paramsmanager.Params,
     p_pctrl: PControl,
-    model: NewtonianVAEFamily,
+    model: NewtonianVAEBase,
     env: ControlSuiteEnvWrap,
     episodes: int,
     time_length: int,

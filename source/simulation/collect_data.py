@@ -136,7 +136,7 @@ def main(
                     Ist=observations["camera"],
                     position=observations["position"],
                     position_title="Position",
-                    set_lim=lambda p: p.ax_action.set_ylim(-1.2, 1.2),
+                    set_lim_fn=lambda p: p.ax_action.set_ylim(-1.2, 1.2),
                 )
 
             if done and not save_anim:

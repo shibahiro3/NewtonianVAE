@@ -6,19 +6,24 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure, SubFigure
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import FormatStrFormatter
+from mpl_toolkits.mplot3d import Axes3D
 from torch import Tensor
 
 import models.core
 import mypython.plotutil as mpu
+import mypython.plt_layout as pltl
 import mypython.vision as mv
 import tool.util
 import view.plot_config
-from models.core import NewtonianVAEFamily
+from _private import unet
+from models.core import NewtonianVAEBase
 from mypython import rdict
 from mypython.ai.util import SequenceDataLoader
-from mypython.pyutil import Seq, Seq2, add_version
+from mypython.pyutil import add_version
 from mypython.terminal import Color, Prompt
 from simulation.env import obs2img
 from tool import checker, paramsmanager
@@ -36,13 +41,14 @@ except:
 
 def reconstruction_(
     *,
-    model: NewtonianVAEFamily,
+    model: NewtonianVAEBase,
     batchdata: dict,  # (T, B, D)
     save_path: Optional[str] = None,
 ):
-    with torch.set_grad_enabled(False):
+    with torch.no_grad():
 
         T = batchdata["action"].shape[0]
+        dim_x = batchdata["action"].shape[-1]
         episodes = batchdata["action"].shape[1]
 
         all_steps = T * episodes
@@ -55,74 +61,62 @@ def reconstruction_(
         model.convert_cache(type_to="numpy")
 
         # ============================================================
-        plt.rcParams.update(
-            {
-                "figure.figsize": (7.74, 9.08),
-                "figure.subplot.left": 0.05,
-                "figure.subplot.right": 0.95,
-                "figure.subplot.bottom": 0.05,
-                "figure.subplot.top": 0.9,
-                "figure.subplot.hspace": 0.4,
-                "figure.subplot.wspace": 0.5,
-            }
-        )
+        plt.rcParams.update({"axes.titlesize": 13})
 
-        fig = plt.figure()
+        fig = plt.figure(figsize=(7.74, 9.08))
         mpu.get_figsize(fig)
 
-        recon_camera_key_list = model.cache["camera"].keys()
+        camera_names = model.cache["camera"].keys()
 
         class Ax:
             def __init__(self) -> None:
+                fig.subplots_adjust(bottom=0.05)
 
-                n_img = len(recon_camera_key_list)
-                r_img = Seq2(n_img, (1, 0), lazy=False)
-                rx = Seq2(2, (1, 0), start=r_img.length, lazy=True)
-                c_obs_recon = Seq2(3, (3, 0), start=0, lazy=True)
+                n_img = len(camera_names)
 
-                gs = GridSpec(nrows=r_img.length + rx.length, ncols=c_obs_recon.length)
+                self.action = pltl.Plotter()
+                self.observations = [pltl.Plotter() for _ in range(n_img)]
+                self.recons = [pltl.Plotter() for _ in range(n_img)]
+                self.x_mean = pltl.Plotter(flex=4)
+                self.x_mean_bar = pltl.Plotter()
+                self.x_std = pltl.Plotter(flex=4)
+                self.x_std_bar = pltl.Plotter()
 
-                self.action = fig.add_subplot(gs[: r_img.length, c_obs_recon.a : c_obs_recon.b])
-                c_obs_recon.update()
+                self.layout = pltl.Column(
+                    [
+                        pltl.Row(
+                            [
+                                self.action,
+                                pltl.Column(
+                                    [
+                                        pltl.Row(self.observations, space=0.2),
+                                        pltl.Row(self.recons, space=0.2),
+                                    ],
+                                    space=0.5,
+                                    flex=n_img,
+                                ),
+                            ],
+                            flex=1.5,
+                        ),
+                        pltl.Column(
+                            [
+                                pltl.Row([self.x_mean, self.x_mean_bar]),
+                                pltl.Row([self.x_std, self.x_std_bar]),
+                            ],
+                            space=0.5,
+                            flex=1,
+                        ),
+                    ],
+                )
 
-                self.observations: List[plt.Axes] = []
-                self.recons: List[plt.Axes] = []
-
-                for _ in range(n_img):
-                    self.observations.append(
-                        fig.add_subplot(gs[r_img.a : r_img.b, c_obs_recon.a : c_obs_recon.b])
-                    )
-
-                r_img.reset()
-                c_obs_recon.update()
-
-                for _ in range(n_img):
-                    self.recons.append(
-                        fig.add_subplot(gs[r_img.a : r_img.b, c_obs_recon.a : c_obs_recon.b])
-                    )
-
-                start = 1
-                bar_size = 2
-                line_end = c_obs_recon.length - bar_size
-
-                self.x_mean = fig.add_subplot(gs[rx.a : rx.b, start:line_end])
-                self.x_mean_bar = fig.add_subplot(gs[rx.a : rx.b, line_end : line_end + bar_size])
-                rx.update()
-                self.x_std = fig.add_subplot(gs[rx.a : rx.b, start:line_end])
-                self.x_std_bar = fig.add_subplot(gs[rx.a : rx.b, line_end : line_end + bar_size])
+                pltl.compile(fig, self.layout)
 
             def clear(self):
-                self.action.clear()
-                for ax in self.observations:
-                    ax.clear()
-                for ax in self.recons:
-                    ax.clear()
-                self.x_mean.clear()
-                self.x_mean_bar.clear()
-                self.x_std.clear()
-                self.x_std_bar.clear()
+                pltl.clear(self.layout)
 
         axes = Ax()
+        colors_action = mpu.cmap(dim_x, "prism")
+        colors_latent = mpu.cmap(dim_x, "rainbow")
         # ============================================================
 
         class AnimPack:
@@ -161,7 +155,6 @@ def reconstruction_(
 
                 # ============================================================
                 self.t += 1
-                dim_colors = mpu.cmap(model.cell.dim_x, "prism")
 
                 if frame_cnt == -1:
                     self.t = T - 1
@@ -177,11 +170,9 @@ def reconstruction_(
                     fontname="monospace",
                 )
 
-                color_map = cm.get_cmap("rainbow")
-
                 # ============================================================
-                ax = axes.action
-                N = model.cell.dim_x
+                ax = axes.action.ax
+                N = dim_x
                 R = range(1, N + 1)
                 ax.set_title(r"$\mathbf{u}_{t-1}$ (Original)")
                 # ax.set_xlabel("$u_x$")
@@ -192,7 +183,7 @@ def reconstruction_(
                 ax.bar(
                     R,
                     batchdata["action"][self.t, self.ep].squeeze(0).cpu().numpy(),
-                    color=dim_colors,
+                    color=colors_action,
                     width=0.5,
                 )
                 ax.set_xticks(R)
@@ -201,23 +192,22 @@ def reconstruction_(
                 mpu.Axis_aspect_2d(ax, 1)
 
                 # ============================================================
-                for i, k in enumerate(recon_camera_key_list):
-                    ax = axes.observations[i]
+                for i, k in enumerate(camera_names):
+                    ax = axes.observations[i].ax
                     ax.set_title(r"$\mathbf{I}_t$ " f"({k}, Original)")
                     ax.imshow(obs2img(batchdata["camera"][k][self.t, self.ep].squeeze(0)))
                     ax.set_axis_off()
-                    i += 1
 
                 # ============================================================
-                for i, k in enumerate(recon_camera_key_list):
-                    ax = axes.recons[i]
+                for i, k in enumerate(camera_names):
+                    ax = axes.recons[i].ax
                     ax.set_title(r"$\mathbf{I}_t$ " f"({k}, Reconstructed)")
                     ax.imshow(obs2img(self.model.cache["camera"][k][self.t, self.ep]))
                     ax.set_axis_off()
 
                 # ============================================================
-                ax = axes.x_mean
-                N = model.cell.dim_x
+                ax = axes.x_mean.ax
+                N = dim_x
                 ax.set_title(r"$\mathbf{x}_{1:t}$ (mean)")
                 ax.set_xlim(0, T)
                 ax.set_ylim(self.min_x_mean, self.max_x_mean)
@@ -226,13 +216,13 @@ def reconstruction_(
                     ax.plot(
                         range(self.t),
                         model.cache["x_mean"][: self.t, self.ep, i],
-                        color=color_map(1 - i / N),
+                        color=colors_latent[i],
                         lw=1,
                     )
 
                 # ============================================================
-                ax = axes.x_mean_bar
-                N = model.cell.dim_x
+                ax = axes.x_mean_bar.ax
+                N = dim_x
                 R = range(1, N + 1)
                 ax.set_title(r"$\mathbf{x}_t$ " f"(mean, dim: {N})")
                 ax.set_ylim(self.min_x_mean, self.max_x_mean)
@@ -240,7 +230,7 @@ def reconstruction_(
                 ax.bar(
                     R,
                     self.model.cache["x_mean"][self.t, self.ep],
-                    color=[color_map(1 - i / N) for i in range(N)],
+                    color=colors_latent,
                 )
                 ax.set_xticks(R)
                 ax.set_xticklabels([str(s) for s in R])
@@ -249,8 +239,8 @@ def reconstruction_(
                 mpu.Axis_aspect_2d(ax, 1)
 
                 # ============================================================
-                ax = axes.x_std
-                N = model.cell.dim_x
+                ax = axes.x_std.ax
+                N = dim_x
                 ax.set_title(r"$\mathbf{x}_{1:t}$ (std)")
                 ax.set_xlim(0, T)
                 ax.set_ylim(self.min_x_std, self.max_x_std)
@@ -259,13 +249,13 @@ def reconstruction_(
                     ax.plot(
                         range(self.t),
                         self.model.cache["x_std"][: self.t, self.ep, i],
-                        color=color_map(1 - i / N),
+                        color=colors_latent[i],
                         lw=1,
                     )
 
                 # ============================================================
-                ax = axes.x_std_bar
-                N = model.cell.dim_x
+                ax = axes.x_std_bar.ax
+                N = dim_x
                 R = range(1, N + 1)
                 ax.set_title(r"$\mathbf{x}_t$ " f"(std, dim: {N})")
                 ax.set_ylim(self.min_x_std, self.max_x_std)
@@ -273,7 +263,7 @@ def reconstruction_(
                 ax.bar(
                     R,
                     self.model.cache["x_std"][self.t, self.ep],
-                    color=[color_map(1 - i / N) for i in range(N)],
+                    color=colors_latent,
                 )
                 ax.set_xticks(R)
                 ax.set_xticklabels([str(s) for s in R])
@@ -316,11 +306,11 @@ def reconstruction(
         device=params.test.device,
     )
 
-    model, manage_dir, weight_path, saved_params = tool.util.load(
+    model, managed_dir, weight_path, saved_params = tool.util.load(
         root=params.path.saves_dir,
         model_place=models.core,
     )
-    model: NewtonianVAEFamily
+    model: NewtonianVAEBase
     model.type(dtype)
     model.to(device)
 
@@ -340,11 +330,21 @@ def reconstruction(
     if save_anim:
         path_result = tool.util.priority(params.path.results_dir, saved_params.path.results_dir)
         save_path = Path(
-            path_result, manage_dir.stem, f"E{weight_path.stem}_reconstructed.{format}"
+            path_result, managed_dir.stem, f"E{weight_path.stem}_reconstructed.{format}"
         )
         save_path = add_version(save_path)
     else:
         save_path = None
+
+    with torch.no_grad():
+        pre_unet = unet.MobileUNet(out_channels=1).to(device)
+        p_ = Path(params.path.saves_dir, "unet", "weight.pth")
+        pre_unet.load_state_dict(torch.load(p_))
+        pre_unet.eval()
+        T, B, C, H, W = batchdata["camera"]["self"].shape
+        batchdata["camera"]["self"] = unet.pre(
+            pre_unet, batchdata["camera"]["self"].reshape(-1, C, H, W)
+        ).reshape(T, B, C, H, W)
 
     reconstruction_(model=model, batchdata=batchdata, save_path=save_path)
 

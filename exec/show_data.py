@@ -23,6 +23,8 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("-c", "--config", type=str, required=True, **argset.config)
 parser.add_argument("--episodes", type=int, default=10)
+parser.add_argument("--env", type=str)
+parser.add_argument("--position-name", type=str)
 parser.add_argument("--save-anim", action="store_true")
 parser.add_argument("--format", type=str, default="mp4", **argset.format_video)
 args = parser.parse_args()

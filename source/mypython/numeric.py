@@ -27,3 +27,21 @@ class MovingAverage:
         self._add_position = 0
         self._x_mean = 0
         self._first_cnt = 0
+
+
+def divisors(n):
+    """
+    Return:
+        sorted divisors
+    """
+    assert type(n) == int and n > 0
+
+    lower_divisors, upper_divisors = [], []
+    i = 1
+    while i * i <= n:
+        if n % i == 0:
+            lower_divisors.append(i)
+            if i != n // i:
+                upper_divisors.append(n // i)
+        i += 1
+    return lower_divisors + upper_divisors[::-1]

@@ -20,9 +20,16 @@
     encoder: {
       dim_output: 1024,
       std_function: "softplus",
+
       model: "VisualEncoder64",
+      model_kwargs: {
+        activation: "ReLU",
+      },
+
+      // model: "ResNet",
       // model_kwargs: {
-      //   activation: "ReLU",
+      //   version: "resnet18",
+      //   // version: "resnet34",
       // },
     },
 
@@ -32,6 +39,8 @@
         dim_middle: 1024,
         activation: "ReLU",
       },
+
+      // model: "SpatialBroadcastDecoder64",
     },
   },
 

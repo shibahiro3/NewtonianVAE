@@ -173,6 +173,9 @@ def creator(
     ├── loss root
     │   ├── ...
     │
+
+    resume_weight_path
+      = old_managed_dir/weight/{epoch}.pth
     """
 
     datetime_now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

@@ -38,14 +38,6 @@ def print_module_params(module: nn.Module, grad=False) -> None:
                 print(f"grad: {param.grad}")  # None
 
 
-def swish(x):
-    return x * torch.sigmoid(x)
-
-
-def mish(x):
-    return x * torch.tanh(F.softplus(x))
-
-
 def find_function(function_name: str) -> Callable[[Tensor], Tensor]:
     try:
         return getattr(torch, function_name)
@@ -154,8 +146,8 @@ class SequenceDataLoader(BatchIdx):
         start: int,
         stop: int,
         batch_size: int,
-        dtype: torch.dtype = torch.float32,
-        device=torch.device("cpu"),
+        dtype: Union[str, torch.dtype] = torch.float32,
+        device: Union[str, torch.device] = torch.device("cpu"),
         show_selected_index=False,
         shuffle=True,
     ):
@@ -170,6 +162,11 @@ class SequenceDataLoader(BatchIdx):
         """
 
         super().__init__(start, stop, batch_size=batch_size, shuffle=shuffle)
+
+        if type(dtype) == str:
+            dtype = getattr(torch, dtype)
+        if type(device) == str:
+            device = torch.device(device)
 
         self.root = root
         self.device = device
@@ -222,7 +219,7 @@ class SequenceDataLoader(BatchIdx):
         rdict.to_torch(batch_data, dtype=dtype, device=device)
 
         if not batch_first:
-            rdict.apply(batch_data, swap01)
+            rdict.apply_(batch_data, swap01)
 
         # rdict.show(batch_data, "batch_data (inside)")
         return batch_data

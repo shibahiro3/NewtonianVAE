@@ -92,7 +92,7 @@ class ShowData:
         Ist: Dict[str, Tensor],
         position: np.ndarray,
         position_title: Optional[str] = None,
-        set_lim: Callable[[Self], None] = None,
+        set_lim_fn: Callable[[Self], None] = None,
     ):
         self.axes_clear()
 
@@ -178,8 +178,8 @@ class ShowData:
         else:
             ax.bar(R, position, color=dim_colors, width=0.5)
 
-        if callable(set_lim):
-            set_lim(self)
+        if callable(set_lim_fn):
+            set_lim_fn(self)
 
         mpu.Axis_aspect_2d(self.ax_action, 1)
         mpu.Axis_aspect_2d(self.ax_position, 1)
@@ -190,6 +190,9 @@ def main(
     episodes: int,
     save_anim: bool,
     format: str,
+    env: str = None,
+    position_name: str = "position",
+    position_title: str = None,
 ):
     params = paramsmanager.Params(config)
 
@@ -202,25 +205,35 @@ def main(
         batch_size=episodes,
         dtype=torch.float32,
         show_selected_index=True,
-        # shuffle=False,
+        shuffle=False,
     ).sample_batch(verbose=True)
 
     # rdict.to_numpy(batchdata)
 
     action = batchdata["action"]
-    position = batchdata["position"]
-    # position = batchdata["relative_position"]
+    position = batchdata[position_name]
 
     T = action.shape[0]
     all_steps = T * episodes
 
+    if type(env) == str:
+        domain, task = env.split("-")
+    else:
+        domain, task = None, None
+
     plt_render = ShowData(
         win_title="Show Data",
         n_cam=len(batchdata["camera"]),
-        # env_domain=env.domain,
-        # env_task=env.task,
+        env_domain=domain,
+        env_task=task,
         # env_position_wrap=env.position_wrap,
     )
+
+    if position_title is None:
+        if position_name == "position":
+            position_title = "Position"
+        elif position_name == "relative_position":
+            position_title = "Relative Position"
 
     class AnimPack:
         def __init__(self) -> None:
@@ -247,10 +260,11 @@ def main(
                 action=action[self.t, self.episode_cnt],
                 Ist={k: v[self.t, self.episode_cnt] for k, v in batchdata["camera"].items()},
                 position=position[self.t, self.episode_cnt],
-                set_lim=lambda p: (
+                set_lim_fn=lambda p: (
                     p.ax_action.set_ylim(action.min() - 0.1, action.max() + 0.1),
                     p.ax_position.set_ylim(position.min() - 0.1, position.max() + 0.1),
                 ),
+                position_title=position_title,
             )
 
     p = AnimPack()
@@ -260,5 +274,5 @@ def main(
         p.anim_func,
         all_steps,
         interval=40,
-        save_path=Path(params.path.data_dir, f"data.{format}"),
+        save_path=Path(params.path.data_dir, f"data_from_file.{format}"),
     )

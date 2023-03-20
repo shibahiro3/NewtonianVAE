@@ -15,7 +15,8 @@ import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
 import view.plot_config
-from models.core import NewtonianVAEFamily
+from _private import unet
+from models.core import NewtonianVAEBase
 from mypython.ai.util import SequenceDataLoader, swap01
 from mypython.pyutil import Seq, add_version
 from mypython.terminal import Color
@@ -33,7 +34,7 @@ except:
 
 def correlation_(
     *,
-    model: NewtonianVAEFamily,
+    model: NewtonianVAEBase,
     batchdata: dict,  # (T, B, D)
     save_path: Optional[str] = None,
     show: bool = True,
@@ -41,7 +42,7 @@ def correlation_(
     position_name: str = "position",
     format: Optional[List[str]] = None,
 ):
-    with torch.set_grad_enabled(False):
+    with torch.no_grad():
 
         T = batchdata["action"].shape[0]
         episodes = batchdata["action"].shape[1]
@@ -93,7 +94,7 @@ def correlation_(
                     ax = axes[ld][pd]
                     x = physical[..., pd]
                     y = latent_map[..., ld]
-                    corr = np.corrcoef(x.flatten(), y.flatten())[0, 1]
+                    corr = np.corrcoef(x.reshape(-1), y.reshape(-1))[0, 1]
                     if pd == ld:
                         ax.set_title(f"Correlation = {corr:.4f}", color="red")
                     else:
@@ -132,7 +133,7 @@ def correlation_(
             for d in range(dim):
                 x = physical[..., d]
                 y = latent_map[..., d]
-                corr = np.corrcoef(x.flatten(), y.flatten())[0, 1]
+                corr = np.corrcoef(x.reshape(-1), y.reshape(-1))[0, 1]
                 ax = axes[d]
                 ax.set_title(f"Correlation = {corr:.4f}")
                 ax.set_xlabel(f"Physical {d+1}")
@@ -172,11 +173,11 @@ def correlation(
         device=params.train.device,
     )
 
-    model, manage_dir, weight_path, saved_params = tool.util.load(
+    model, managed_dir, weight_path, saved_params = tool.util.load(
         root=params.path.saves_dir,
         model_place=models.core,
     )
-    model: NewtonianVAEFamily
+    model: NewtonianVAEBase
     model.type(dtype)
     model.to(device)
 
@@ -192,9 +193,32 @@ def correlation(
     )
     batchdata = next(testloader)
 
+    if saved_params.others.get("use_unet", False):
+        with torch.no_grad():
+            pre_unet = unet.MobileUNet(out_channels=1).to(device)
+
+            p_ = Path(params.path.saves_dir, "unet", "weight.pth")
+
+            # p_ = Path(
+            #     params.path.saves_dir,
+            #     managed_dir.stem,
+            #     "unet_with_nvae",
+            #     "weight",
+            #     weight_path.name,
+            # )
+
+            pre_unet.load_state_dict(torch.load(p_))
+
+            pre_unet.eval()
+
+            T, B, C, H, W = batchdata["camera"]["self"].shape
+            batchdata["camera"]["self"] = unet.pre(
+                pre_unet, batchdata["camera"]["self"].reshape(-1, C, H, W)
+            ).reshape(T, B, C, H, W)
+
     # ============================================================
     path_result = tool.util.priority(params.path.results_dir, saved_params.path.results_dir)
-    save_path = Path(path_result, manage_dir.stem, f"E{weight_path.stem}_correlation.pdf")
+    save_path = Path(path_result, managed_dir.stem, f"E{weight_path.stem}_correlation.pdf")
     save_path = add_version(save_path)
 
     correlation_(
