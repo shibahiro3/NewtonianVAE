@@ -1,12 +1,12 @@
 [tool.isort]
 profile = "black"
 src_paths = [
-    "source/*",
+    "src/*",
 ]
 skip_glob = [
-    "source/third"
+    "src/third"
 ]
 
 [tool.black]
 line-length = 100
-extend_exclude = "source/third"
+extend_exclude = "src/third"

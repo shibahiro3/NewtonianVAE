@@ -1,0 +1,98 @@
+{
+  model: "MNVAE",
+
+  MNVAE: {
+    dim_x: 3,
+    camera_names: ["top", "x side"],
+
+    velocity: {
+      fix_abc: [0, 0, 1],
+      // fix_abc: null,
+    },
+
+    transition: {
+      std: 0.001,
+    },
+
+    encoder: {
+      modellist: [
+        {
+          model: "VanillaEncoder",
+          model_kwargs: {
+            dim_output: 80,
+            activation: "ReLU",
+          },
+        },
+        {
+          model: "VanillaEncoder",
+          model_kwargs: {
+            dim_output: 80,
+            activation: "ReLU",
+          },
+        },
+      ],
+    },
+
+    decoder: {
+      split_version: "v1",
+      modellist: [
+        {
+          model: "SpatialBroadcastDecoder",
+          model_kwargs: {
+            dim_input: 80,
+          },
+        },
+        {
+          model: "SpatialBroadcastDecoder",
+          model_kwargs: {
+            dim_input: 80,
+          },
+        },
+      ],
+    },
+  },
+
+  train: {
+    path: "data/point_mass_3d/episodes/{0..999}.*",
+    batch_size: 10,
+    epochs: 600,
+    learning_rate: 3e-4,
+    max_time_length: 100,
+    device: "cuda",
+    dtype: "float32",
+    save_per_epoch: 30,
+    check_value: false,
+    grad_clip_norm: 1000,
+  },
+
+  valid: {
+    path: "data/point_mass_3d/episodes/{1000..1199}.*",
+    batch_size: 10,
+  },
+
+  test: {
+    path: "data/point_mass_3d/episodes/{1200..1399}.*",
+    device: "cuda",
+    dtype: "float32",
+  },
+
+  ControlSuiteEnvWrap: {
+    env: "point_mass_3d-easy",
+    seed: 1,
+    max_episode_length: 100,
+    action_repeat: 1,
+    bit_depth: 8,
+    action_type: "random_walk",
+    imgsize: [64, 64],
+    task_settings: {
+      target_size: 0.015,
+      target_position: "default",
+    },
+  },
+
+  path: {
+    saves_dir: "save/point_mass_3d/saves",
+    results_dir: "save/point_mass_3d/results",
+    hidden_conf: "config/_hidden_conf.json5",
+  },
+}

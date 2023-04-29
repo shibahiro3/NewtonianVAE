@@ -2,62 +2,37 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
-This is NOT an official implementation.
-
-Point Mass and Reacher2D show high correlation between latent space and physical location.
-But I'm still working on fixing some details. Destructive changes may be made (2022/12/14).
-
-Paper
-
-- Original: https://arxiv.org/abs/2006.01959
-
-Other References (All implementations are PyTorch)
-
-- TS-NVAE
-  - paper: https://arxiv.org/abs/2203.05955
-- VRNN
-  - paper: https://arxiv.org/abs/1506.02216
-  - impl: https://github.com/emited/VariationalRecurrentNeuralNetwork
-- World Models
-  - paper: https://arxiv.org/abs/1803.10122
-  - impl: https://github.com/ctallec/world-models
-- PlaNet (RSSM):
-  - paper: https://arxiv.org/abs/1811.04551
-  - impl: https://github.com/Kaixhin/PlaNet
-- Spatial Broadcast Decoder
-  - paper: https://arxiv.org/abs/1901.07017
-  - impl: https://github.com/dfdazac/vaesbd
+This is a PyTorch implementation that expands on [NewtonianVAE](https://arxiv.org/abs/2006.01959).
 
 ## Prerequisites
 
 Install the necessary packages.
 
 ```bash
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
-And install PyTorch manually by referring to the [official site](https://pytorch.org/).
-
 ### Tips
-
-The installation of matplotlib, opencv, and their associated Qt is likely to be environmentally dependent.
+- Recommend using a virtual environment such as [venv](https://docs.python.org/3/library/venv.html)
+- The installation of matplotlib, opencv, and their associated Qt is likely to be environmentally dependent.
+- You may need to install PyTorch according to [official site](https://pytorch.org/).
 
 ## Run
 
-These should be run under the [exec](exec) directory.
+These should be run under the [src/exec](src/exec) directory. To see examples other than those listed below, run `python xxx.py -h`.
 
 ### Create Data
 
 Example:
 
 ```bash
-python create_data.py -c config/reacher2d.json5
+python python create_data.py -c config/reacher2d.json5 --mode save-data --save-dir data/reacher2d
 ```
 
 If you want to see what kind of data you are looking for:
 
 ```bash
-python create_data.py -c config/reacher2d.json5 --watch plt
+python create_data.py -c config/reacher2d.json5 --mode show-plt
 ```
 
 ### Train
@@ -73,31 +48,22 @@ python train.py -c config/reacher2d.json5
 Example:
 
 ```bash
-python correlation.py -c config/reacher2d.json5 --env-domain reacher2d
+python correlation.py -c config/reacher2d.json5
 ```
 
-![Result](media/2023-01-03_01-35-40_W300_correlation.png)
+## References
 
-```bash
-python correlation.py -c config/point_mass.json5 --env-domain point_mass
-```
-
-![Result](media/2023-01-03_17-53-03_W300_correlation.png)
-
-In a point_mass environment, they may become negatively correlated or the correlated axes may be inverted.
-
-### Control with PID
-
-You can give the target image in the source code and see how it behaves.
-
-Example:
-
-```bash
-python control_pure.py -c config/reacher2d.json5 --episodes 3 --format gif --save-anim
-```
-
-![Result](media/2023-01-03_01-35-40_W300_control_pure_V2.gif)
-
-## Acknowledgements
-
-[@ItoMasaki](https://github.com/ItoMasaki) helped me understand the detailed formulas.
+- TS-NVAE
+  - paper: https://arxiv.org/abs/2203.05955
+- VRNN
+  - paper: https://arxiv.org/abs/1506.02216
+  - impl: https://github.com/emited/VariationalRecurrentNeuralNetwork
+- World Models
+  - paper: https://arxiv.org/abs/1803.10122
+  - impl: https://github.com/ctallec/world-models
+- PlaNet (RSSM):
+  - paper: https://arxiv.org/abs/1811.04551
+  - impl: https://github.com/Kaixhin/PlaNet
+- Spatial Broadcast Decoder
+  - paper: https://arxiv.org/abs/1901.07017
+  - impl: https://github.com/dfdazac/vaesbd

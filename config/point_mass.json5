@@ -1,74 +1,51 @@
 {
-  model: "NewtonianVAEV2",
+  model: "NewtonianVAE",
 
-  NewtonianVAEV2: {
+  NewtonianVAE: {
     dim_x: 2,
-    regularization: false,
     camera_name: "top",
 
     velocity: {
       fix_abc: [0, 0, 1],
-      // fix_abc: null,
-      // activation: "ReLU",
     },
 
     transition: {
       std: 0.001,
-      // std: null,
     },
 
     encoder: {
-      dim_output: 1024,
-      std_function: "softplus",
-
-      // model: "VisualEncoder64",
-      // model_kwargs: {
-      //   activation: "ReLU",
-      // },
-
-      model: "ResNet",
-      // model_kwargs: {
-      //   version: "resnet18",
-      //   // version: "resnet34",
-      // },
+      model: "VanillaEncoder",
+      model_kwargs: {
+        dim_output: 1024,
+      },
     },
 
     decoder: {
-      // model: "VisualDecoder64",
-      // model_kwargs: {
-      //   dim_middle: 1024,
-      //   activation: "ReLU",
-      // },
-
-      model: "SpatialBroadcastDecoder64",
+      model: "SpatialBroadcastDecoder",
     },
   },
 
   train: {
-    data_start: 0,
-    data_stop: 1000,
+    path: "data/point_mass/episodes/{0..999}.*",
     batch_size: 20,
-    epochs: 300,
+    epochs: 400,
     learning_rate: 3e-4,
     max_time_length: 100,
     device: "cuda",
     dtype: "float32",
-    kl_annealing: true,
-    save_per_epoch: 20,
+    save_per_epoch: 50,
     check_value: false,
   },
 
   valid: {
-    data_start: 1000,
-    data_stop: 1200,
+    path: "data/point_mass/episodes/{1000..1199}.*",
     batch_size: 20,
   },
 
   test: {
+    path: "data/point_mass/episodes/{1200..1399}.*",
     device: "cuda",
     dtype: "float32",
-    data_start: 1200,
-    data_stop: 1400,
   },
 
   ControlSuiteEnvWrap: {
@@ -81,30 +58,26 @@
     imgsize: [64, 64],
     task_settings: {
       // target_size: 0.03,
-      // target_size: 0.015,
+      target_size: 0.015,
       target_position: "default",
       // target_position: "random",
     },
   },
 
   path: {
-    data_dir: "environments/point_mass/data",
-    saves_dir: "environments/point_mass/saves",
-    results_dir: "environments/point_mass/results",
+    saves_dir: "save/point_mass/saves",
+    results_dir: "save/point_mass/results",
+    hidden_conf: "config/_hidden_conf.json5",
   },
 
-  correlation: {
-    episodes: 50,
-    kwargs: {
-      all: true,
-      position_name: "position",
-      format: ["png"],
-    },
-  },
-
-  reconstruction: {
-    episodes: 3,
-    format: "mp4",
-    // kwargs: {},
+  others: {
+    /*
+      Paper:
+      In the point mass experiments
+      we found it useful to anneal the KL term in the ELBO,
+      starting with a value of 0.001 and increasing it linearly
+      to 1.0 between epochs 30 and 60.
+    */
+    beta_schedule: { linear1: [30, 60, 0.001, 1] },
   },
 }

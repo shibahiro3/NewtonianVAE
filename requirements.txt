@@ -1,20 +1,21 @@
-typing_extensions==4.4.0
-json5==0.9.10
-numpy==1.23.4
-dm-control==1.0.8
+numpy
+dm-control
 
 # https://pytorch.org/
-# torch==1.13.0
-# torchvision==0.14.0
+torch
+torchvision
 
-
+##############################
 matplotlib==3.6.2
-
 opencv-python==4.6.0.66
 PyQt6==6.4.0
+PyQt6-Qt6==6.4.1
+PyQt6-sip==13.4.0
+
 # If you get the following error ...
 #   qt.qpa.plugin: Could not load the Qt platform plugin
 #   UserWarning: Animation was deleted without rendering anything.
+# https://github.com/NVlabs/instant-ngp/discussions/300
 # Try any or all of these.
 # opencv-python==4.3.0.36
 # PyQt5==5.15.2
@@ -22,15 +23,20 @@ PyQt6==6.4.0
 
 # sudo apt install python3-tk
 # sudo apt install ffmpeg  # for saving movie
+##############################
 
 
-tensorboard==2.11.0
-visdom==0.2.3
-torchviz==0.0.2
-seaborn==0.12.1
-pandas==1.5.2
+typing_extensions
+json5==0.9.10
+natsort
+einops
+wcmatch
+
+tensorboard
+# torch-tb-profiler
+visdom
+torchviz
+seaborn
+pandas
 torch-summary
-
-
-
 vit-pytorch

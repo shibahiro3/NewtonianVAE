@@ -1,74 +1,112 @@
 {
-  model: "NewtonianVAEV2",
+  // Class name of the model to use for training
+  // Search in core.py
+  model: "NewtonianVAE",
 
-  NewtonianVAEV2: {
-    camera_name: "fixed",
+  NewtonianVAE: {
     dim_x: 2,
-    regularization: false,
+
+    // Use KL(q(x|I)‖N (0, 1))
+    // undefined == false
+    // Paper: Secondly, we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
+    // regularization: false,
+
+    camera_name: "fixed",
 
     velocity: {
+      // Fix values for A, B, C
+      // Paper: Firstly, the transition matrices were set to A = 0, B = 0, C = 1.
       fix_abc: [0, 0, 1],
-      // fix_abc: null,
-      // activation: "ReLU",
+      // fix_abc: null,  // train ABC
     },
 
     transition: {
       std: 0.001,
-      // std: null,
     },
 
     encoder: {
-      dim_output: 1024,
-      std_function: "softplus",
+      // image -> model (enc) -> nn.Linear -> μ, σ
 
-      model: "VisualEncoder64",
+      model: "VanillaEncoder",
       model_kwargs: {
-        activation: "ReLU",
+        dim_output: 1024,
       },
+
+      // You can try these!
 
       // model: "ResNet",
       // model_kwargs: {
-      //   version: "resnet18",
-      //   // version: "resnet34",
+      //   dim_output: 128,
       // },
+
+      // model: "MobileViTWrap",
+      // model_kwargs: {
+      //   dim_output: 128,
+      //   img_size: [64, 64]
+      // }
     },
 
     decoder: {
-      model: "VisualDecoder64",
-      model_kwargs: {
-        dim_middle: 1024,
-        activation: "ReLU",
-      },
+      // x (latent) -> model (dec) -> generated image
 
-      // model: "SpatialBroadcastDecoder64",
+      model: "VanillaDecoder",
     },
   },
 
   train: {
-    data_start: 0,
-    data_stop: 1000,
+    /*
+      === Paper ===
+
+      To train the models, we generate 1000 random se-
+      quences with 100 time-steps for the point mass and
+      reacher-2D systems, and 30 time-steps for the fetch-3D
+      system.
+
+      All
+      models were trained using Adam [28] with a learning
+      rate of 3 · 10−4 and batch size 1 (a single sequence per
+      batch) for 300 epochs.
+    */
+
+    // Support: https://facelessuser.github.io/wcmatch/glob/
+    // Multiple paths can also be written using arrays
+    path: "data/reacher2d/episodes/{0..999}.*",
+
     batch_size: 20,
-    epochs: 300,
+    epochs: 400, // 300 + alpha (just in case)
     learning_rate: 3e-4,
-    max_time_length: 100,
+
+    // Max time length
+    // "clip_min" : Truncate from batch data according to minimum time length
+    // max_time_length: 100,
+    max_time_length: "clip_min",
+
     device: "cuda",
     dtype: "float32",
-    // kl_annealing: true,
-    save_per_epoch: 20,
     check_value: false, // if false, a little faster
+
+    // Per epoch to save the weights
+    save_per_epoch: 50,
+
+    // Random seed  (Optional)
+    // undefined == null
+    // If null, the seed is determined automatically.
+    // seed: null, // int or null
+
+    // https://pytorch.org/docs/stable/generated/torch.nn.utils.clip_grad_norm_.html
+    // (Optional)
+    grad_clip_norm: null, // Number type or null
   },
 
   valid: {
-    data_start: 1000,
-    data_stop: 1200,
+    path: "data/reacher2d/episodes/{1000..1199}.*",
     batch_size: 20,
   },
 
   test: {
+    path: "data/reacher2d/episodes/{1200..1399}.*",
     device: "cuda",
     dtype: "float32",
-    data_start: 1200,
-    data_stop: 1400,
   },
 
   ControlSuiteEnvWrap: {
@@ -83,23 +121,8 @@
   },
 
   path: {
-    data_dir: "environments/reacher2d/data",
-    saves_dir: "environments/reacher2d/saves",
-    results_dir: "environments/reacher2d/results",
-  },
-
-  correlation: {
-    episodes: 50,
-    kwargs: {
-      all: true,
-      position_name: "position",
-      format: ["png"],
-    },
-  },
-
-  reconstruction: {
-    episodes: 3,
-    format: "mp4",
-    // kwargs: {},
+    saves_dir: "save/reacher2d/saves", // For model weight & this file (hyperparameter)
+    results_dir: "save/reacher2d/results", // For visualization results using model
+    hidden_conf: "config/_hidden_conf.json5", // See config/hidden_conf.json5
   },
 }

@@ -5,8 +5,9 @@ _*
 
 # Source #
 ##########
-qt
 !__init__.py
+qt
+*/mypython/examples/
 
 # Virtual environment #
 #######################
@@ -14,10 +15,12 @@ venv/
 
 # Binary data #
 ###############
+environments/
 data*/
 save*/
 result*/
 log*/
+generated*/
 
 # Docs #
 ########
@@ -28,6 +31,7 @@ docs/*
 ##########
 pylintrc
 .pylintrc
+
 
 # https://github.com/numpy/numpy/blob/main/.gitignore
 
