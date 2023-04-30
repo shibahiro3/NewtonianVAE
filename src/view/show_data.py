@@ -185,7 +185,8 @@ class ShowData:
             set_lim_fn(self)
 
         mpu.Axis_aspect_2d(self.ax_action.ax, 1)
-        mpu.Axis_aspect_2d(self.ax_position.ax, 1)
+        if self.env_domain != "point_mass_3d":
+            mpu.Axis_aspect_2d(self.ax_position.ax, 1)
 
 
 def main(
