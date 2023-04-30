@@ -20,14 +20,12 @@
           model: "VanillaEncoder",
           model_kwargs: {
             dim_output: 80,
-            activation: "ReLU",
           },
         },
         {
           model: "VanillaEncoder",
           model_kwargs: {
             dim_output: 80,
-            activation: "ReLU",
           },
         },
       ],
