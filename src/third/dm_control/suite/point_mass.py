@@ -101,6 +101,8 @@ class PointMass(base.Task):
       self.task_settings = {}
     else:
       self.task_settings = task_settings
+
+    self.self_color = self.task_settings.get("self_color", None)
     self._set_position()
 
   def initialize_episode(self, physics):
@@ -133,18 +135,28 @@ class PointMass(base.Task):
       physics.named.model.geom_pos["target"][:2] = self.target_pos
     else:
       assert False
-    
+
     if target_size is not None:
       assert type(target_size) == float
       physics.named.model.geom_size["target"][0] = target_size
+
+    if self.self_color == "random_per_episode":
+      color = self.random.uniform(0.0, 1.0, 3)
+      physics.named.model.geom_rgba["pointmass"] = [*color, 1]
+
+    # pprint(dir(physics.named.model))
 
     # print(physics.named.data.qpos)
     # print(physics.named.data.geom_xpos)
     # print(physics.named.model.geom_size)
     # print(physics.named.model.geom_pos)
-    # pprint(dir(physics.named.model))
     # physics.named.model.cam_quat["cam0"][:2] = np.array([0, 0])
     # print(physics.named.model.cam_quat)
+
+    # print(physics.named.model.geom_rgba)
+    # print(physics.named.model.skin_rgba)
+    # print(physics.named.model.mat_rgba)
+    # print(physics.named.model.site_rgba)
 
     ###
 
@@ -191,3 +203,12 @@ class PointMass(base.Task):
     theta = self.random.uniform(0, 2*np.pi)
     self.target_pos = self.init_self_pos + r * np.array([np.cos(theta), np.sin(theta)])
     # self.target_pos = self.random.uniform(-wall, wall, size=2)
+
+  # Changed/added by Sugar
+  def before_step(self, action, physics):
+
+    if self.self_color == "random":
+      color = self.random.uniform(0.0, 1.0, 3)
+      physics.named.model.geom_rgba["pointmass"] = [*color, 1]
+
+    super().before_step(action, physics)

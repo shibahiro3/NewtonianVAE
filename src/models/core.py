@@ -169,7 +169,8 @@ class NewtonianVAE(NewtonianVAEBase):
         transition: dict,
         encoder: dict,
         decoder: dict,
-        regularization=False,
+        regularization: bool = False,
+        decoder_free: bool = False,
     ) -> None:
         super().__init__()
 
@@ -183,6 +184,7 @@ class NewtonianVAE(NewtonianVAEBase):
             transition=transition,
             encoder=encoder,
             decoder=decoder,
+            decoder_free=decoder_free,
         )
 
     def forward(self, batchdata: Dict[str, Tensor]):
@@ -209,28 +211,38 @@ class NewtonianVAE(NewtonianVAEBase):
             if t == 0:
                 x_q_t = self.cell.q_encoder.given(I_t).rsample()
                 v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
-                I_dec = self.cell.p_decoder(x_q_t)
+                if not self.cell._decoder_free:
+                    I_dec = self.cell.p_decoder(x_q_t)
 
                 x_q_tn1 = x_q_t
 
             elif t == 1:
                 x_q_t = self.cell.q_encoder.given(I_t).rsample()
                 v_t = (x_q_t - x_q_tn1) / delta[t]
-                I_dec = self.cell.p_decoder(x_q_t)
+                if not self.cell._decoder_free:
+                    I_dec = self.cell.p_decoder(x_q_t)
 
             else:
                 output = self.cell(
-                    I_t=I_t, x_q_tn1=x_q_tn1, x_q_tn2=x_q_tn2, u_tn1=u_tn1, dt=delta[t]
+                    I_t=I_t,
+                    x_q_tn1=x_q_tn1,
+                    x_q_tn2=x_q_tn2,
+                    u_tn1=u_tn1,
+                    dt=delta[t],
                 )
 
-                E_sum += output.E
-                E_ll_sum += output.E_ll
-                E_kl_sum += output.E_kl
-                beta_kl += output.beta_kl
-
-                x_q_t = output.x_q_t
-                v_t = output.v_t
-                I_dec = output.I_t_rec
+                # for loss
+                E_sum += output["E"]
+                E_kl_sum += output["E_kl"]
+                beta_kl += output["beta_kl"]
+                # for next cell
+                x_q_t = output["x_q_t"]
+                v_t = output["v_t"]
+                if not self.cell._decoder_free:
+                    # for loss
+                    E_ll_sum += output["E_ll"]
+                    # for next cell
+                    I_dec = output["I_t_rec"]
 
             x_q_tn2 = x_q_tn1
             x_q_tn1 = x_q_t
@@ -244,16 +256,20 @@ class NewtonianVAE(NewtonianVAEBase):
                 self.cache["x_mean"].append(self.cell.q_encoder.loc)
                 self.cache["x_std"].append(self.cell.q_encoder.scale)
                 self.cache["v"].append(v_t)
-                self.cache["camera"][self.camera_name].append(I_dec)
+                if not self.cell._decoder_free:
+                    self.cache["camera"][self.camera_name].append(I_dec)
 
         E = E_sum / T
         L = -E
 
-        losses = {
-            f"{self.camera_name} Loss": -E_ll_sum / T,
-            "KL Loss": E_kl_sum / T,
-            "Beta KL Loss": beta_kl / T,
-        }
+        losses = {}  # for order
+
+        if not self.cell._decoder_free:
+            losses[f"{self.camera_name} Loss"] = -E_ll_sum / T
+
+        losses["KL Loss"] = E_kl_sum / T
+        losses["Beta KL Loss"] = beta_kl / T
+
         return L, losses
 
     def init_cache(self):
@@ -337,15 +353,17 @@ class MNVAE(NewtonianVAEBase):
                     dt=delta[t],
                 )
 
+                # for loss
                 E_sum += output["E"]
                 KL_loss += output["KL_loss"]
                 beta_kl += output["beta_kl"]
-                if not self.cell._decoder_free:
-                    image_losses += np.array(output["image_losses"])
-
+                # for next cell
                 x_q_t = output["x_q_t"]
                 v_t = output["v_t"]
                 if not self.cell._decoder_free:
+                    # for loss
+                    image_losses += np.array(output["image_losses"])
+                    # for next cell
                     I_t_recs = output["I_t_recs"]
 
             x_q_tn2 = x_q_tn1
@@ -374,12 +392,8 @@ class MNVAE(NewtonianVAEBase):
             for i, k in enumerate(self._camera_names):
                 losses[f"camera {k} Loss"] = image_losses[i]
 
-        losses.update(
-            {
-                "KL Loss": KL_loss / T,
-                "Beta KL Loss": beta_kl / T,
-            }
-        )
+        losses["KL Loss"] = KL_loss / T
+        losses["Beta KL Loss"] = beta_kl / T
 
         return L, losses
 
