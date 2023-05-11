@@ -17,23 +17,75 @@
 
 import collections
 
-from dm_control import mujoco
-from dm_control.rl import control
-from dm_control.suite import base
-from dm_control.suite import common
-from dm_control.suite.utils import randomizers
-from dm_control.utils import containers
-from dm_control.utils import rewards
 import numpy as np
 
+from dm_control import mujoco
+from dm_control.rl import control
+from dm_control.suite import base, common
+from dm_control.suite.utils import randomizers
+from dm_control.utils import containers
 from dm_control.utils import io as resources
+from dm_control.utils import rewards
 
 _DEFAULT_TIME_LIMIT = 20
 SUITE = containers.TaggedTasks()
 
+from pprint import pprint
+
+import mypython.pyutil as mpu
+
 # Changed/added by Sugar
 from third.dm_control import read_model
-from pprint import pprint
+
+
+# @mpu.run_once
+# def check_attr_dm():
+#   import dm_control
+#   mpu.recursive_attr(dm_control, verbose=True, add_ignore_types=(np.ndarray,), search_words=None)
+
+# check_attr_dm()
+
+@mpu.run_once
+def check_attr(obj):
+  
+  # sw = "add"
+  # sw = "cam"
+  sw = "geom"
+  # sw = "pos"
+  # sw = ("geom", "pos")
+  # sw = "worldbody"
+  # sw = ("add", "geom", "worldbody")
+  mpu.recursive_attr(obj, verbose=True, add_ignore_types=(np.ndarray,), search_words=sw)
+  
+from numpy.random.mtrand import RandomState
+
+ON = 16
+
+class RandomWalk:
+  def __init__(self, random: RandomState, initvalue, width) -> None:
+    self.random = random
+    self._initvalue = initvalue
+    self._width = width
+    self._v = initvalue
+
+  def step(self):
+    self._v += self.random.uniform(self._width[0], self._width[1], size=len(self._v))
+    self._v = np.clip(self._v, -0.3, 0.3)
+    return self._v
+
+  @property
+  def value(self):
+    return self._v
+
+  def reset(self, initvalue=None, width=None):
+    if initvalue is not None:
+      self._initvalue = initvalue
+    if width is not None:
+      self._width = width
+
+    self._v = self._initvalue
+    return self._v
+
 
 def get_model_and_assets():
   """Returns a tuple containing the model XML string and a dict of assets."""
@@ -45,6 +97,8 @@ def get_model_and_assets():
 def easy(time_limit=_DEFAULT_TIME_LIMIT, random=None, task_settings=None, environment_kwargs=None):
   """Returns the easy point_mass task."""
   physics = Physics.from_xml_string(*get_model_and_assets())
+  # print(callable(physics.named))
+  # check_attr(physics)
   task = PointMass(randomize_gains=False, random=random, task_settings=task_settings)
   environment_kwargs = environment_kwargs or {}
   return control.Environment(
@@ -103,6 +157,12 @@ class PointMass(base.Task):
       self.task_settings = task_settings
 
     self.self_color = self.task_settings.get("self_color", None)
+
+    # global ON
+    # ON = physics.named.model.cam_quat.axes.row.names
+
+    self.walker = [RandomWalk(random=self.random, initvalue=self.random.uniform(-0.25, 0.25, size=2), width=(-0.01, 0.01)) for _ in range(ON)]
+    self.fix_color = [self.random.uniform(0, 1, size=3) for _ in range(ON)]
     self._set_position()
 
   def initialize_episode(self, physics):
@@ -141,10 +201,20 @@ class PointMass(base.Task):
       physics.named.model.geom_size["target"][0] = target_size
 
     if self.self_color == "random_per_episode":
-      color = self.random.uniform(0.0, 1.0, 3)
-      physics.named.model.geom_rgba["pointmass"] = [*color, 1]
+      color = self.random.uniform(0, 1, size=3)
+      physics.named.model.geom_rgba["pointmass"][:3] = color
 
+    for i in range(ON):
+      physics.named.model.geom_rgba[f"other{i}"][:3] = self.fix_color[i]
+      physics.named.model.geom_pos[f"other{i}"][:2] = self.walker[i].reset(self.random.uniform(-0.25, 0.25, size=2))
+
+    # check_attr(physics)
+    # print(type(physics))  # third.dm_control.suite.point_mass.Physics
+    # print(type(physics.model)) # dm_control.mujoco.wrapper.core.MjModel
+  
     # pprint(dir(physics.named.model))
+    # self.random.uniform(0.0, 1.0, size=3)
+    # print(type(self.random))
 
     # print(physics.named.data.qpos)
     # print(physics.named.data.geom_xpos)
@@ -157,6 +227,15 @@ class PointMass(base.Task):
     # print(physics.named.model.skin_rgba)
     # print(physics.named.model.mat_rgba)
     # print(physics.named.model.site_rgba)
+
+    # pprint(dir(physics.named.model))
+
+    # print(physics.model.add_geom)
+    # print(physics.model.body_rootid)
+    # pprint(dir(physics.model))
+    # pprint(dir(physics.model.body))
+    # aa = physics.named.model.geom_size["target2"]
+    # physics.named.model.geom_size["target3"] = aa
 
     ###
 
@@ -208,7 +287,9 @@ class PointMass(base.Task):
   def before_step(self, action, physics):
 
     if self.self_color == "random":
-      color = self.random.uniform(0.0, 1.0, 3)
-      physics.named.model.geom_rgba["pointmass"] = [*color, 1]
+      color = self.random.uniform(0, 1, size=3)
+      physics.named.model.geom_rgba["pointmass"][:3] = color
+    for i in range(ON):
+      physics.named.model.geom_pos[f"other{i}"][:2] = self.walker[i].step()
 
     super().before_step(action, physics)

@@ -48,9 +48,26 @@
       <!-- <geom name="pointmass" type="sphere" size=".01" material="self" mass=".3"/> -->
       <geom name="pointmass" type="sphere" size=".03" material="self" mass=".3"/>
     </body>
-
+    
     <!-- <geom name="target" pos="0 0 .01" material="target" type="sphere" size=".015"/> -->
     <geom name="target" pos="0 0 .01" material="target" type="sphere" size=".03"/>
+    
+    <geom name="other0" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other1" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other2" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other3" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other4" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other5" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other6" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other7" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other8" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other9" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other10" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other11" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other12" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other13" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other14" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
+    <geom name="other15" pos="0 0 -0.006" type="sphere" size=".03" rgba="0.5 0.5 0.5 1"/>
   </worldbody>
 
   <tendon>
