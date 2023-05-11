@@ -21,14 +21,16 @@ import subprocess
 import sys
 import threading
 import time
+import types
 import typing
 import unicodedata
 from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
 from posix import times_result
-from pprint import pformat
-from typing import Callable, Optional, Tuple
+
+# from pprint import pformat, pprint
+from typing import Callable, Iterable, Optional, Tuple, Union
 
 from mypython.terminal import Color
 
@@ -209,3 +211,80 @@ def human_readable_byte(b: int, bin=False) -> str:
     b /= U
     if b < U:
         return _p(b, "GB")
+
+
+def recursive_attr(
+    obj,
+    max_depth=None,
+    verbose=False,
+    ignore_types: Optional[tuple] = None,
+    add_ignore_types: Optional[tuple] = None,
+    search_words: Union[None, str, Iterable[str]] = None,
+):
+    """
+    ignore_types, add_ignore_types: そのオブジェクトより深くは探索しない
+    Ex: add_ignore_types=(np.ndarray,)
+    """
+
+    if ignore_types is None:
+        ignore_types = (types.FunctionType, int, bool, float, str, dict, list, set)
+
+    if add_ignore_types is not None:
+        ignore_types += add_ignore_types
+
+    if type(search_words) == str:
+        search_words = (search_words,)
+
+    def is_hit_word(s):
+        if search_words is None:
+            return True
+        else:
+            for sw in search_words:
+                # assert type(s) == str and type(sw) == str
+                if sw in s:
+                    return True
+            return False
+
+    if verbose:
+        print("=" * 10 + " recursive_attr " + "=" * 10)
+
+    attrs = []
+    searched_objs = set()
+    stack = [(obj, None, "", True, 0)]
+    while stack:
+        obj, typ, prefix, is_hit_w, depth = stack.pop()
+        if depth > 0 and is_hit_w:
+            attr_info = f"{prefix} | {typ}"
+            attrs.append(attr_info)
+            if verbose:
+                print(attr_info)
+                # if isinstance(obj, types.FunctionType):
+                #     Color.pprint(attr_info)
+                # else:
+                #     print(attr_info)
+
+        if (depth == max_depth) or (obj is None):
+            continue
+
+        if id(obj) in searched_objs:
+            continue
+        searched_objs.add(id(obj))
+
+        for name in dir(obj):
+            if name.startswith("_"):
+                continue
+            else:
+                child_obj = getattr(obj, name)
+
+            prefix_new = f"{prefix}.{name}" if prefix else name
+            common = (type(child_obj).__name__, prefix_new, is_hit_word(name), depth + 1)
+            if not isinstance(child_obj, ignore_types):
+                stack.append((child_obj, *common))
+            else:
+                stack.append((None, *common))
+
+    if verbose:
+        print(f"size: {len(attrs)}")
+        print("=" * 7 + " end of recursive_attr " + "=" * 7)
+
+    return attrs

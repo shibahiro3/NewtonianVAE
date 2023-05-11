@@ -92,13 +92,13 @@ class NewtonianVAEBase(BaseWithCache):
     def camera_names(self) -> List[str]:
         raise NotImplementedError()
 
-    def encode(self, I_t) -> Optional[Tensor]:
+    def encode(self, I_t) -> Tensor:
         """return "position" """
-        return None
+        raise NotImplementedError()
 
-    def decode(self, x_t) -> Optional[Dict[str, Tensor]]:
+    def decode(self, x_t) -> Dict[str, Tensor]:
         """return reconstructed image"""
-        return None
+        raise NotImplementedError()
 
 
 class NewtonianVAE(NewtonianVAEBase):
@@ -284,9 +284,11 @@ class NewtonianVAE(NewtonianVAEBase):
 
     @property
     def camera_names(self) -> List[str]:
-        return [self.camera_names]
+        return [self.camera_name]
 
     def encode(self, I_t) -> Tensor:
+        if type(I_t) == list:
+            I_t = I_t[0]
         return self.cell.q_encoder.given(I_t).rsample()
 
     def decode(self, x_t) -> Dict[str, Dict[str, Tensor]]:

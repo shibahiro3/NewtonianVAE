@@ -10,12 +10,6 @@ from typing import Dict, List, Optional, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure, SubFigure
-from matplotlib.gridspec import GridSpec
-from matplotlib.ticker import FormatStrFormatter
-from mpl_toolkits.mplot3d import Axes3D
-from torch import Tensor
 
 import models.core
 import mypython.plotutil as mpu
@@ -24,7 +18,6 @@ import mypython.vision as mv
 import tool.util
 import view.plot_config
 from models.core import NewtonianVAEBase
-from models.pcontrol import PurePControl
 from mypython import rdict
 from mypython.ai.util import to_np
 from mypython.pyutil import add_version
@@ -38,9 +31,7 @@ from view.label import Label
 def main(
     config: str,
     episodes: int,
-    fix_xmap_size: float,
     save_anim: bool,
-    goal_img: str,
     alpha: float,
     steps: int,
     format: str,
@@ -83,21 +74,23 @@ def main(
 
     all_steps = max_time_length * episodes
 
-    p = draw(
+    anim_pack = draw(
         record=record,
-        fix_xmap_size=fix_xmap_size,
-        all_steps=all_steps,
         max_time_length=max_time_length,
-        P_gain=alpha,
+        all_steps=all_steps,
     )
-    save_path = Path(
-        path_result, f"{manage_dir.stem}", f"E{weight_path.stem}_control_pure.{format}"
+    save_path = tool.util.save_pathname(
+        root=path_result,
+        day_time=manage_dir.stem,
+        epoch=weight_path.stem,
+        descr="control_pure",
+        format=format,
+        version=True,
     )
-    save_path = add_version(save_path)
     mpu.anim_mode(
         "save" if save_anim else "anim",
-        p.fig,
-        p.anim_func,
+        anim_pack.fig,
+        anim_pack.anim_func,
         all_steps,
         interval=40,
         freeze_cnt=-1,
@@ -105,15 +98,6 @@ def main(
     )
 
     print()
-
-
-# @initialize.all_with([])
-# class Pack(RecoderBase):
-#     action: np.ndarray
-#     observation: np.ndarray
-#     reconstruction: np.ndarray
-#     x: np.ndarray
-#     position: np.ndarray
 
 
 def calculate(
@@ -213,21 +197,17 @@ def calculate(
 
 def draw(
     record,
-    # env: ControlSuiteEnvWrap,
-    # Igoal: Tensor,
     max_time_length: int,
     all_steps: int,
-    fix_xmap_size: float,
-    P_gain: float,
 ):
     dim_x = record[0]["action"].shape[-1]
     camera_names = record[0]["camera"].keys()
 
-    colors_action = mpu.cmap(dim_x, "prism")
-    colors_latent = mpu.cmap(dim_x, "rainbow")
+    colors_dim = mpu.cmap(dim_x, "rainbow")
     # label = Label(env.domain)
 
     # ============================================================
+    view.plot_config.apply()
     plt.rcParams.update({"axes.titlesize": 12})
 
     fig = plt.figure(figsize=(8.77, 8.39))
@@ -335,7 +315,7 @@ def draw(
             ax.bar(
                 R,
                 record[self.episode]["action"][self.t],
-                color=colors_action,
+                color=colors_dim,
                 width=0.5,
             )
             pad = (self.action_max - self.action_min) * 0.1
@@ -370,7 +350,7 @@ def draw(
                 ax.plot(
                     T,
                     record[self.episode]["position"][0, i],
-                    color=colors_latent[i],
+                    color=colors_dim[i],
                     marker="o",
                     ms=10,
                     mec=None,
@@ -379,7 +359,7 @@ def draw(
                 ax.plot(
                     # list(range(self.t)),
                     record[self.episode]["position"][1 : 1 + self.t + 1, i],
-                    color=colors_latent[i],
+                    color=colors_dim[i],
                     lw=1,
                 )
 
@@ -395,7 +375,7 @@ def draw(
             ax.bar(
                 R,
                 record[self.episode]["position"][1 + self.t],
-                color=colors_latent,
+                color=colors_dim,
             )
             ax.set_xticks(R)
             ax.set_xticklabels([str(s) for s in R])
@@ -415,7 +395,7 @@ def draw(
                 ax.plot(
                     T,
                     record[self.episode]["x"][0, i],
-                    color=colors_latent[i],
+                    color=colors_dim[i],
                     marker="o",
                     ms=10,
                     mec=None,
@@ -424,7 +404,7 @@ def draw(
                 ax.plot(
                     # list(range(self.t)),
                     record[self.episode]["x"][1 : 1 + self.t + 1, i],
-                    color=colors_latent[i],
+                    color=colors_dim[i],
                     lw=1,
                 )
 
@@ -439,7 +419,7 @@ def draw(
             ax.bar(
                 R,
                 record[self.episode]["x"][1 + self.t],
-                color=colors_latent,
+                color=colors_dim,
             )
             ax.set_xticks(R)
             ax.set_xticklabels([str(s) for s in R])
