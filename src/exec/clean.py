@@ -18,6 +18,10 @@ from typing import List
 from mypython.terminal import Color
 
 
+def main():
+    clean(sys.argv[1])
+
+
 def clean(root):
     if not Path(root).exists():
         print(f'"{root}" does not exist')
@@ -68,4 +72,4 @@ def delete(deletable: List[Path]):
 
 
 if __name__ == "__main__":
-    clean(sys.argv[1])
+    main()

@@ -1,3 +1,9 @@
+# Security #
+############
+credentials.json
+token.json
+# cred*
+
 # Common #
 ##########
 _*
@@ -24,8 +30,9 @@ generated*/
 
 # Docs #
 ########
-docs/*
-!docs/generated
+docs
+# docs/*
+# !docs/generated
 
 # Others #
 ##########

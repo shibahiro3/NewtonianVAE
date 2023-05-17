@@ -1,7 +1,5 @@
-import os
 import pickle
 import random
-import sys
 from functools import singledispatch
 from pathlib import Path
 from pprint import pprint
@@ -112,10 +110,9 @@ class BatchIndices:
 
         self._N = stop - start
         self._B = batch_size
-        self._indexes = np.arange(start=start, stop=stop)
+        self._indices = np.arange(start=start, stop=stop)
         self.shuffle = shuffle
-
-        self._reset()
+        self.reset_indices()
 
     @property
     def datasize(self):
@@ -135,16 +132,15 @@ class BatchIndices:
         self.i += 1
 
         if self.i == self.__len__():
-            self._reset()
+            self.reset_indices()
             raise StopIteration()
 
-        mask = self._indexes[self.i * self._B : (self.i + 1) * self._B]
-        return mask
+        indices = self._indices[self.i * self._B : (self.i + 1) * self._B]
+        return indices
 
-    def _reset(self) -> None:
+    def reset_indices(self) -> None:
         if self.shuffle:
-            np.random.shuffle(self._indexes)
-
+            np.random.shuffle(self._indices)
         self.i = -1
 
 
@@ -159,18 +155,19 @@ def file_collector(patterns: Union[Union[str, Path], List[Union[str, Path]]]):
     """
 
     def _fc(ptn: str):
-        return glob.glob(patterns=ptn, flags=wcmatch.GLOBSTAR | wcmatch.BRACE)
+        return glob.glob(patterns=ptn, flags=wcmatch.GLOBSTAR | wcmatch.BRACE, limit=0)  # no limit
         # return Path().glob(ptn)
 
-    filelist = []
-    if type(patterns) == list:
-        for p in patterns:
-            fs = _fc(p)
-            filelist += fs
-    else:
-        filelist = _fc(patterns)
+    # filelist = []
+    # if type(patterns) == list:
+    #     for p in patterns:
+    #         fs = _fc(p)
+    #         filelist += fs
+    # else:
+    #     filelist = _fc(patterns)
 
-    filelist = list(set(filelist))
+    filelist = _fc(patterns)
+    # filelist = list(set(filelist)) # already (input list)
     filelist = natsorted(filelist)
 
     return filelist
@@ -178,8 +175,9 @@ def file_collector(patterns: Union[Union[str, Path], List[Union[str, Path]]]):
 
 class SequenceDataLoader(BatchIndices):
     """
-    References:
-        torch.utils.data.IterableDataset
+    HACK:
+    https://pytorch.org/docs/stable/data.html#torch.utils.data.IterableDataset
+    https://pytorch.org/tutorials/beginner/basics/data_tutorial.html
     """
 
     def __init__(
@@ -192,6 +190,7 @@ class SequenceDataLoader(BatchIndices):
         show_selected_index=False,
         shuffle=True,
         preprocess: Optional[Callable[[BatchDataType], BatchDataType]] = None,
+        keypaths=None,
     ):
         """
 
@@ -223,7 +222,10 @@ class SequenceDataLoader(BatchIndices):
         self.max_time = max_time
         self.show_selected_indices = show_selected_index
         self.preprocess = preprocess
+        self.keypaths = keypaths
         # self.flist = list(Path(self.root).glob("*"))
+
+        self.filenames = []  # each batch
 
     def __next__(self) -> BatchDataType:
         """
@@ -242,9 +244,13 @@ class SequenceDataLoader(BatchIndices):
         ### load and clip ###
         batch_data = {}
         min_t = None
+        self.filenames = []
         for i in indices:
+            self.filenames.append(self._filelist[i])
             # one_seq_data = self._pickle_load(Path(self.root, f"{i}.pickle"))  # (T, *)
             one_seq_data = self._pickle_load(self._filelist[i])  # (T, *)
+            if self.keypaths is not None:  # save memory
+                one_seq_data = rdict.extract_from_keypaths(one_seq_data, self.keypaths)
 
             ### for "clip_min" ###
             leaf, kc = rdict.either_leaf(one_seq_data)
@@ -266,15 +272,17 @@ class SequenceDataLoader(BatchIndices):
         ### transform ###
         # TODO: rdict.pad_time(...
         rdict.apply_(batch_data, swap01)  # to: (T, B, *)
+        rdict.to_torch(batch_data, dtype=self.dtype, device=self.device)
         if self.preprocess is not None:
             batch_data = self.preprocess(batch_data)
         #################
 
-        rdict.to_torch(batch_data, dtype=self.dtype, device=self.device)
         # rdict.apply_(batch_data, lambda x: x.detach())  # Unnecessary
         return batch_data
 
     def sample_batch(self, batch_size: Union[int, str] = "same", verbose=False, print_name=None):
+        # TODO: each sequence List[dict]  for large batch_size for correlation  (torch.cuda.OutOfMemoryError)
+
         batch_size_prev = self.batchsize
         if type(batch_size) == str:
             assert batch_size in ("same", "all")
@@ -282,7 +290,7 @@ class SequenceDataLoader(BatchIndices):
                 self._B = self.datasize
 
         batchdata = next(self)
-        self._reset()
+        self.reset_indices()
         if verbose:
             if print_name is None:
                 print_name = "sample batch data"
@@ -304,7 +312,7 @@ class SequenceDataLoader(BatchIndices):
 _T = TypeVar("_T")
 
 
-def random_sample(x: _T) -> _T:
+def random_sample(x: _T, k: int) -> _T:
     indices = np.arange(len(x))
     np.random.shuffle(indices)
-    return x[indices]
+    return x[indices[:k]]

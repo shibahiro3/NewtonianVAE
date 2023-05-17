@@ -43,8 +43,8 @@ import torch.nn.functional as F
 from torch import Tensor, nn, optim
 from torchvision import models
 
+from exec.train import cyclical_linear
 from mypython.pyutil import function_test
-from newtonianvae.train import cyclical_linear
 
 
 # @function_test

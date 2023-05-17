@@ -14,6 +14,8 @@ Reference:
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import torchvision.transforms.functional as TF
 
 
 class InvertedResidualBlock(nn.Module):
@@ -149,11 +151,11 @@ class MobileUNet(nn.Module):
         x8 = self.irb_bottleneck7(x7)  # (320,7,7)
         x9 = self.conv1x1_encode(x8)  # (1280,7,7) s5
 
-        print("x6", x6.shape)
-        print("x4", x4.shape)
-        print("x3", x3.shape)
-        print("x2", x2.shape)
-        print("x9", x9.shape)
+        # print("x6", x6.shape)
+        # print("x4", x4.shape)
+        # print("x3", x3.shape)
+        # print("x2", x2.shape)
+        # print("x9", x9.shape)
 
         # Right arm / Decoding arm with skip connections
         d1 = self.D_irb1(x9) + x6
@@ -163,6 +165,24 @@ class MobileUNet(nn.Module):
         d5 = self.DConv4x4(d4)
         out = self.conv1x1_decode(d5)
         return out
+
+
+class Masker(nn.Module):
+    def __init__(self, in_channels: int = 3, out_channels: int = 3):
+        super().__init__()
+        self.unet = MobileUNet(in_channels, out_channels)
+
+    def forward(self, input, target):
+        out = self.mask(input)
+        L = F.mse_loss(out, target)
+        # L = F.binary_cross_entropy(out, target)
+        return L
+
+    def mask(self, imgs):
+        return torch.sigmoid(self.unet(imgs))
+
+    def masked(self, imgs):
+        return imgs * self.mask(imgs)
 
 
 class MobileUNetWithLatent(MobileUNet):

@@ -1,6 +1,12 @@
 """
 cv2.imread : (*, H, W, BGR) (0 to 255)
 cnn : (*, RGB, H, W) (0 to 1) (floatにしないとcnnは受け入れない)
+
+from torchvision import transforms # transforms.Compose([...])
+
+transforms.ToTensor
+    Input: (N, H, W, C) [0, 255]
+    Output: (N, C, H, W) [0, 1]
 """
 
 import os
@@ -11,7 +17,8 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torchvision.transforms.functional as VF
+import torchvision.transforms.functional as TF
+import torchvision.transforms.functional_tensor as F_t
 from torch import Tensor
 
 from mypython.ai.util import to_np
@@ -34,6 +41,8 @@ plt2cv = RGB2BGR
 
 def plt2cnn(imgs: _NT, in_size=None, out_size=None) -> Tensor:
     """
+    [Deprecated]
+
     in  (N, H, W, RGB) (0 to 255)
     out (N, RGB, H, W) (0 to 1)
     """
@@ -45,19 +54,22 @@ def plt2cnn(imgs: _NT, in_size=None, out_size=None) -> Tensor:
 
     imgs = HWC2CHW(imgs)
     if in_size is not None:
-        imgs = VF.center_crop(imgs, (in_size, in_size))
+        imgs = TF.center_crop(imgs, (in_size, in_size))
     if out_size is not None:
-        imgs = VF.resize(imgs, (out_size, out_size))
+        imgs = TF.resize(imgs, (out_size, out_size))
     imgs = imgs / 255.0
     return imgs.float()
 
 
 def cv2cnn(imgs: np.ndarray) -> Tensor:
+    """[Deprecated]"""
     return plt2cnn(cv2plt(imgs))
 
 
 def cnn2plt(imgs: _NT) -> np.ndarray:
     """
+    [Deprecated]
+
     in  (N, RGB, H, W) (0 to 1)
     out (N, H, W, RGB) (0 to 255)
     """
@@ -75,6 +87,8 @@ def cnn2plt(imgs: _NT) -> np.ndarray:
 
 def cnn2cv(imgs: _NT) -> np.ndarray:
     """
+    [Deprecated]
+
     in  (N, RGB, H, W) (0 to 1)
     out (N, H, W, BGR) (0 to 255)
     """
@@ -95,7 +109,7 @@ def CHW2HWC(x: _NT) -> _NT:
 
     i = x.ndim - 3
     axes = tuple(range(0, x.ndim - 3)) + (1 + i, 2 + i, 0 + i)
-    return _transpose(x, axes)
+    return transpose(x, axes)
 
 
 def HWC2CHW(x: _NT) -> _NT:
@@ -111,10 +125,10 @@ def HWC2CHW(x: _NT) -> _NT:
 
     i = x.ndim - 3
     axes = tuple(range(0, x.ndim - 3)) + (2 + i, 0 + i, 1 + i)
-    return _transpose(x, axes)
+    return transpose(x, axes)
 
 
-def _transpose(x: _NT, axes) -> _NT:
+def transpose(x: _NT, axes) -> _NT:
     if type(x) == Tensor:
         return x.permute(axes)
     if type(x) == np.ndarray:
@@ -123,11 +137,42 @@ def _transpose(x: _NT, axes) -> _NT:
         assert False
 
 
-def clip(x, min, max):
+def clip(x, min, max) -> _NT:
     if type(x) == Tensor:
         return torch.clip(x, min=min, max=max)
     else:
         return np.clip(x, a_min=min, a_max=max)
+
+
+def convert_range(x: _NT, src_range, dst_range) -> _NT:
+    """
+    like: https://www.arduino.cc/reference/en/language/functions/math/map/
+
+    Example:
+        convert_range(imgs, (-1, 1), (0, 255))
+    """
+    in_min, in_max = src_range
+    out_min, out_max = dst_range
+    x = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+    x = clip(x, out_min, out_max)
+    if out_min == 0 and out_max == 255:
+        x = to_uint8(x)
+    return x
+
+
+def to_uint8(x: _NT) -> _NT:
+    if type(x) == Tensor:
+        x = x.to(torch.uint8)
+    elif type(x) == np.ndarray:
+        x = x.astype(np.uint8)
+    else:
+        assert False
+    return x
+
+
+# def _check_range(x: _NT, min, max):
+#     assert min <= x.min()
+#     assert x.max() <= max
 
 
 def show_imgs(
@@ -295,12 +340,13 @@ def create_board(
     # ==========
 
     type_images = type(images)
-    assert (
+    if not (
         type_images == list
         or type_images == tuple
         or type_images == np.ndarray
         or type_images == Tensor
-    )
+    ):
+        raise TypeError(f"images type: {type_images}")
 
     N = len(images)
     if N > lim:
@@ -381,6 +427,7 @@ def show_imgs_cv(
     space=None,
     lim=60,
     block=True,
+    delay=100,  # for your PC env.
 ):
     """Faster"""
 
@@ -401,11 +448,11 @@ def show_imgs_cv(
     if block:
         cv_wait(winname)
     else:
-        cv2.waitKey(1)  # 小さすぎるとなぜか最初の反映が遅い
+        cv2.waitKey(delay)  # 小さすぎるとなぜか最初の反映が遅い
         # 先に
         # cv2.namedWindow("winname", cv2.WINDOW_NORMAL)
         # cv2.waitKey(1)
-        # をやっておくと良い
+        # をやっておくと良い -> 要らん
         # tips: cv2.resizeWindow("winname", 1000, 700)
 
 

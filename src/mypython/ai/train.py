@@ -24,45 +24,25 @@ from ..pyutil import s2dhms_str
 from ..terminal import Color, Prompt
 from ..valuewriter import ValueWriter
 
-
-class VisualHandlerBase:
-    def __init__(self):
-        self.title = ""
-
-    def plot(self, *args, **kwargs) -> None:
-        pass
-
-    def wait_init(self):
-        pass
-
-    def call_end_init(self):
-        pass
-
-    def call_end(self) -> None:
-        pass
-
-    @property
-    def is_running(self) -> bool:
-        return True
-
-
 # BatchDataType = Dict[str, Any]
 BatchDataType = Any
 
 
 class BaseModel(nn.Module):
+    ReturnType = Union[Tensor, Tuple[Tensor, Dict[str, float]]]
+
     def __init__(self) -> None:
         super().__init__()
 
-    def __call__(self, *args, **kwargs) -> Tuple[Tensor, Dict[str, float]]:
+    def __call__(self, *args, **kwargs) -> ReturnType:
+        return super().__call__(*args, **kwargs)
+
+    def forward(batchdata: BatchDataType) -> ReturnType:
         """
         Returns:
             L (Tensor)     -> L.backward()
-            losses (dict)  -> Recording
+            losses (dict)  -> Recording   (Optional)
         """
-        return super().__call__(*args, **kwargs)
-
-    def forward(batchdata: BatchDataType) -> Tuple[Tensor, Dict[str, float]]:
         raise NotImplementedError()
 
 
@@ -71,14 +51,15 @@ def train(
     model: BaseModel,
     optimizer: optim.Optimizer,
     trainloader: BatchIndices,
-    validloader: BatchIndices,
     epochs: int,
     #
+    validloader: BatchIndices = None,
+    unpack=True,  # model(input) or model(*input)
     save_per_epoch: Optional[int] = None,
     managed_dir: Union[str, Path, None] = None,
     grad_clip_norm: Optional[float] = None,
     pre_epoch_fn: Optional[Callable[[int], None]] = None,
-    pre_batch_fn: Optional[Callable[[BatchDataType, float], BatchDataType]] = None,
+    pre_batch_fn: Optional[Callable[[float, Any], Any]] = None,
     post_batch_fn: Optional[Callable[[float, dict], None]] = None,
     post_epoch_fn: Optional[Callable[[int, dict], None]] = None,
     print_precision: int = 4,
@@ -88,7 +69,7 @@ def train(
     all index start from 1
 
     pre_epoch_fn(epoch: int) -> None
-    pre_batch_fn(epoch: float, batchdata) -> batchdata
+    pre_batch_fn(epoch: float, *args) -> batchdata
     post_batch_fn(epoch: float, status: dict) -> None
     post_epoch_fn(epoch: int, status: dict) -> None
 
@@ -105,11 +86,14 @@ def train(
 
     if managed_dir is None:
         managed_dir = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        print("Auto created managed_dir:", managed_dir)
+    else:
+        _wp = Path(managed_dir, "weight")
+        if len(list(_wp.glob("*"))) > 0:
+            raise Exception(f"managed_dir weight has aleady weight files: {_wp}")
+
     managed_dir = Path(managed_dir)
     managed_dir.mkdir(parents=True, exist_ok=True)
-    if managed_dir is None:
-        print("Auto created managed_dir:", managed_dir)
-
     weight_dir = Path(managed_dir, "weight")
     weight_dir.mkdir(parents=True, exist_ok=True)
 
@@ -120,6 +104,11 @@ def train(
 
     if next(model.parameters()).device == torch.device("cpu"):
         Color.print("Warning: model is on cpu", c=Color.coral)
+
+    if validloader is None:
+        phases = ["train"]
+    else:
+        phases = ["train", "valid"]
 
     try:
         epoch_f = 0.0
@@ -133,7 +122,7 @@ def train(
                 pre_epoch_fn(epoch)
 
             epoch_losses_all = {"train": {}, "valid": {}}
-            for phase in ["train", "valid"]:
+            for phase in phases:
                 epoch_losses = {}
 
                 if phase == "train":
@@ -149,11 +138,23 @@ def train(
                 ##### core #####
                 for batch_i, batchdata in enumerate(dataloader, 1):
                     if pre_batch_fn is not None:
-                        batchdata = pre_batch_fn(epoch_f, batchdata)
+                        if unpack:
+                            batchdata = pre_batch_fn(epoch_f, *batchdata)
+                        else:
+                            batchdata = pre_batch_fn(epoch_f, batchdata)
 
-                    output = model(batchdata)
-                    if len(output) == 2:
+                    if unpack:
+                        output = model(*batchdata)
+                    else:
+                        output = model(batchdata)
+
+                    if type(output) == Tensor:
+                        L = output
+                        losses = {}
+                    elif len(output) == 2:
                         L, losses = output
+                    else:
+                        assert False
 
                     if phase == "train":
                         optimizer.zero_grad()
@@ -249,9 +250,16 @@ def train(
                         + f" | Elapsed: {s2dhms_str(time.perf_counter() - time_start_learning)}"
                     )
 
+                if validloader is None:
+                    ep_msg = (
+                        ep_msg
+                        + f" | Duration: {s2dhms_str(time.perf_counter() - time_start_epoch)}"
+                        + f" | Elapsed: {s2dhms_str(time.perf_counter() - time_start_learning)}"
+                    )
+
                 epoch_losses_all[phase] = epoch_losses
 
-                # vh.plot(dict(mode="average", epoch=epoch, losses=epoch_losses, phase=phase))
+                # dict(mode="average", epoch=epoch, losses=epoch_losses, phase=phase)
                 print(ep_msg)
 
             for k, v in epoch_losses_all["train"].items():

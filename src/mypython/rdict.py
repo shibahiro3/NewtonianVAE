@@ -9,7 +9,7 @@ Dict[str, Union[Dict[str, Tensor], Tensor]]
 import builtins
 import dataclasses
 from numbers import Number
-from typing import Any, Callable
+from typing import Any, Callable, List, Optional, Union
 
 import numpy as np
 import torch
@@ -48,6 +48,82 @@ def _apply(d: dict, d_: dict, func: Callable):
             d_[k] = func(v)
 
 
+# def _get_value(d, keypath):
+#     tmp = d
+#     for k in keypath:
+#         tmp = tmp[k]
+#     return tmp
+
+
+def transfer_from_kp(dsrc: dict, ddst: dict, keypath: list):
+    _transfer_from_kp(dsrc, ddst, keypath, 0)
+
+
+def _transfer_from_kp(dsrc: dict, ddst: dict, keypath: list, i: int):
+    if keypath[i] in dsrc:
+        if i < len(keypath) - 1:
+            if not keypath[i] in ddst:
+                ddst[keypath[i]] = {}
+            _transfer_from_kp(dsrc[keypath[i]], ddst[keypath[i]], keypath, i + 1)
+        else:
+            ddst[keypath[i]] = dsrc[keypath[i]]
+
+
+def extract_from_keypaths(d: dict, keypaths: List[list]):
+    """
+    Ex.
+
+    d = {
+        "key1": random.randint(0, 127),
+        "key2": {
+            "key2.1": random.randint(0, 127),
+            "key2.2": random.randint(0, 127),
+            "key2.3_NOT_NEED": random.randint(0, 127),
+        },
+        "key3_NOT_NEED": random.randint(0, 127),
+        "key4": {
+            "key4.1_NOT_NEED": random.randint(0, 127),
+            "key4.2": random.randint(0, 127),
+        },
+        "key5": random.randint(0, 127),
+        "key6": {},
+        "key7": {
+            "key7.3": {
+                "key7.3.5": random.randint(0, 127),
+                "key7.3.X_NOT_NEED": random.randint(0, 127),
+            },
+            "key7.4_NOT_NEED": random.randint(0, 127),
+        },
+        "key8": [],
+        "key9": random.randint(0, 127),
+        123: {"456": {789: "DATA"}},
+    }
+
+    keypaths = [
+        ["key1"],
+        ["key2", "key2.1"],
+        ["key2", "key2.2"],
+        ["key4"],  # -> all
+        ["key6"],
+        ["key7", "key7.3", "key7.3.5"],
+        ["key100"],  # ignore
+        "key9", # if only top, not necessary list
+        [123, "456", 789],
+    ]
+
+    rdict.show(d)
+    extracted = rdict.extract_from_keypaths(d, keypaths)
+    rdict.show(extracted)
+
+    """
+    extracted = {}
+    for kpath in keypaths:
+        if type(kpath) != list:
+            kpath = [kpath]
+        transfer_from_kp(d, extracted, kpath)
+    return extracted
+
+
 # feed key chain list
 # def _apply_k(d: dict, func: Callable):
 
@@ -70,8 +146,11 @@ def is_scalar(scalar):
     # return type_ == int or type_ == float or type_ == np.float16
 
 
-def show(d: dict, name: str):
-    s = f"===== show recursive dict [{name}] ====="
+def show(d: dict, name: Optional[str] = None):
+    if name is None:
+        s = f"===== show recursive dict ====="
+    else:
+        s = f"===== show recursive dict [{name}] ====="
     print(s)
     _show(d)
     print("=" * len(s))
@@ -85,12 +164,15 @@ def _show(d: dict, start=0):
     indent = 2
 
     for k, v in d.items():
-        k = Color.green + k + Color.reset
+        k = Color.green + str(k) + Color.reset
 
         type_v = type(v)
         if type_v == dict:
-            print(" " * start + f"{k}:")
-            _show(v, start + indent)
+            if not v:
+                print(" " * start + f"{k}: (empty dict)")
+            else:
+                print(" " * start + f"{k}:")
+                _show(v, start + indent)
         # ==========
 
         elif type_v == np.ndarray:
