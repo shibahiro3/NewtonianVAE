@@ -88,7 +88,7 @@ def train(imgs_dir, coco_file):
         managed_dir="_unet_save/" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
     )
 
-    torch.save(model.state_dict(), "save/unet/unet_weight.pth")
+    # torch.save(model.state_dict(), "save/unet/unet_weight.pth")
 
 
 if __name__ == "__main__":

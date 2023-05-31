@@ -24,9 +24,13 @@ import tool.preprocess
 import tool.util
 import view.plot_config
 from models.core import NewtonianVAEBase
+from mypython import rdict
+from mypython.ai.train import save_pathname
 from mypython.ai.util import SequenceDataLoader, swap01
+from mypython.pyutil import add_version
 from mypython.terminal import Color, Prompt
-from tool import paramsmanager
+from tool import paramsmanager, prepost
+from tool.util import create_prepostprocess
 from unet_mask.seg_data import mask_unet
 
 
@@ -34,8 +38,8 @@ def main():
     # fmt: off
     description = \
 """\
-Examples:
-  $ python correlation.py -c config/reacher2d.json5
+Show correlation using test data
+  Save: Press S key on a window
 """
     parser = argparse.ArgumentParser(allow_abbrev=False, formatter_class=RawTextHelpFormatter, description=description)
     parser.add_argument("-c", "--config", type=str, required=True, **common.config)
@@ -43,7 +47,9 @@ Examples:
     parser.add_argument("--all", action="store_true", help="Show correlations for all combinations")
     parser.add_argument("--position-name", type=str, default="position")
     parser.add_argument("--all-epochs", action="store_true")
-    parser.add_argument("--format", type=str, default=["svg", "pdf", "png"], nargs="*", **common.format_file)
+    parser.add_argument("--no-window", action='store_true', help="Save instantly without displaying a window")
+    # parser.add_argument("--format", type=str, default=["svg", "pdf", "png"], nargs="*", **common.format_file) # Deprecated
+    parser.add_argument("--format", type=str, default=common.default_fig_formats, nargs="*")
     args = parser.parse_args()
     # fmt: on
 
@@ -236,19 +242,21 @@ def correlation_(
         fig.suptitle(title)
 
     if fig_mode == "show":
-        if (save_path is not None) and (format is not None):
-            mpu.register_save_path(fig, save_path, format)
+        assert save_path is not None
+        assert format is not None
+        mpu.register_save_path(fig, save_path, format)
         plt.show()
 
     elif fig_mode == "save":
-        if save_path is not None:
-            save_path: Path = Path(save_path).with_suffix(".png")
-            save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path)
-            Color.print("[correlation] saved to:", save_path)
-        else:
-            Color.print('fig_mode is "show" but save_path is None')
-            sys.exit()
+        assert save_path is not None
+        assert format is not None
+        save_path: Path = Path(save_path)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        for fmt in format:
+            p = save_path.with_suffix(f".{fmt}")
+            p = add_version(p)
+            plt.savefig(p)
+            Color.print("saved to:", p)
 
     elif fig_mode == "numpy":
         buf = io.BytesIO()
@@ -272,12 +280,13 @@ def correlation(
     all_epochs=False,
     episodes: int = None,
     position_name: str = "position",
+    no_window: bool = False,
 ):
     params = paramsmanager.Params(config)
 
     dtype, device = tool.util.dtype_device(
-        dtype=params.train.dtype,
-        device=params.train.device,
+        dtype=params.test.dtype,
+        device=params.test.device,
     )
 
     model, managed_dir, weight_path, saved_params = tool.util.load(
@@ -290,20 +299,8 @@ def correlation(
 
     print("weight path:", weight_path)
 
-    preprocess_simple = getattr(tool.preprocess, params.others.get("preprocess", ""), lambda x: x)
-    preprocess = preprocess_simple
-
-    unet_mask_path = params.others.get("unet_mask", None)
-    if unet_mask_path is not None:
-        masker, preprocess_unet = mask_unet(unet_mask_path)
-        masker.to(device)
-
-        def p_(batchdata):
-            batchdata = preprocess_simple(batchdata)
-            batchdata = preprocess_unet(batchdata)
-            return batchdata
-
-        preprocess = p_
+    preprocess, postprocesses = create_prepostprocess(params, device=device)
+    keypaths = params.others.get("keypaths", None)
 
     batchdata = SequenceDataLoader(
         patterns=params.test.path,
@@ -311,7 +308,9 @@ def correlation(
         dtype=dtype,
         device=device,
         preprocess=preprocess,
+        keypaths=keypaths,
     ).sample_batch(verbose=True)
+
     batchdata["delta"].unsqueeze_(-1)
 
     # if saved_params.others.get("use_unet", False):
@@ -341,12 +340,8 @@ def correlation(
     path_result = params.path.results_dir
 
     if not all_epochs:
-        save_path = tool.util.save_pathname(
-            root=path_result,
-            day_time=managed_dir.stem,
-            epoch=weight_path.stem,
-            descr="correlation",
-            format="pdf",
+        save_path = save_pathname(
+            root=path_result, day_time=managed_dir.stem, epoch=weight_path.stem, descr="correlation"
         )
 
         correlation_(
@@ -355,7 +350,7 @@ def correlation(
             all=all,
             save_path=save_path,
             format=format,
-            fig_mode="show",
+            fig_mode="save" if no_window else "show",
             position_name=position_name,
         )
     else:
@@ -380,12 +375,9 @@ def correlation(
             )
             figarrays.append(figarray)
 
-        save_path = tool.util.save_pathname(
-            root=path_result,
-            day_time=managed_dir.stem,
-            descr="correlation_epochs",
-            format="gif",
-        )
+        save_path = save_pathname(
+            root=path_result, day_time=managed_dir.stem, descr="correlation_epochs"
+        ).with_suffix(".gif")
         save_path.parent.mkdir(parents=True, exist_ok=True)
         Color.print("saving to:", save_path)
         figarrays = [Image.fromarray(img) for img in figarrays]

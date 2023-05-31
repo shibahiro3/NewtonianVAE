@@ -59,7 +59,7 @@ def check_attr(obj):
   
 from numpy.random.mtrand import RandomState
 
-ON = 16
+ON = 0
 
 class RandomWalk:
   def __init__(self, random: RandomState, initvalue, width) -> None:
@@ -86,17 +86,18 @@ class RandomWalk:
     self._v = self._initvalue
     return self._v
 
-
-def get_model_and_assets():
+# Changed/added by Sugar
+def get_model_and_assets(xml_file=None):
   """Returns a tuple containing the model XML string and a dict of assets."""
   # return common.read_model('point_mass.xml'), common.ASSETS
-  return read_model("point_mass.xml"), common.ASSETS  # Changed/added by Sugar
+  xml_file = xml_file if xml_file is not None else "point_mass.xml"
+  return read_model(xml_file), common.ASSETS
 
 
 @SUITE.add('benchmarking', 'easy')
-def easy(time_limit=_DEFAULT_TIME_LIMIT, random=None, task_settings=None, environment_kwargs=None):
+def easy(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None, task_settings=None, xml_file=None):
   """Returns the easy point_mass task."""
-  physics = Physics.from_xml_string(*get_model_and_assets())
+  physics = Physics.from_xml_string(*get_model_and_assets(xml_file))
   # print(callable(physics.named))
   # check_attr(physics)
   task = PointMass(randomize_gains=False, random=random, task_settings=task_settings)
@@ -106,9 +107,9 @@ def easy(time_limit=_DEFAULT_TIME_LIMIT, random=None, task_settings=None, enviro
 
 
 @SUITE.add()
-def hard(time_limit=_DEFAULT_TIME_LIMIT, random=None, task_settings=None, environment_kwargs=None):
+def hard(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None, task_settings=None, xml_file=None):
   """Returns the hard point_mass task."""
-  physics = Physics.from_xml_string(*get_model_and_assets())
+  physics = Physics.from_xml_string(*get_model_and_assets(xml_file))
   task = PointMass(randomize_gains=True, random=random, task_settings=task_settings)
   environment_kwargs = environment_kwargs or {}
   return control.Environment(
@@ -151,11 +152,7 @@ class PointMass(base.Task):
     super().__init__(random=random)
 
     # Changed/added by Sugar
-    if task_settings is None:
-      self.task_settings = {}
-    else:
-      self.task_settings = task_settings
-
+    self.task_settings = task_settings or {}
     self.self_color = self.task_settings.get("self_color", None)
 
     # global ON

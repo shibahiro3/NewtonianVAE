@@ -21,13 +21,11 @@ import mypython.vision as mv
 import tool.preprocess
 import tool.util
 import view.plot_config
-
-# from _private import unet
 from models.core import NewtonianVAEBase
 from mypython import rdict
+from mypython.ai.train import save_pathname
 from mypython.ai.util import SequenceDataLoader
 from mypython.terminal import Color, Prompt
-from simulation.env import obs2img
 from tool import checker, paramsmanager
 
 
@@ -35,6 +33,8 @@ def main():
     # fmt: off
     description = \
 """\
+Show reconstructed video using test data
+
 Examples:
   $ python reconstruct.py -c config/reacher2d.json5
 """
@@ -54,6 +54,7 @@ def reconstruction_(
     *,
     model: NewtonianVAEBase,
     batchdata: dict,  # (T, B, D)
+    postprocesses,
     save_path: Optional[str] = None,
 ):
     with torch.no_grad():
@@ -211,14 +212,14 @@ def reconstruction_(
                 for i, k in enumerate(camera_names):
                     ax = axes.observations[i].ax
                     ax.set_title(r"$\mathbf{I}_t$ " f"({k}, Original)")
-                    ax.imshow(obs2img(batchdata["camera"][k][self.t, self.ep]))
+                    ax.imshow(postprocesses.image(batchdata["camera"][k][self.t, self.ep]))
                     ax.set_axis_off()
 
                 # ============================================================
                 for i, k in enumerate(camera_names):
                     ax = axes.recons[i].ax
                     ax.set_title(r"$\mathbf{I}_t$ " f"({k}, Reconstructed)")
-                    ax.imshow(obs2img(self.model.cache["camera"][k][self.t, self.ep]))
+                    ax.imshow(postprocesses.image(self.model.cache["camera"][k][self.t, self.ep]))
                     ax.set_axis_off()
 
                 # ============================================================
@@ -331,24 +332,27 @@ def reconstruction(
     model.type(dtype)
     model.to(device)
 
+    preprocess, postprocesses = tool.util.create_prepostprocess(params, device=device)
+    keypaths = params.others.get("keypaths", None)
+
     batchdata = SequenceDataLoader(
         patterns=params.test.path,
         batch_size=episodes,
         dtype=dtype,
         device=device,
         shuffle=shuffle,
-        preprocess=getattr(tool.preprocess, saved_params.others.get("preprocess", ""), None),
+        preprocess=preprocess,
+        keypaths=keypaths,
     ).sample_batch(verbose=True)
 
     if save_anim:
         path_result = params.path.results_dir
-        save_path = tool.util.save_pathname(
+        save_path = save_pathname(
             root=path_result,
             day_time=managed_dir.stem,
             epoch=weight_path.stem,
             descr="reconstructed",
-            format=format,
-        )
+        ).with_suffix(f".{format}")
     else:
         save_path = None
 
@@ -364,7 +368,9 @@ def reconstruction(
     #         ).reshape(T, B, C, H, W)
 
     view.plot_config.apply()
-    reconstruction_(model=model, batchdata=batchdata, save_path=save_path)
+    reconstruction_(
+        model=model, batchdata=batchdata, save_path=save_path, postprocesses=postprocesses
+    )
 
     print()
 

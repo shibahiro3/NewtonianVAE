@@ -95,10 +95,10 @@ class NewtonianVAE(BaseWithCache):
             # tp_debug.check_dist_model(self.cell)
 
             if self.is_save:
-                self.LOG_x.append(to_np(x_t))
-                self.LOG_v.append(to_np(v_t))
-                self.LOG_I_dec.append(to_np(I_dec))
-                self.LOG_x_mean.append(to_np(self.cell.q_encoder.loc))
+                self.LOG_x.append(to_numpy(x_t))
+                self.LOG_v.append(to_numpy(v_t))
+                self.LOG_I_dec.append(to_numpy(I_dec))
+                self.LOG_x_mean.append(to_numpy(self.cell.q_encoder.loc))
 
         # self.LOG2numpy()
 
@@ -205,18 +205,18 @@ class NewtonianVAEDerivation(BaseWithCache):
                 I_dec = self.cell.p_decoder.decode()
 
                 if self.is_save:
-                    self.LOG_xhat_mean.append(to_np(self.cell.p_xhat.loc))
-                    self.LOG_xhat_std.append(to_np(self.cell.p_xhat.scale))
+                    self.LOG_xhat_mean.append(to_numpy(self.cell.p_xhat.loc))
+                    self.LOG_xhat_std.append(to_numpy(self.cell.p_xhat.scale))
 
             # ##### DEBUG:
             # print(f"time: {t}")
             # tp_debug.check_dist_model(self.cell)
 
             if self.is_save:
-                self.LOG_x.append(to_np(x_t))
-                self.LOG_v.append(to_np(v_t))
-                self.LOG_I_dec.append(to_np(I_dec))
-                self.LOG_x_mean.append(to_np(self.cell.q_encoder.loc))
+                self.LOG_x.append(to_numpy(x_t))
+                self.LOG_v.append(to_numpy(v_t))
+                self.LOG_I_dec.append(to_numpy(I_dec))
+                self.LOG_x_mean.append(to_numpy(self.cell.q_encoder.loc))
 
         E = E_sum / T
         E_ll = E_ll_sum / T
@@ -319,8 +319,8 @@ class NewtonianVAEV2Derivation(BaseWithCache):
                 I_dec = self.cell.p_decoder.given(xhat_t).decode()
 
                 if self.is_save:
-                    self.LOG_xhat_mean.append(to_np(self.cell.p_xhat.loc))
-                    self.LOG_xhat_std.append(to_np(self.cell.p_xhat.scale))
+                    self.LOG_xhat_mean.append(to_numpy(self.cell.p_xhat.loc))
+                    self.LOG_xhat_std.append(to_numpy(self.cell.p_xhat.scale))
 
             else:
                 output = self.cell(
@@ -336,8 +336,8 @@ class NewtonianVAEV2Derivation(BaseWithCache):
                 I_dec = self.cell.p_decoder.decode()
 
                 if self.is_save:
-                    self.LOG_xhat_mean.append(to_np(self.cell.p_xhat.loc))
-                    self.LOG_xhat_std.append(to_np(self.cell.p_xhat.scale))
+                    self.LOG_xhat_mean.append(to_numpy(self.cell.p_xhat.loc))
+                    self.LOG_xhat_std.append(to_numpy(self.cell.p_xhat.scale))
 
             x_q_tn2 = x_q_tn1
             x_q_tn1 = x_q_t
@@ -347,10 +347,10 @@ class NewtonianVAEV2Derivation(BaseWithCache):
             # tp_debug.check_dist_model(self.cell)
 
             if self.is_save:
-                self.LOG_x.append(to_np(x_q_t))
-                self.LOG_v.append(to_np(v_t))
-                self.LOG_I_dec.append(to_np(I_dec))
-                self.LOG_x_mean.append(to_np(self.cell.q_encoder.loc))
+                self.LOG_x.append(to_numpy(x_q_t))
+                self.LOG_v.append(to_numpy(v_t))
+                self.LOG_I_dec.append(to_numpy(I_dec))
+                self.LOG_x_mean.append(to_numpy(self.cell.q_encoder.loc))
 
         E = E_sum / T
         E_ll = E_ll_sum / T

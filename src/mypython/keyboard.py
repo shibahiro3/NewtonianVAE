@@ -108,8 +108,7 @@ class KeyInput:
         self._pressed: Dict[str, bool] = {}
 
         ### last define ###
-        self._t = threading.Thread(target=self._listener)
-        self._t.daemon = True
+        self._t = threading.Thread(target=self._listener, daemon=True)
         self._t.start()
 
     def get(self, block=True) -> str:

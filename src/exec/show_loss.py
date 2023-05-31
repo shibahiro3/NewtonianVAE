@@ -23,6 +23,9 @@ def main():
     # fmt: off
     description = \
 """\
+Show loss figure
+  Save: Press S key on a window
+
 Examples:
   $ python show_loss.py -c config/reacher2d.json5
   $ python show_loss.py -c config/point_mass.json5 --mode epoch --start-iter 5
@@ -31,7 +34,8 @@ Examples:
     parser.add_argument("-c", "--config", type=str, required=True, **common.config)
     parser.add_argument("--mode", type=str, default="epoch", choices=["batch", "epoch"])
     parser.add_argument("--start-iter", type=int, default=1, metavar="NUM", help="Number of initial iterations or ephocs to draw Loss")
-    parser.add_argument("--format", type=str, default=["svg", "pdf", "png"], nargs="*", **common.format_file)
+    parser.add_argument("--format", type=str, default=common.default_fig_formats, nargs="*", **common.format_file)
+    parser.add_argument("--no-window", action='store_true', help="Save instantly without displaying a window")
     args = parser.parse_args()
     # fmt: on
 
@@ -43,6 +47,7 @@ def show_loss(
     start_iter: int,
     format: List[str],
     mode: str,
+    no_window: bool = False,
 ):
 
     assert start_iter > 0
@@ -60,7 +65,7 @@ def show_loss(
     )
 
     params_path = paramsmanager.Params(config).path
-    manage_dir = tool.util.select_date(params_path.saves_dir, no_weight_ok=False)
+    manage_dir = tool.util.select_date(params_path.saves_dir, no_weight_ok=False, min_epoch=5)
     if manage_dir is None:
         return
 
@@ -70,6 +75,7 @@ def show_loss(
         format=format,
         mode=mode,
         start_iter=start_iter,
+        no_window=no_window,
     )
 
 

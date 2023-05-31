@@ -23,10 +23,10 @@ import mypython.plt_layout as pltl
 import mypython.vision as mv
 import tool.util
 import view.plot_config
+from models.controller import PurePControl
 from models.core import NewtonianVAEBase
-from models.pcontrol import PurePControl
 from mypython import rdict
-from mypython.ai.util import to_np
+from mypython.ai.util import to_numpy
 from mypython.pyutil import add_version
 from mypython.terminal import Color, Prompt
 from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img

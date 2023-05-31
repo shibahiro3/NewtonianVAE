@@ -17,7 +17,7 @@ from torch import NumberType, Tensor, nn
 import mypython.ai.torchprob as tp
 import mypython.ai.torchprob.debug as tp_debug
 from mypython import rdict
-from mypython.ai.util import find_function, swap01, to_np
+from mypython.ai.util import find_function, swap01, to_numpy
 from mypython.terminal import Color
 
 from . import cell

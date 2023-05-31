@@ -12,16 +12,16 @@ from matplotlib.ticker import FormatStrFormatter
 from torch import Tensor
 
 import controller.train as ct
+import models.controller
 import models.core
-import models.pcontrol
 import mypython.ai.torchprob as tp
 import mypython.plotutil as mpu
 import mypython.vision as mv
 import tool.util
 import view.plot_config
+from models.controller import PControl
 from models.core import NewtonianVAEBase
-from models.pcontrol import PControl
-from mypython.ai.util import to_np
+from mypython.ai.util import to_numpy
 from mypython.pyutil import add_version, initialize
 from mypython.terminal import Color, Prompt
 from simulation.env import ControlSuiteEnvWrap, img2obs, obs2img
@@ -51,7 +51,7 @@ def main(
 
     p_pctrl, manage_dir, weight_path, saved_params_ctrl = tool.util.load(
         root=params_ctrl.path.saves_dir,
-        model_place=models.pcontrol,
+        model_place=models.controller,
     )
     p_pctrl: PControl
     p_pctrl.type(dtype)
@@ -176,12 +176,12 @@ def calculate(
             observation = observation.to(dtype=dtype).to(device=device)
 
             record.append(
-                action=to_np(action_prev.squeeze(0)),
-                observation=to_np(observation.squeeze(0)),
-                reconstruction=to_np(I_t_dec.squeeze(0)),
-                x=to_np(x_t.squeeze(0)),
+                action=to_numpy(action_prev.squeeze(0)),
+                observation=to_numpy(observation.squeeze(0)),
+                reconstruction=to_numpy(I_t_dec.squeeze(0)),
+                x=to_numpy(x_t.squeeze(0)),
                 position=position,
-                pi=to_np(p_pctrl.param_pi.squeeze(0)),
+                pi=to_numpy(p_pctrl.param_pi.squeeze(0)),
             )
 
             Prompt.print_one_line(

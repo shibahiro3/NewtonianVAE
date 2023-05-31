@@ -1,6 +1,7 @@
 import itertools
+import math
 from numbers import Real
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -8,6 +9,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 from torch import NumberType, Tensor, nn
+from torch.nn.common_types import _size_2_t
+from torch.nn.modules import activation as activations
+from torch.nn.modules.utils import _pair
 from torch.nn.utils import parametrizations  # .spectral_norm
 
 from models import from_stable_diffusion, limiter
@@ -39,14 +43,10 @@ class VisualEncoder64(nn.Module):
     ) -> None:
         super().__init__()
 
-        if channels is None:
-            channels: list = [32, 64, 128, 256]
-        if kernels is None:
-            kernels: list = [4, 4, 4, 4]
-        if strides is None:
-            strides: list = [2, 2, 2, 2]
-        if img_size is None:
-            img_size: list = [64, 64]
+        channels: list = channels or [32, 64, 128, 256]
+        kernels: list = kernels or [4, 4, 4, 4]
+        strides: list = strides or [2, 2, 2, 2]
+        img_size: list = img_size or [64, 64]
 
         assert len(kernels) == len(channels)
         assert len(kernels) == len(strides)
@@ -122,12 +122,9 @@ class VisualDecoder64(nn.Module):
     ):
         super().__init__()
 
-        if channels is None:
-            channels: list = [32, 64, 128]
-        if kernels is None:
-            kernels: list = [6, 6, 5, 5]
-        if strides is None:
-            strides: list = [2, 2, 2, 2]
+        channels: list = channels or [32, 64, 128]
+        kernels: list = kernels or [6, 6, 5, 5]
+        strides: list = strides or [2, 2, 2, 2]
 
         assert len(kernels) == len(channels) + 1
         assert len(kernels) == len(strides)
@@ -221,7 +218,11 @@ class VisualDecoder224(VisualDecoder64):
 
 class ResNet(nn.Module):
     def __init__(
-        self, dim_output: int, version: str = "resnet18", weights: Optional[str] = None
+        self,
+        dim_output: int,
+        version: str = "resnet18",
+        weights: Optional[str] = None,
+        in_channels: int = 3,
     ) -> None:
         """
         version: "resnet18", "resnet34", etc.
@@ -236,10 +237,72 @@ class ResNet(nn.Module):
         super().__init__()
 
         self.m: torchvision.models.ResNet = getattr(torchvision.models, version)(weights=weights)
+        if in_channels != 3:
+            self.m.conv1 = nn.Conv2d(
+                in_channels,
+                out_channels=self.m.conv1.out_channels,
+                kernel_size=self.m.conv1.kernel_size,  # 7
+                stride=self.m.conv1.stride,  # 2
+                padding=self.m.conv1.padding,  # 3
+                bias=False,
+            )
         self.m.fc = torch.nn.Linear(self.m.fc.in_features, dim_output)
 
     def forward(self, x: Tensor):
         return self.m(x)
+
+
+# class ResNetBackBone(nn.Module):
+#     def __init__(self) -> None:
+#         super().__init__()
+#         # AdaptiveAvgPool2d はパラメーターを持っていない　すなわちただの関数
+#         # out = torch.tanh(out)
+
+
+class MLP(torch.nn.Sequential):
+    """
+    Linear
+    NormLayer
+    Activation
+    Linear
+    NormLayer
+    Activation
+    ...
+    Linear
+
+    References:
+        - torchvision.ops.MLP
+        - https://github.com/lucidrains/vit-pytorch/blob/ce4bcd08fbab864e92167415552a722ff5ce2005/vit_pytorch/es_vit.py#L118
+    """
+
+    def __init__(
+        self,
+        dim_in: int,
+        dim_hiddens: List[int],  # same as number of Linear layer
+        norm_layer: Optional[Callable[..., torch.nn.Module]] = None,
+        activation: Union[str, Callable[..., torch.nn.Module]] = torch.nn.ReLU,
+        inplace: Optional[bool] = True,
+        bias: bool = True,
+    ):
+        # The addition of `norm_layer` is inspired from the implementation of TorchMultimodal:
+        # https://github.com/facebookresearch/multimodal/blob/5dec8a/torchmultimodal/modules/layers/mlp.py
+        params = {} if inplace is None else {"inplace": inplace}
+
+        if type(activation) == str:
+            activation = getattr(nn, activation)
+
+        layers = []
+        in_dim = dim_in
+        for hidden_dim in dim_hiddens[:-1]:
+            layers.append(torch.nn.Linear(in_dim, hidden_dim, bias=bias))
+            if norm_layer is not None:
+                layers.append(norm_layer(hidden_dim))
+            layers.append(activation(**params))
+            in_dim = hidden_dim
+
+        layers.append(torch.nn.Linear(in_dim, dim_hiddens[-1], bias=bias))
+
+        super().__init__(*layers)
 
 
 class VisualDecoder224V2(nn.Module):
@@ -738,6 +801,70 @@ class DecoderC(nn.Module):
         return x
 
 
+class InfratorV1(nn.Module):
+    """
+    Input:  (*)
+    Output: (*, *out_size)
+    """
+
+    def __init__(
+        self,
+        out_size: Iterable[int],
+        bias: bool = True,
+    ) -> None:
+        super().__init__()
+
+        self.out_size = out_size
+        prod = math.prod(out_size)
+        self.fc = nn.Linear(1, prod, bias=bias)
+
+    def forward(self, x: Tensor):
+        s_ = x.shape
+        x = x.unsqueeze(-1)
+        x = self.fc(x)
+        x = x.reshape(*s_, *self.out_size)
+        return x
+
+
+class InfratorV2(nn.Module):
+    """
+    Input:  (*)
+    Output: (*, *out_size)
+    """
+
+    # for jump source code
+    # torchvision.ops.MLP
+    # nn.Conv2d
+    # nn.SiLU # swish
+    # nn.Mish
+    # nn.Identity # not in torch.nn.modules.activation
+
+    def __init__(
+        self,
+        out_size: Iterable[int],
+        activation: Union[str, nn.Module] = nn.Mish,
+        inplace: Optional[bool] = None,
+        bias: bool = True,
+    ) -> None:
+        super().__init__()
+        params = {} if inplace is None else {"inplace": inplace}
+
+        self.out_size = out_size
+        prod = math.prod(out_size)
+        middle = prod // 2
+        middle = int(math.sqrt(middle))
+        self.fc1 = nn.Linear(1, middle, bias=bias)
+        self.act_fn = (activation if type(activation) != str else getattr(nn, activation))(**params)
+        self.fc2 = nn.Linear(middle, prod, bias=bias)
+
+    def forward(self, x: Tensor):
+        s_ = x.shape
+        x = x.unsqueeze(-1)
+        x = self.fc2(self.act_fn(self.fc1(x)))
+        x = x.reshape(*s_, *self.out_size)
+        return x
+
+
 class ResNetC(nn.Module):
     """
     Input:  (N, 3, Any, Any)
@@ -928,3 +1055,60 @@ class ResnetCWrap(nn.Module):
 #         out = self.gamma * out + x
 
 #         return out, attention
+
+
+def positional_encoding_item(d_model: int, max_len: int):
+    """
+    Returns:
+        pe: (max_len, d_model)
+
+    Attention Is All You Need
+    PE(pos, 2i) = sin(pos/100002i/dmodel)
+    PE(pos, 2i+1) = cos(pos/100002i/dmodel)
+
+    https://pytorch.org/tutorials/beginner/transformer_tutorial.html
+
+    https://machinelearningmastery.com/a-gentle-introduction-to-positional-encoding-in-transformer-models-part-1/
+    https://erdem.pl/2021/05/understanding-positional-encoding-in-transformers
+    https://discuss.pytorch.org/t/transformer-example-position-encoding-function-works-only-for-even-d-model/100986/2
+    https://datascience.stackexchange.com/questions/82451/why-is-10000-used-as-the-denominator-in-positional-encodings-in-the-transformer
+    """
+    # nn.Embedding
+
+    position = torch.arange(max_len).unsqueeze(1)
+    div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+    pe = torch.zeros(max_len, d_model)
+    pe[:, 0::2] = torch.sin(position * div_term)
+    if d_model % 2 == 0:
+        pe[:, 1::2] = torch.cos(position * div_term)
+    else:
+        pe[:, 1::2] = torch.cos(position * div_term[:-1])
+    return pe
+
+
+def positional_encoding_func(d_model: int, t: int):
+    """
+    Returns:
+        pe: (d_model)
+
+    Attention Is All You Need
+    PE(pos, 2i) = sin(pos/100002i/dmodel)
+    PE(pos, 2i+1) = cos(pos/100002i/dmodel)
+
+    https://pytorch.org/tutorials/beginner/transformer_tutorial.html
+
+    https://machinelearningmastery.com/a-gentle-introduction-to-positional-encoding-in-transformer-models-part-1/
+    https://erdem.pl/2021/05/understanding-positional-encoding-in-transformers
+    https://discuss.pytorch.org/t/transformer-example-position-encoding-function-works-only-for-even-d-model/100986/2
+    https://datascience.stackexchange.com/questions/82451/why-is-10000-used-as-the-denominator-in-positional-encodings-in-the-transformer
+    """
+    # nn.Embedding
+
+    div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+    pe = torch.zeros(d_model)
+    pe[0::2] = torch.sin(t * div_term)
+    if d_model % 2 == 0:
+        pe[1::2] = torch.cos(t * div_term)
+    else:
+        pe[1::2] = torch.cos(t * div_term[:-1])
+    return pe

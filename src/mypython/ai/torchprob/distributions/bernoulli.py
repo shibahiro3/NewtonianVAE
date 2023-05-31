@@ -9,7 +9,7 @@ from typing_extensions import Self
 from mypython.terminal import Color
 
 from .. import config
-from .base import Distribution, ProbParamsValueError, _eps, to_optional_tensor
+from .base import Distribution, ProbParamsValueError, to_optional_tensor
 
 
 class Bernoulli(Distribution):
@@ -90,4 +90,4 @@ class Bernoulli(Distribution):
             https://github.com/emited/VariationalRecurrentNeuralNetwork/blob/0f23c87d11597ecf50ecbbf1dd37429861fd7aca/model.py#L181
         """
 
-        return x * torch.log(mu + _eps) + (1 - x) * torch.log(1 - mu - _eps)
+        return x * torch.log(mu) + (1 - x) * torch.log(1 - mu)

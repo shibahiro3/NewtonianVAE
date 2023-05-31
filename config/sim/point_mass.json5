@@ -6,7 +6,9 @@
     camera_name: "top",
 
     velocity: {
+      // good result either way
       fix_abc: [0, 0, 1],
+      // fix_abc: null,
     },
 
     transition: {
@@ -27,19 +29,21 @@
 
   train: {
     path: "data/point_mass/episodes/{0..999}.*",
-    batch_size: 20,
-    epochs: 400,
+    batch_size: 10,
+    epochs: 300,
     learning_rate: 3e-4,
     max_time_length: 100,
     device: "cuda",
     dtype: "float32",
     save_per_epoch: 50,
     check_value: false,
+    gradscaler_args: {},
+    use_autocast: true,
+    load_all: true,
   },
 
   valid: {
     path: "data/point_mass/episodes/{1000..1199}.*",
-    batch_size: 20,
   },
 
   test: {
@@ -48,17 +52,17 @@
     dtype: "float32",
   },
 
-  ControlSuiteEnvWrap: {
+  sim_env: "ControlSuite",
+
+  ControlSuite: {
     env: "point_mass-easy",
     seed: 1,
     max_episode_length: 100,
-    action_repeat: 1,
-    bit_depth: 8,
-    action_type: "random_walk",
     imgsize: [64, 64],
+    // ***
+    action_type: "random_walk",
     task_settings: {
-      // target_size: 0.03,
-      target_size: 0.015,
+      target_size: 0.0,
       target_position: "default",
       // target_position: "random",
     },
@@ -79,5 +83,17 @@
       to 1.0 between epochs 30 and 60.
     */
     beta_schedule: { linear1: [30, 60, 0.001, 1] },
+
+    keypaths: [
+      "action", //
+      "delta",
+      "position",
+      ["camera", "top"],
+    ],
+
+    HandyForImage: {
+      size: [64, 64],
+      bit_depth: 5,
+    },
   },
 }

@@ -8,7 +8,7 @@ from scipy import special as sp
 from torch import Tensor
 
 from . import config
-from .distributions.base import Distribution, _eps
+from .distributions.base import Distribution
 from .distributions.normal import Normal
 
 # F.kl_div

@@ -3,6 +3,7 @@ import common
 common.set_path(__file__)
 
 import argparse
+import gc
 import os
 from argparse import RawTextHelpFormatter
 from datetime import datetime, timedelta
@@ -16,10 +17,9 @@ from torch import Tensor, nn, optim
 
 import models.core
 import mypython.ai.torchprob as tp
-import tool.preprocess
 import tool.util
 from correlation import correlation_cal, print_corr
-from models import cell, core, parts
+from models import core, parts
 from models.core import NewtonianVAEBase
 from mypython import rdict
 from mypython.ai import train as mp_train
@@ -33,8 +33,7 @@ from mypython.keyboard import Key, KeyInput
 from mypython.terminal import Color, Prompt
 from mypython.valuewriter import ValueWriter
 from tool import paramsmanager
-from tool.util import creator, dtype_device
-from unet_mask.seg_data import mask_unet
+from tool.util import create_prepostprocess, creator, dtype_device
 from view import visualhandler
 from view.visualhandlerbase import VisualHandlerBase
 
@@ -43,6 +42,8 @@ def main():
     # fmt: off
     description = \
 """\
+Train
+
 if you use "--visual tensorboard":
   1. Another terminal: $ tensorboard --logdir="../log_tb"  # In exec/
   2. Open the output URL (http://localhost:6006/) in a browser
@@ -96,23 +97,8 @@ def train(
         device=params.train.device,
     )
 
-    preprocess_simple = getattr(tool.preprocess, params.others.get("preprocess", ""), lambda x: x)
-    preprocess = preprocess_simple
-
-    unet_mask_path = params.others.get("unet_mask", None)
-    if unet_mask_path is not None:
-        masker, preprocess_unet = mask_unet(unet_mask_path)
-        masker.to(device)
-
-        def p_(batchdata):
-            batchdata = preprocess_simple(batchdata)
-            batchdata = preprocess_unet(batchdata)
-            return batchdata
-
-        preprocess = p_
-
-    # keypaths = None
-    keypaths = ["action", "delta", "position", ["camera", "ee1"], ["camera", "ee2"]]
+    preprocess, postprocesses = create_prepostprocess(params, device=device)
+    keypaths = params.others.get("keypaths", None)
 
     trainloader = SequenceDataLoader(
         patterns=params.train.path,
@@ -122,16 +108,18 @@ def train(
         device=device,
         preprocess=preprocess,
         keypaths=keypaths,
+        load_all=params.train.load_all,
     )
     trainloader.sample_batch(verbose=True, print_name="sample train batch")
 
     validloader = SequenceDataLoader(
         patterns=params.valid.path,
-        batch_size=params.valid.batch_size,
+        batch_size=params.train.batch_size,
         dtype=dtype,
         device=device,
         preprocess=preprocess,
         keypaths=keypaths,
+        load_all=params.train.load_all,
     )
     validloader.sample_batch(verbose=True, print_name="sample valid batch")
 
@@ -254,6 +242,7 @@ def train(
 
             rdict.to_torch(batchdata, device=torch.device("cpu"))
             model.cpu()
+            gc.collect()
             torch.cuda.empty_cache()
 
             keyinput.wait_until("r")
@@ -315,7 +304,10 @@ def train(
         #         print("save unet")
 
         # bd = validloader.sample_batch(batch_size="all")
-        bd = validloader.sample_batch(batch_size=30)
+        bd = validloader.sample_batch(
+            batch_size=30
+        )  # for u-net (avoid OutOfMemoryError), and just time saving
+
         bd["delta"].unsqueeze_(-1)
         corr, _, _ = correlation_cal(model=model, batchdata=bd, all=False)
         corr_writer.write("corr", corr)
@@ -346,6 +338,8 @@ def train(
         pre_batch_fn=pre_batch_fn,
         post_batch_fn=post_batch_fn,
         post_epoch_fn=post_epoch_fn,
+        gradscaler_args=params.train.gradscaler_args,
+        use_autocast=params.train.use_autocast,
     )
 
 

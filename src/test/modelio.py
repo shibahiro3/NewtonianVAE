@@ -1,12 +1,12 @@
-if __name__ == "__main__":
-    import os
-    import sys
+import os
+import sys
 
-    sys.path.append(os.pardir + os.sep)
+sys.path.append((os.pardir + os.sep))
 
 
 from typing import Callable, Optional
 
+import matplotlib.pyplot as plt
 import torch
 import vit_pytorch
 from torchsummary import summary
@@ -21,6 +21,47 @@ torch.set_grad_enabled(False)
 
 # torch.set_default_dtype(torch.float32)
 # torch.set_default_dtype(torch.float16)
+
+
+def main():
+    # unet_double_conv(True)
+
+    # conv311()
+    # conv320()
+    # conv110()
+    # upsample()
+    # downsample()
+    # downsample_with_conv()
+    # simple_decoder()
+
+    # vanilla_cnn64()
+
+    # resnet_decoder()
+    # resnet_official()
+
+    # vit()
+    # simple_vit()
+
+    # mobile_unet_()
+
+    # encoder_v1()
+    # decoder_v1()
+    # decoder_v2()
+    # irb_decoder_wrap()
+    # decoder_v3()
+
+    # resnet_c()
+    # upsample_conv_decoder_c()
+    # autoencoder_v1()
+    # self_attention()
+    # mobile_vit()
+
+    # mobile_unet_v2()
+    # resnet_decoder()
+    # infrator_v1()
+    # infrator_v2()
+    # positional_encoding_item()
+    mlp()
 
 
 def IOprinter(input: torch.Tensor, output: torch.Tensor):
@@ -40,8 +81,11 @@ def IOcheck(
     assert (Out == Out_).all().item()
 
 
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+def count_parameters(model, all=False):
+    if all:
+        return sum(p.numel() for p in model.parameters())
+    else:
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
 def common(
@@ -428,6 +472,75 @@ def mobile_unet_v2():
         IOprinter(x, out)
 
 
+@function_test
+def infrator_v1():
+    model = parts_backend.InfratorV1((7, 7))
+    print(count_parameters(model))
+    x = torch.randn(10, 512)
+    y = model(x)
+    IOprinter(x, y)
+
+    model = parts_backend.InfratorV1((5, 6, 7))
+    print(count_parameters(model))
+    x = torch.randn(2, 3, 4)
+    y = model(x)
+    IOprinter(x, y)
+
+    # L = y.mean().backward()
+
+
+@function_test
+def infrator_v2():
+    model = parts_backend.InfratorV2((7, 7))
+    print(count_parameters(model))
+    x = torch.randn(10, 512)
+    y = model(x)
+    IOprinter(x, y)
+
+    model = parts_backend.InfratorV2((5, 6, 7), "SiLU")
+    print(count_parameters(model))
+    x = torch.randn(2, 3, 4)
+    y = model(x)
+    IOprinter(x, y)
+
+    # L = y.mean().backward()
+
+
+@function_test
+def positional_encoding_item():
+    D, T = 10, 50
+    pe1 = parts_backend.positional_encoding_item(d_model=D, max_len=T)
+    pe2 = torch.stack([parts_backend.positional_encoding_func(d_model=D, t=t) for t in range(T)])
+
+    assert pe1.shape == pe2.shape
+    assert (pe1 == pe2).all().item()
+
+    pe = parts_backend.positional_encoding_item(d_model=512, max_len=100)
+    # pe = parts_backend.positional_encoding_item(d_model=3, max_len=50)
+
+    if True:
+        cax = plt.matshow(pe)
+        plt.gcf().colorbar(cax)
+        plt.xlabel("Encoding Dimension (Depth)")
+        plt.ylabel("Position (Time step)")
+    else:
+        cax = plt.matshow(pe.T)
+        plt.gcf().colorbar(cax)
+        plt.xlabel("Position (Time step)")
+        plt.ylabel("Encoding Dimension (Depth)")
+
+    plt.show()
+
+
+@function_test
+def mlp():
+    dim_in = 5
+    model = parts_backend.MLP(dim_in, [2, 4, 3]).to(device)
+    # model = parts_backend.MLP(dim_in, [2]*3).to(device)
+    x = torch.randn(10, 7, dim_in)
+    summary(model, x, device=device)
+
+
 # @function_test
 # def MaxUnpool2d_():
 #     ic = 512
@@ -437,38 +550,6 @@ def mobile_unet_v2():
 #     z1 = model(z)
 #     IOprinter(z, z1)
 
+
 if __name__ == "__main__":
-    # unet_double_conv(True)
-
-    # conv311()
-    # conv320()
-    # conv110()
-    # upsample()
-    # downsample()
-    # downsample_with_conv()
-    # simple_decoder()
-
-    # vanilla_cnn64()
-
-    # resnet_decoder()
-    # resnet_official()
-
-    # vit()
-    # simple_vit()
-
-    # mobile_unet_()
-
-    # encoder_v1()
-    # decoder_v1()
-    # decoder_v2()
-    # irb_decoder_wrap()
-    # decoder_v3()
-
-    # resnet_c()
-    # upsample_conv_decoder_c()
-    # autoencoder_v1()
-    # self_attention()
-    # mobile_vit()
-
-    # mobile_unet_v2()
-    resnet_decoder()
+    main()

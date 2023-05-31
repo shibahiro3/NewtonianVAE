@@ -85,7 +85,3 @@ def to_optional_tensor(x: Union[None, int, float, Tensor]) -> Optional[Tensor]:
 
 class ProbParamsValueError(Exception):
     pass
-
-
-# _eps = torch.finfo(torch.float).eps  # DO NOT USE
-_eps = 0

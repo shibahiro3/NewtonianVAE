@@ -15,6 +15,7 @@ from functools import partial, singledispatch
 from typing import Any, Callable, List, Optional, Type, Union
 
 import torch
+import torch.nn.functional as F
 from torch import Tensor, nn
 from torch.nn.utils import parametrizations  # .spectral_norm
 
@@ -98,7 +99,7 @@ class Upsample(nn.Module):
             self.conv = conv311(IC, OC)
 
     def forward(self, x: Tensor):
-        x = torch.nn.functional.interpolate(x, scale_factor=2.0, mode="nearest")
+        x = F.interpolate(x, scale_factor=2.0, mode="nearest")
         if self.with_conv:
             x = self.conv(x)
         return x
@@ -123,10 +124,10 @@ class Downsample(nn.Module):
     def forward(self, x: Tensor):
         if self.with_conv:
             pad = (0, 1, 0, 1)
-            x = torch.nn.functional.pad(x, pad, mode="constant", value=0)
+            x = F.pad(x, pad, mode="constant", value=0)
             x = self.conv(x)
         else:
-            x = torch.nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
+            x = F.avg_pool2d(x, kernel_size=2, stride=2)
         return x
 
 

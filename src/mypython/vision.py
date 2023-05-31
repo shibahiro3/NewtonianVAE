@@ -11,7 +11,7 @@ transforms.ToTensor
 
 import os
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, TypeVar, Union
 
 import cv2
 import matplotlib.pyplot as plt
@@ -19,11 +19,14 @@ import numpy as np
 import torch
 import torchvision.transforms.functional as TF
 import torchvision.transforms.functional_tensor as F_t
+from PIL import Image, ImageDraw
 from torch import Tensor
+from torchvision.io import read_image
 
-from mypython.ai.util import to_np
+from mypython.ai.util import to_numpy
 
-_NT = Union[np.ndarray, Tensor]
+# _NT = Union[np.ndarray, Tensor]
+_NT = TypeVar("_NT")
 
 # Color order
 def reverseRGB(imgs: _NT) -> _NT:
@@ -101,8 +104,8 @@ def cnn2cv(imgs: _NT) -> np.ndarray:
 
 def CHW2HWC(x: _NT) -> _NT:
     """
-    Args:
-        x: shape: [..., C, H, W]
+    Input: (*, C, H, W) (For CNN input (Conv2D, torchvision.transforms.functional output))
+    Output:  (*, H, W, C) (OpenCV read)
     """
 
     assert x.ndim >= 3
@@ -114,11 +117,8 @@ def CHW2HWC(x: _NT) -> _NT:
 
 def HWC2CHW(x: _NT) -> _NT:
     """
-    Args:
-        x: shape: [..., H, W, C] (OpenCV read)
-
-    Returns:
-        arr shape: [..., C, H, W] (Conv2D, torchvision.transforms.functional input)
+    Input:  (*, H, W, C) (OpenCV read)
+    Output: (*, C, H, W) (For CNN input (Conv2D, torchvision.transforms.functional input))
     """
 
     assert x.ndim >= 3
@@ -150,10 +150,17 @@ def convert_range(x: _NT, src_range, dst_range) -> _NT:
 
     Example:
         convert_range(imgs, (-1, 1), (0, 255))
+
+    Note:
+        Whether x is torch or numpy, if x.dtype == uint8:
+            X:  y = x * 2
+            O:  y = x * 2.0
+          y.dtype is uint8
+        so operation order was changed to get float
     """
     in_min, in_max = src_range
     out_min, out_max = dst_range
-    x = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+    x = (x - in_min) * ((out_max - out_min) / (in_max - in_min)) + out_min
     x = clip(x, out_min, out_max)
     if out_min == 0 and out_max == 255:
         x = to_uint8(x)
@@ -173,6 +180,34 @@ def to_uint8(x: _NT) -> _NT:
 # def _check_range(x: _NT, min, max):
 #     assert min <= x.min()
 #     assert x.max() <= max
+
+
+def _rc_cal(N: int, rows: Optional[int], cols: Optional[int]):
+    def rc(r_or_c):
+        q, mod = divmod(N, r_or_c)
+        if mod > 0:
+            return q + 1
+        else:
+            return q
+
+    if rows is None and cols is None:
+        rows = int(np.sqrt(N))
+        cols = rc(rows)
+    elif rows is not None and cols is None:
+        rows = rows if rows != -1 else N
+        cols = rc(rows)
+    elif rows is None and cols is not None:
+        cols = cols if cols != -1 else N
+        rows = rc(cols)
+
+    if N < rows:
+        rows = N
+    if N < cols:
+        cols = N
+
+    assert N <= rows * cols
+
+    return rows, cols
 
 
 def show_imgs(
@@ -203,7 +238,7 @@ def show_imgs(
     if type(images) == np.ndarray or type(images) == torch.Tensor:
         # if len(images.shape) <= 3:  # 1画像モード
         if images.ndim <= 3:
-            plt.imshow(to_np(images))
+            plt.imshow(to_numpy(images))
             plt.show()
             return
 
@@ -215,22 +250,7 @@ def show_imgs(
         N = lim
         print(f"Limited to {lim} (origin len: ({len(images)}))")
 
-    def rc(r_or_c):
-        q, mod = divmod(N, r_or_c)
-        if mod > 0:
-            return q + 1
-        else:
-            return q
-
-    if rows is None and cols is None:
-        rows = int(np.sqrt(N))
-        cols = rc(rows)
-    elif rows is not None and cols is None:
-        cols = rc(rows)
-    elif rows is None and cols is not None:
-        rows = rc(cols)
-
-    assert N <= rows * cols
+    rows, cols = _rc_cal(N, rows, cols)
 
     if fig is None:
         fig = plt.figure()
@@ -243,7 +263,7 @@ def show_imgs(
         dtype = img.dtype
         # if dtype == torch.uint8 or dtype == np.uint8:
         # (N, H, W, RGB) row-major, float: 0 to 1  int: vmin=0 to vmax=255
-        ax.imshow(to_np(img), **kwargs)
+        ax.imshow(to_numpy(img), **kwargs)
         # else:
         #     ax.imshow(images[i], **kwargs, vmin=0, vmax=1)
 
@@ -330,13 +350,6 @@ def create_board(
 
         return ret
 
-    def rc(r_or_c):
-        q, mod = divmod(N, r_or_c)
-        if mod > 0:
-            return q + 1
-        else:
-            return q
-
     # ==========
 
     type_images = type(images)
@@ -354,15 +367,7 @@ def create_board(
         images = images[:N]
         print(f"Limited to {lim} (origin len: ({len(images)}))")
 
-    if rows is None and cols is None:
-        rows = int(np.sqrt(N))
-        cols = rc(rows)
-    elif rows is not None and cols is None:
-        cols = rc(rows)
-    elif rows is None and cols is not None:
-        rows = rc(cols)
-
-    assert N <= rows * cols
+    rows, cols = _rc_cal(N, rows, cols)
 
     len(background_color) == 3
 
@@ -449,6 +454,7 @@ def show_imgs_cv(
         cv_wait(winname)
     else:
         cv2.waitKey(delay)  # 小さすぎるとなぜか最初の反映が遅い
+
         # 先に
         # cv2.namedWindow("winname", cv2.WINDOW_NORMAL)
         # cv2.waitKey(1)

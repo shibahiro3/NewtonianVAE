@@ -127,12 +127,15 @@ class Train(_Converter):
     grad_clip_norm: Union[None, int, float] = None
     seed: Optional[int] = None
     check_value: bool = True
+    gradscaler_args: Optional[dict] = None
+    use_autocast: bool = False
+    load_all: bool = False
 
     _path_root: Union[List[str], str] = ""
 
     def __post_init__(self):
         # check_args_type(self, self.__dict__)
-        assert self.dtype in ("float16", "float32")
+        pass
 
     @property
     def _contents(self):
@@ -144,7 +147,7 @@ class Train(_Converter):
 @dataclasses.dataclass
 class Valid(_Converter):
     path: Union[List[str], str]
-    batch_size: int
+    batch_size: Optional[int] = None  # Deprecated (for backward compatibility)
 
     _path_root: Union[List[str], str] = ""
 

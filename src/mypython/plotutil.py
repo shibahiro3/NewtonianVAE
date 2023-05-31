@@ -11,6 +11,7 @@ from matplotlib.backend_bases import KeyEvent
 from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
 
+from mypython.pyutil import add_version
 from mypython.terminal import Color
 
 
@@ -55,10 +56,11 @@ def cartesian_coordinate(ax: Axes, r: float):
     ax.vlines(0, -r, r, color="black")
 
 
-def register_save_path(fig: Figure, path: Union[str, Path], suffixs: Optional[list] = None):
+def register_save_path(
+    fig: Figure, path: Union[str, Path], suffixs: Optional[list] = None, version=False
+):
     plt.rcParams["keymap.save"] = ""
     path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
 
     if suffixs is None:
         s = path.suffix
@@ -72,6 +74,9 @@ def register_save_path(fig: Figure, path: Union[str, Path], suffixs: Optional[li
         if event.key == "s":
             for suffix in suffixs:
                 p = path.with_suffix("." + suffix)
+                p.parent.mkdir(parents=True, exist_ok=True)
+                if version:
+                    p = add_version(p)
                 event.canvas.figure.savefig(p)
                 Color.print("saved to:", p)
 

@@ -12,8 +12,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
+from matplotlib import ticker
 from matplotlib.gridspec import GridSpec
-from matplotlib.ticker import MaxNLocator
 from torch import Tensor, nn, optim
 
 from .. import plotutil as mpu
@@ -63,6 +63,8 @@ def train(
     post_batch_fn: Optional[Callable[[float, dict], None]] = None,
     post_epoch_fn: Optional[Callable[[int, dict], None]] = None,
     print_precision: int = 4,
+    gradscaler_args: Optional[dict] = None,
+    use_autocast: bool = False,
 ) -> None:
     """
 
@@ -110,6 +112,11 @@ def train(
     else:
         phases = ["train", "valid"]
 
+    if gradscaler_args is not None:
+        scaler = torch.cuda.amp.GradScaler(enabled=True, **gradscaler_args)
+    else:
+        scaler = torch.cuda.amp.GradScaler(enabled=False)
+
     try:
         epoch_f = 0.0
         time_start_learning = time.perf_counter()
@@ -137,16 +144,19 @@ def train(
 
                 ##### core #####
                 for batch_i, batchdata in enumerate(dataloader, 1):
+
                     if pre_batch_fn is not None:
                         if unpack:
                             batchdata = pre_batch_fn(epoch_f, *batchdata)
                         else:
                             batchdata = pre_batch_fn(epoch_f, batchdata)
 
-                    if unpack:
-                        output = model(*batchdata)
-                    else:
-                        output = model(batchdata)
+                    # https://h-huang.github.io/tutorials/recipes/recipes/amp_recipe.html
+                    with torch.autocast("cuda", enabled=use_autocast):
+                        if unpack:
+                            output = model(*batchdata)
+                        else:
+                            output = model(batchdata)
 
                     if type(output) == Tensor:
                         L = output
@@ -157,14 +167,16 @@ def train(
                         assert False
 
                     if phase == "train":
-                        optimizer.zero_grad()
-                        L.backward()
+                        optimizer.zero_grad(set_to_none=True)
+                        scaler.scale(L).backward()
                         # print_module_params(model, True)
                         if grad_clip_norm is not None:
-                            nn.utils.clip_grad_norm_(
-                                model.parameters(), grad_clip_norm, norm_type=2
-                            )
-                        optimizer.step()
+                            # https://h-huang.github.io/tutorials/recipes/recipes/amp_recipe.html#inspecting-modifying-gradients-e-g-clipping
+                            scaler.unscale_(optimizer)
+                            nn.utils.clip_grad_norm_(model.parameters(), grad_clip_norm)
+                        # optimizer.step()
+                        scaler.step(optimizer)
+                        scaler.update()
                     ##### end of core #####
 
                     # === show progress ===
@@ -290,6 +302,7 @@ def show_loss(
     start_iter: int = 1,
     format: List[str] = ["pdf", "png"],
     mode: str = "epoch",
+    no_window: bool = False,
 ):
     assert start_iter > 0
     assert mode in ("batch", "epoch")
@@ -338,7 +351,7 @@ def show_loss(
         ax.set_title(k)
         ax.plot(R, data, color=color, alpha=alpha)
         ax.plot(R, smooth, color=color, lw=2, label=label)
-        # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         # ax.set_xticks(np.linspace(start_iter, steps, 5, dtype=int))  # OK: len(data) < 5
         ax.grid(ls=":")
 
@@ -356,8 +369,29 @@ def show_loss(
 
     # mpu.legend_reduce(fig, loc="lower right")
 
-    if results_dir is not None:
-        save_path = Path(results_dir, day_time, f"{day_time}_{mode}_loss")
+    save_path = save_pathname(root=results_dir, day_time=day_time, descr="loss")
+    if no_window:
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        for fmt in format:
+            p = save_path.with_suffix(f".{fmt}")
+            plt.savefig(p)
+            Color.print("saved to:", p)
+    else:
         mpu.register_save_path(fig, save_path, format)
+        plt.show()
 
-    plt.show()
+
+def save_pathname(*, root, day_time: str, descr, epoch=None):
+    """Put the execution date and time on the file name"""
+    # .with_suffix(f".{fmt}")
+
+    datetime.strptime(day_time, "%Y-%m-%d_%H-%M-%S")  # for check (ValueError)
+
+    if epoch is None:
+        # save_path = Path(root, day_time, f"{day_time}_{descr}")
+        save_path = Path(root, f"{day_time}_{descr}")
+    else:
+        # save_path = Path(root, day_time, f"{day_time}_E{epoch}_{descr}")
+        save_path = Path(root, f"{day_time}_E{epoch}_{descr}")
+
+    return save_path

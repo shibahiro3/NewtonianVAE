@@ -10,7 +10,7 @@ from typing_extensions import Self
 from mypython.terminal import Color
 
 from .. import config
-from .base import Distribution, ProbParamsValueError, _eps, to_optional_tensor
+from .base import Distribution, ProbParamsValueError, to_optional_tensor
 
 
 class Normal(Distribution):

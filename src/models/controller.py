@@ -7,7 +7,27 @@ import torch.nn.init
 from torch import Tensor, nn
 
 import mypython.ai.torchprob as tp
+from models import parts_backend
 from mypython.terminal import Color
+
+
+class ControllerBase:
+    def forward(batchdata):
+        raise NotImplementedError()
+        loss: Tensor
+        return loss
+
+    def step(self, *obs_args, **obs_kwargs):
+        """
+        Args:
+            observation meaning (Ex. Image from camera)
+
+        Returns:
+            u_t: Velocity (Control input / Action)
+        """
+        raise NotImplementedError()
+        u_t: Tensor
+        return u_t
 
 
 class PurePControl:
@@ -108,3 +128,26 @@ class PControl(tp.GMM):
     def step(self, x_t: Tensor):
         u_t = self.given(x_t).sample()
         return u_t
+
+
+class ControllerV2(tp.Normal, ControllerBase):
+    """
+    P(u_t | x_t) = N(u_t | P(x_t) * (Goal(x_t) - x_t), σ^2)
+    or
+    P(u_t | x_t, t) = N(u_t | P(x_t, t) * (Goal(x_t, t) - x_t), σ^2)
+    """
+
+    def __init__(self, dim_x: int, dim_middle: int, dim_pe: Optional[int] = None) -> None:
+        super().__init__()
+
+        self.feature = parts_backend.MLP(dim_x + (dim_pe or 0), [dim_middle, dim_middle, dim_x * 2])
+        self.forward = self.forward_normal if dim_pe is None else self.forward_pe
+
+    def step(self, *obs_args, **obs_kwargs):
+        return super().step(*obs_args, **obs_kwargs)
+
+    def forward_normal(self, u, x):
+        pass
+
+    def forward_pe(self, u, x):
+        pass

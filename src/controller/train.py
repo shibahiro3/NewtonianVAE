@@ -11,12 +11,12 @@ import numpy as np
 import torch
 from torch import nn, optim
 
+import models.controller
 import models.core
-import models.pcontrol
 import mypython.ai.torchprob as tp
 import tool.util
+from models.controller import PControl
 from models.core import NewtonianVAEBase
-from models.pcontrol import PControl
 from mypython.ai.util import SequenceDataLoader, print_module_params, reproduce
 from mypython.numeric import RemainingTime
 from mypython.pyutil import s2dhms_str
@@ -33,8 +33,7 @@ def train(
 
     params_ctrl = paramsmanager.Params(config_ctrl)
 
-    if params_ctrl.train.seed is None:
-        params_ctrl.train.seed = np.random.randint(0, 2**16)
+    params_ctrl.train.seed = params_ctrl.train.seed or np.random.randint(0, 2**16)
     reproduce(params_ctrl.train.seed)
 
     dtype, device = tool.util.dtype_device(
@@ -64,7 +63,7 @@ def train(
 
     p_pctrl, managed_dir, weight_dir, resume_weight_path = tool.util.creator(
         root=params_ctrl.path.saves_dir,
-        model_place=models.pcontrol,
+        model_place=models.controller,
         model_name=params_ctrl.model,
         model_params=params_ctrl.model_params,
     )

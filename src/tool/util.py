@@ -3,12 +3,13 @@ Do not import NewtonianVAE series
 """
 
 import builtins
+import dataclasses
 import shutil
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
 import torch
@@ -20,14 +21,28 @@ from torch import nn
 import json5
 import mypython.plotutil as mpu
 import mypython.pyutil as pyu
+import tool.preprocess
 import tool.util
+from mypython import rdict
 from mypython.terminal import Color
-from tool import checker, paramsmanager
+from mypython.valuewriter import ValueWriter
+from tool import checker, paramsmanager, prepost
+from unet_mask.seg_data import mask_unet
 
 _weight = "weight*/*"
 
 
-def select_date(root, no_weight_ok=False) -> Optional[Path]:
+def select_date(root, no_weight_ok=False, min_epoch=1) -> Optional[Path]:
+    """
+    root
+        date_time_1
+        date_time_2
+        ...
+        date_time_n
+
+    See: from mypython.ai.train import train
+    """
+
     if not Path(root).exists():
         Color.print(f"'{root}' doesn't exist.", c=Color.red)
         return None
@@ -44,23 +59,36 @@ def select_date(root, no_weight_ok=False) -> Optional[Path]:
             if len(list(date.glob(_weight))) == 0:
                 dates.remove(date)
 
-    if len(dates) == 0:
+    date_new = []
+    cnt = 0
+    for date in dates:
+        weights = len(list(date.glob(_weight)))
+        epochs = len(ValueWriter.load(Path(date, "epoch train"))["Loss"])
+
+        if epochs < min_epoch:
+            continue
+        else:
+            date_new.append(date)
+            cnt += 1
+
+        s = (
+            f"{cnt:2d} : {date.name} - weights: {weights:2d}, epochs: {epochs:4d}, config_bk: "
+            + str(Path(date, "params_saved.json5"))
+        )
+        if cnt % 2:
+            Color.print(s, c=Color.bg_rgb(30, 70, 70))
+        else:
+            print(s)
+
+    if len(date_new) == 0:
         Color.print(f'"Date and time directory" doesn\'t exist in "{root}" directory.', c=Color.red)
         return None
 
-    for i, date in enumerate(dates, 1):
-        l = len(list(date.glob(_weight)))
-        _s = (f"{i:2d}", ":", date.name, f"({l:3d})", Path(date, "params_saved.json5"))
-        if Preferences.get(date, "running") is None:
-            print(*_s)
-        else:
-            print(*_s, Color.coral + "Running" + Color.reset)
-
-    idx = _get_idx("Select date and time (or exit): ", len(dates))
+    idx = _get_idx("Select date and time (or exit): ", len(date_new))
     if idx is None:
         return None
     else:
-        return dates[idx]
+        return date_new[idx]
 
 
 def select_weight(root: Path) -> Optional[Path]:
@@ -92,7 +120,7 @@ def select_weight(root: Path) -> Optional[Path]:
 #             shutil.rmtree(date)
 
 
-def _get_idx(text, len_list):
+def _get_idx(text, n_max):
     while True:
         idx = builtins.input(Color.green + text + Color.reset)
 
@@ -103,10 +131,10 @@ def _get_idx(text, len_list):
 
             try:
                 idx = int(idx) - 1
-                if 0 <= idx and idx < len_list:
+                if 0 <= idx and idx < n_max:
                     return idx
                 else:
-                    Color.print(f"Please 1 to {len_list}. again.", c=Color.red)
+                    Color.print(f"Please 1 to {n_max}. again.", c=Color.red)
             except ValueError:
                 Color.print("Input integer or exit. again.", c=Color.red)
 
@@ -194,7 +222,7 @@ def creator(
 
     if resume:
         print('You chose "resume". Select a model to load.')
-        resume_manage_dir = tool.util.select_date(root)
+        resume_manage_dir = tool.util.select_date(root, min_epoch=5)
         if resume_manage_dir is None:
             sys.exit()
         resume_weight_path = tool.util.select_weight(resume_manage_dir)
@@ -208,7 +236,7 @@ def creator(
 
 
 def load(root: str, model_place):
-    manage_dir = tool.util.select_date(root)
+    manage_dir = tool.util.select_date(root, min_epoch=5)
     if manage_dir is None:
         sys.exit()
     weight_path = tool.util.select_weight(manage_dir)
@@ -263,15 +291,39 @@ class RecoderBase:
             print("======================")
 
 
-def save_pathname(*, root, day_time: str, descr, format, epoch=None, version=True):
-    datetime.strptime(day_time, "%Y-%m-%d_%H-%M-%S")  # for check (ValueError)
+def create_prepostprocess(params: paramsmanager.Params, device):
 
-    if epoch is None:
-        save_path = Path(root, day_time, f"{day_time}_{descr}.{format}")
-    else:
-        save_path = Path(root, day_time, f"{day_time}_E{epoch}_{descr}.{format}")
+    preprocess_list = []
 
-    if version:
-        save_path = pyu.add_version(save_path)
+    pp_simple = getattr(tool.preprocess, params.others.get("preprocess", ""), lambda x: x)
+    preprocess_list.append(pp_simple)
 
-    return save_path
+    pp_image = prepost.HandyForImage(**rdict.get(params.others, ["HandyForImage"], {}))
+
+    def pp_image_wrap(batchdata):
+        rdict.apply_(batchdata["camera"], pp_image.pre)
+        return batchdata
+
+    preprocess_list.append(pp_image_wrap)
+
+    pp_unet = None
+    unet_mask_path = params.others.get("unet_mask", None)
+    if unet_mask_path is not None:
+        masker, preprocess_unet = mask_unet(unet_mask_path)
+        masker.to(device)
+
+        def pp_unet(batchdata):
+            return preprocess_unet(batchdata)
+
+        preprocess_list.append(pp_unet)
+
+    class _postrocesses:
+        def __init__(self) -> None:
+            self.image = pp_image.post
+
+    def preprocess(batchdata):
+        for p_ in preprocess_list:
+            batchdata = p_(batchdata)
+        return batchdata
+
+    return preprocess, _postrocesses()

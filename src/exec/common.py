@@ -28,3 +28,10 @@ format_file = dict(
 format_video = dict(
     help='Format of the video to be saved\nYou can save the video with "--save-anim".'
 )
+default_fig_formats = ["png"]
+# default_fig_formats = ["png", "pdf", "svg"]
+
+# format:
+#   png: versatile, raster
+#   pdf: versatile, vector, for LaTeX
+#   svg: vector, for PowerPoint

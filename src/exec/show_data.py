@@ -18,17 +18,19 @@ import tool.preprocess
 import view.plot_config
 from models.mobile_unet import Masker
 from mypython import rdict
-from mypython.ai.util import SequenceDataLoader, to_np
+from mypython.ai.util import SequenceDataLoader, to_numpy
 from mypython.terminal import Color, Prompt
-from simulation.env import obs2img
-from tool import paramsmanager
+from tool import paramsmanager, prepost
+from tool.util import create_prepostprocess
 from unet_mask.seg_data import mask_unet
 
 
 def main():
     # fmt: off
     description = \
-"""Check datasets from file"""
+"""\
+Show datasets video from file
+"""
     parser = argparse.ArgumentParser(allow_abbrev=False, formatter_class=RawTextHelpFormatter, description=description)
     parser.add_argument("-c", "--config", type=str, required=True, **common.config)
     parser.add_argument("--episodes", type=int, required=True, help="If nor specified, it will load all as batch")
@@ -121,7 +123,7 @@ class ShowData:
     ):
         self.axes_clear()
 
-        action = to_np(action)
+        action = to_numpy(action)
 
         self.fig.suptitle(
             f"Episode: {episode_cnt}, t = {t:3d}",
@@ -152,9 +154,9 @@ class ShowData:
         for k, v in Ist.items():
             ax = self.ax_cameras[_i].ax
             ax.set_title("$\mathbf{I}_t$" f" ({k})")
-            ax.imshow(obs2img(v))
-            ax.set_xlabel(f"{v.shape[-1]} px")
-            ax.set_ylabel(f"{v.shape[-2]} px")
+            ax.imshow(v)  # H W RGB
+            ax.set_xlabel(f"{v.shape[-2]} px")  # W
+            ax.set_ylabel(f"{v.shape[-3]} px")  # H
             ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
             _i += 1
 
@@ -229,25 +231,11 @@ def show_data(
 
     if position_name is None:
         position_name = "position"
-    if position_name is None:
-        position_name = "Position"
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    preprocess_simple = getattr(tool.preprocess, params.others.get("preprocess", ""), lambda x: x)
-    preprocess = preprocess_simple
-
-    unet_mask_path = params.others.get("unet_mask", None)
-    if unet_mask_path is not None:
-        masker, preprocess_unet = mask_unet(unet_mask_path)
-        masker.to(device)
-
-        def p_(batchdata):
-            batchdata = preprocess_simple(batchdata)
-            batchdata = preprocess_unet(batchdata)
-            return batchdata
-
-        preprocess = p_
+    preprocess, postprocesses = create_prepostprocess(params, device=device)
+    keypaths = params.others.get("keypaths", None)
 
     batchdata = SequenceDataLoader(
         patterns=getattr(params, data_type).path,
@@ -257,6 +245,7 @@ def show_data(
         show_selected_index=True,
         shuffle=shuffle,
         preprocess=preprocess,
+        keypaths=keypaths,
     ).sample_batch(verbose=True)
 
     rdict.to_numpy(batchdata)
@@ -309,7 +298,10 @@ def show_data(
                 t=self.t + 1,
                 episode_cnt=self.episode_cnt + 1,
                 action=action[self.t, self.episode_cnt],
-                Ist={k: v[self.t, self.episode_cnt] for k, v in batchdata["camera"].items()},
+                Ist={
+                    k: v[self.t, self.episode_cnt]
+                    for k, v in rdict.apply(batchdata["camera"], postprocesses.image).items()
+                },
                 position=position[self.t, self.episode_cnt],
                 set_lim_fn=lambda p: (
                     p.ax_action.ax.set_ylim(action.min() - 0.1, action.max() + 0.1),

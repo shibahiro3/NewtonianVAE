@@ -12,6 +12,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn.functional as F
+
+# import torchvision
+# torchvision.datasets.ImageFolder
+import torchvision
 import torchvision.transforms.functional as TF
 from pycocotools.coco import COCO
 from torchvision.io import read_image
@@ -21,9 +25,6 @@ from models.mobile_unet import Masker
 from mypython.ai.util import BatchIndices
 from mypython.terminal import Color
 
-# import torchvision
-# torchvision.datasets.ImageFolder
-
 
 def main():
     # python seg_data.py data_imgs/ee data_imgs/orange_complete.json
@@ -31,12 +32,22 @@ def main():
 
 
 def core(imgs_dir, coco_file):
-    trainloader = MaskingDataLoader(imgs_dir, coco_file, batch_size=5)
-    # trainloader.cutout_and_random = False
+    trainloader = MaskingDataLoader(
+        imgs_dir,
+        coco_file,
+        batch_size=5,
+        cutout_and_random=None,
+        device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+    )
     trainloader.sample_batch(verbose=False, show=True, debug=True)
 
 
 class MaskingDataLoader(BatchIndices):
+    """
+    torchvision.datasets.CocoDetection
+    torchvision.datasets.CocoCaptions
+    """
+
     def __init__(
         self,
         images_dir: str,
@@ -44,8 +55,8 @@ class MaskingDataLoader(BatchIndices):
         batch_size: int,
         shuffle: bool = True,
         full_load: bool = True,
-        cutout_and_random: Optional[bool] = False,
-        device=None,
+        cutout_and_random: Optional[bool] = False,  # None is mixed
+        device=torch.device("cpu"),
     ):
         def has_duplicates(seq):
             return len(seq) != len(set(seq))
@@ -58,7 +69,7 @@ class MaskingDataLoader(BatchIndices):
         self.coco = COCO(coco_file)
         self._image_ids = np.array(self.coco.getImgIds())
         cat_ids = self.coco.getCatIds()
-        cat_ids = cat_ids[0]  # <<⭐
+        cat_ids = cat_ids[0]  # <<⭐ support only one category for cutout_and_random
         self._filenames = np.array(
             [ii["file_name"] for ii in self.coco.loadImgs(self._image_ids)]
         )  # correspond index
@@ -109,12 +120,12 @@ class MaskingDataLoader(BatchIndices):
     def __next__(self):
         """
         Returns
-            img:  N C H W   [0, 1]
-            mask: N 1 H W   0 or 1
+            images:  N C H W   [0, 1]
+            masks: N 1 H W   0 or 1
         """
 
         indices = super().__next__()
-        imgs_orig = self._load_imgs(indices) / 255
+        imgs_orig = (self._load_imgs(indices) / 255).to(self.device)
         # imgs_orig = self._transform(imgs_orig)
 
         if self.cutout_and_random is None:
@@ -123,29 +134,23 @@ class MaskingDataLoader(BatchIndices):
             cutout_and_random = self.cutout_and_random
 
         if cutout_and_random:
-            background = torch.rand_like(imgs_orig)
-            # background = imgs_orig  # check round
-            masks = torch.zeros((len(indices), 1, *imgs_orig.shape[-2:]))
+            images = torch.rand_like(imgs_orig)
+            # images = imgs_orig  # check round
+            masks = torch.zeros((len(indices), 1, *imgs_orig.shape[-2:]), device=self.device)
         else:
-            background = imgs_orig
-            masks = torch.empty((len(indices), 1, *imgs_orig.shape[-2:]))
-            background = self._transform(background)
+            images = imgs_orig
+            masks = torch.empty((len(indices), 1, *imgs_orig.shape[-2:]), device=self.device)
+            images = self._transform(images)
 
-        # なぜかここで転送するとlossがnan
-        # if self.device is not None:
-        #     return background.to(self.device), masks.to(self.device)
-
+        # TODO: parallel.. but training time is already few minitus.
         for i, img_id in enumerate(self._image_ids[indices]):
-            # mask_all = [None for _ in range(len(cat_ids))]
+
             anns_ids = self.coco.getAnnIds(imgIds=img_id)
             anns = self.coco.loadAnns(anns_ids)
             # for ann in anns:
             ann = anns[0]
             mask = self.coco.annToMask(ann)
             mask = torch.from_numpy(mask)
-
-            # if self.device is not None:
-            #     mask = mask.to(self.device)
 
             if cutout_and_random:  # いらん処理でしたぁ
                 H, W = imgs_orig.shape[-2:]
@@ -158,7 +163,7 @@ class MaskingDataLoader(BatchIndices):
                     size[1] = W
                 size = tuple(size)
 
-                mask = mask[BY : BY + BH, BX : BX + BW].to(torch.bool)  # HW
+                mask = mask[BY : BY + BH, BX : BX + BW].to(self.device).to(torch.bool)  # HW
                 mask = TF.resize(
                     mask.unsqueeze_(0), size=size, interpolation=TF.InterpolationMode.NEAREST
                 ).squeeze_(0)
@@ -167,25 +172,22 @@ class MaskingDataLoader(BatchIndices):
                 imgs_o_ = self._transform(imgs_o_)
                 imgs_o_ = TF.resize(imgs_o_, size=size, interpolation=TF.InterpolationMode.NEAREST)
 
-                # bg_ = background[i, :, BY : BY + BH, BX : BX + BW]
+                # bg_ = images[i, :, BY : BY + BH, BX : BX + BW]
                 # bg_ = TF.resize(bg_, size=size, interpolation=TF.InterpolationMode.NEAREST) # masked背景の引き伸ばしが起こる
-                bg_ = torch.rand((3, *size))
+                bg_ = torch.rand((3, *size), device=self.device)
 
                 masked_img = imgs_o_ * mask + bg_ * ~mask  # CHW
 
                 h, w = size
                 x = np.random.randint(H - w + 1)
                 y = np.random.randint(W - h + 1)
-                background[i, :, y : y + h, x : x + w] = masked_img
+                images[i, :, y : y + h, x : x + w] = masked_img
                 masks[i, 0, y : y + h, x : x + w] = mask  # bool to float32
 
             else:
                 masks[i, 0] = mask
 
-        if self.device is not None:
-            return background.to(self.device), masks.to(self.device)
-
-        return background, masks
+        return images, masks
 
     def sample_batch(
         self, batch_size: Union[int, str] = "same", verbose=False, show=False, debug=False

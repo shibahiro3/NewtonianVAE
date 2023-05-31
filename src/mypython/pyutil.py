@@ -91,6 +91,12 @@ def s2dhms_str(sec, always_day=False):
 
 
 def add_version(path) -> Path:
+    """
+    for probabilistic result, etc.
+
+    path: need suffix
+    """
+
     path = Path(path)
     remove_suffix = str(path.with_suffix(""))
     suffix = path.suffix
@@ -133,16 +139,32 @@ def function_test(func):
     def func...
     """
 
-    @wraps(func)
-    def wrapper(*args, **kargs):
-        Color.print(f"\n=== [Start] {func.__name__}", c=Color.orange)
+    def wrapper(*args, **kwargs):
+        Color.print(f"\n=== [Start] {func.__name__} ===", c=Color.orange)
         start = time.perf_counter()
-        result = func(*args, **kargs)
+        result = func(*args, **kwargs)
         elapsed_time = time.perf_counter() - start
-        Color.print(f"=== [End]   {func.__name__}  Elapsed: {elapsed_time:.2f}s", c=Color.green)
+        Color.print(f"=== [End]   {func.__name__}  Elapsed: {elapsed_time:.2f}s ===", c=Color.green)
         return result
 
     return wrapper
+
+
+# def function_test(msg=""):
+#     # 常にかっこ要る @function_test()
+
+#     def _function_test(func):
+#         def wrapper(*args, **kwargs):
+#             Color.print(f"\n=== [Start] {func.__name__}", c=Color.orange)
+#             start = time.perf_counter()
+#             result = func(*args, **kwargs)
+#             elapsed_time = time.perf_counter() - start
+#             Color.print(f"=== [End]   {func.__name__}  Elapsed: {elapsed_time:.2f}s", c=Color.green)
+#             return result
+
+#         return wrapper
+
+#     return _function_test
 
 
 def run_once(func):
@@ -178,34 +200,34 @@ def singleton_class(class_):
     return wrapper
 
 
-def human_readable_byte(b: int, bin=False) -> str:
+def human_readable_byte(nbytes: int, bin=False) -> str:
     # torch.Tensor: b = x.element_size() * x.numel()
 
-    assert type(b) == int
-    assert b >= 0
+    assert type(nbytes) == int
+    assert nbytes >= 0
 
-    def _p(b, unit) -> str:
+    def _p(nbytes_, unit: str) -> str:
         if bin:
-            return f"{b:.3f} {unit[0]}i{unit[1]}"
+            return f"{nbytes_:.3f} {unit[0]}i{unit[1]}"
         else:
-            return f"{b:.3f} {unit}"
+            return f"{nbytes_:.3f} {unit}"
 
     if bin:
         U = 1024
     else:
         U = 1000
 
-    if b < U:
-        return f"{b} B"
+    if nbytes < U:
+        return f"{nbytes} B"
 
-    b /= U
-    if b < U:
-        return _p(b, "KB")
+    nbytes /= U
+    if nbytes < U:
+        return _p(nbytes, "KB")
 
-    b /= U
-    if b < U:
-        return _p(b, "MB")
+    nbytes /= U
+    if nbytes < U:
+        return _p(nbytes, "MB")
 
-    b /= U
-    if b < U:
-        return _p(b, "GB")
+    nbytes /= U
+    if nbytes < U:
+        return _p(nbytes, "GB")

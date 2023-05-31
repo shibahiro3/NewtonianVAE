@@ -20,7 +20,7 @@ from torch import Tensor, nn, optim
 
 import mypython.ai.torchprob as tp
 import mypython.plotutil as mpu
-from mypython.ai.util import BatchIndices, to_np
+from mypython.ai.util import BatchIndices, to_numpy
 from mypython.numeric import RemainingTime
 from mypython.pyutil import s2dhms_str
 from mypython.terminal import Color, Prompt
@@ -135,8 +135,8 @@ def main():
 
     resample = prob.given(sample).sample()
 
-    sample = to_np(sample)
-    resample = to_np(resample)
+    sample = to_numpy(sample)
+    resample = to_numpy(resample)
 
     print("Sample shape:  ", sample.shape)
     print("Resample shape:", resample.shape)

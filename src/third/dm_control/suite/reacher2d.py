@@ -39,26 +39,29 @@ _SMALL_TARGET = .02
 from third.dm_control import read_model
 
 
-def get_model_and_assets():
+# Changed/added by Sugar
+def get_model_and_assets(xml_file):
   """Returns a tuple containing the model XML string and a dict of assets."""
   # return common.read_model('reacher.xml'), common.ASSETS
-  return read_model("reacher2d.xml"), common.ASSETS  # Changed/added by Sugar
+  xml_file = xml_file if xml_file is not None else "reacher2d.xml"
+  return read_model(xml_file), common.ASSETS
 
-# Changed/added by Sugar (add "task_settings" arg)
+# Changed/added by Sugar
+# suite.load  ->  env = domain.SUITE[task_name](**task_kwargs)
 @SUITE.add('benchmarking', 'easy')
-def easy(time_limit=_DEFAULT_TIME_LIMIT, random=None, task_settings=None, environment_kwargs=None):
+def easy(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None, task_settings=None, xml_file=None):
   """Returns reacher with sparse reward with 5e-2 tol and randomized target."""
-  physics = Physics.from_xml_string(*get_model_and_assets())
+  physics = Physics.from_xml_string(*get_model_and_assets(xml_file))
   task = Reacher(target_size=_BIG_TARGET, random=random, task_settings=task_settings)
   environment_kwargs = environment_kwargs or {}
   return control.Environment(
       physics, task, time_limit=time_limit, **environment_kwargs)
 
-# Changed/added by Sugar (add "task_settings" arg)
+# Changed/added by Sugar
 @SUITE.add('benchmarking')
-def hard(time_limit=_DEFAULT_TIME_LIMIT, random=None, task_settings=None, environment_kwargs=None):
+def hard(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None, task_settings=None, xml_file=None):
   """Returns reacher with sparse reward with 1e-2 tol and randomized target."""
-  physics = Physics.from_xml_string(*get_model_and_assets())
+  physics = Physics.from_xml_string(*get_model_and_assets(xml_file))
   task = Reacher(target_size=_SMALL_TARGET, random=random, task_settings=task_settings)
   environment_kwargs = environment_kwargs or {}
   return control.Environment(
@@ -103,10 +106,7 @@ class Reacher(base.Task):
     super().__init__(random=random)
 
     # Changed/added by Sugar
-    if task_settings is None:
-      self.task_settings = {}
-    else:
-      self.task_settings = task_settings
+    self.task_settings = task_settings or {}
 
   def initialize_episode(self, physics):
     """Sets the state of the environment at the start of each episode."""

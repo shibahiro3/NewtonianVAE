@@ -23,7 +23,7 @@ from typing_extensions import Self
 
 import mypython.ai.torchprob as tp
 import mypython.plotutil as mpu
-from mypython.ai.util import BatchIndices, to_np
+from mypython.ai.util import BatchIndices, to_numpy
 from mypython.numeric import RemainingTime
 from mypython.pyutil import s2dhms_str
 from mypython.terminal import Color, Prompt
@@ -164,8 +164,8 @@ def main():
     Y_sampled = prob.given(datascaler_x.pre(X_test)).sample()
     Y_sampled = datascaler_y.post(Y_sampled)
 
-    X_test = to_np(X_test)
-    Y_sampled = to_np(Y_sampled)
+    X_test = to_numpy(X_test)
+    Y_sampled = to_numpy(Y_sampled)
 
     # ============================================================
     fig, axes = plt.subplots(nrows=1, ncols=2, squeeze=False)

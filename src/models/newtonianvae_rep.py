@@ -56,7 +56,7 @@ class VanillaEncoder(nn.Module):
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
         x = self.conv4(x)
-        x = x.view(x.size(0), -1)
+        x = x.reshape(x.size(0), -1)
         x = self.last(x)
         return x
 
