@@ -29,11 +29,11 @@ class Plotter(ContainerBase):
         self._ax = None
 
     @property
-    def ax(self) -> Union[Axes, Axes3D]:
+    def ax(self) -> Optional[Union[Axes, Axes3D]]:
         return self._ax
 
 
-class Void(ContainerBase):
+class Space(ContainerBase):
     def __init__(self, *, flex=1.0) -> None:
         super().__init__(flex=flex)
 

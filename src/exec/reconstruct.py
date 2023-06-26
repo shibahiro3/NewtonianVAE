@@ -95,16 +95,20 @@ def reconstruction_(
                 self.x_std = pltl.Plotter(flex=4)
                 self.x_std_bar = pltl.Plotter()
 
+                self.latent_space = pltl.Plotter(projection="3d")
+
+                visions = [pltl.Row(self.observations, space=0.2)]
+                if model.cell.decodable:
+                    visions += [pltl.Row(self.recons, space=0.2)]
+
                 self.layout = pltl.Column(
                     [
                         pltl.Row(
                             [
-                                self.action,
+                                # self.action,
+                                pltl.Column([self.action, pltl.Space(flex=0.2), self.latent_space]),
                                 pltl.Column(
-                                    [
-                                        pltl.Row(self.observations, space=0.2),
-                                        pltl.Row(self.recons, space=0.2),
-                                    ],
+                                    visions,
                                     space=0.5,
                                     flex=n_img,
                                 ),
@@ -169,6 +173,9 @@ def reconstruction_(
                     self.action_min = batchdata["action"][:, self.ep].min()
                     self.action_max = batchdata["action"][:, self.ep].max()
 
+                    self.latent_min = model.cache["x"][:, self.ep].min(0)
+                    self.latent_max = model.cache["x"][:, self.ep].max(0)
+
                 # ============================================================
                 self.t += 1
 
@@ -209,6 +216,19 @@ def reconstruction_(
                 mpu.Axis_aspect_2d(ax, 1)
 
                 # ============================================================
+                ax = axes.latent_space.ax
+                ax.set_title("Latent Space")
+                x = model.cache["x"][: self.t, self.ep]
+                ax.set_xlim(self.latent_min[0], self.latent_max[0])
+                ax.set_ylim(self.latent_min[1], self.latent_max[1])
+                ax.set_zlim(self.latent_min[2], self.latent_max[2])
+                ax.set_xlabel("x")
+                ax.set_ylabel("y")
+                ax.set_zlabel("z")
+                ax.plot(x[:, 0], x[:, 1], x[:, 2], lw=2)
+                ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+
+                # ============================================================
                 for i, k in enumerate(camera_names):
                     ax = axes.observations[i].ax
                     ax.set_title(r"$\mathbf{I}_t$ " f"({k}, Original)")
@@ -216,11 +236,14 @@ def reconstruction_(
                     ax.set_axis_off()
 
                 # ============================================================
-                for i, k in enumerate(camera_names):
-                    ax = axes.recons[i].ax
-                    ax.set_title(r"$\mathbf{I}_t$ " f"({k}, Reconstructed)")
-                    ax.imshow(postprocesses.image(self.model.cache["camera"][k][self.t, self.ep]))
-                    ax.set_axis_off()
+                if model.cell.decodable:
+                    for i, k in enumerate(camera_names):
+                        ax = axes.recons[i].ax
+                        ax.set_title(r"$\mathbf{I}_t$ " f"({k}, Reconstructed)")
+                        ax.imshow(
+                            postprocesses.image(self.model.cache["camera"][k][self.t, self.ep])
+                        )
+                        ax.set_axis_off()
 
                 # ============================================================
                 ax = axes.x_mean.ax

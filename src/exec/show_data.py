@@ -242,7 +242,6 @@ def show_data(
         batch_size=episodes,
         dtype=torch.float32,
         device=device,
-        show_selected_index=True,
         shuffle=shuffle,
         preprocess=preprocess,
         keypaths=keypaths,

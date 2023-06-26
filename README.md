@@ -9,7 +9,7 @@ This is a PyTorch implementation that expands on [NewtonianVAE](https://arxiv.or
 Install the necessary packages.
 
 ```bash
-python3 -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ### Tips
@@ -26,7 +26,7 @@ These should be run under the [src/exec](src/exec) directory. To see examples ot
 Example:
 
 ```bash
-python python create_data.py -c config/reacher2d.json5 --mode save-data --save-dir data/reacher2d
+python create_data.py -c config/reacher2d.json5 --mode save-data --save-dir data/reacher2d
 ```
 
 If you want to see what kind of data you are looking for:

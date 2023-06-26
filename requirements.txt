@@ -18,6 +18,12 @@ PyQt6-sip==13.4.0
 # sudo apt install ffmpeg  # for saving movie
 ##############################
 
+PySide6==6.5.1
+PySide6-Addons==6.5.1
+PySide6-Essentials==6.5.1
+
+##############################
+
 numpy
 dm-control
 torch

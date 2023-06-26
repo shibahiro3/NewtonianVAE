@@ -29,6 +29,9 @@ class HandyForImage(PrePostBase):
         size: Optional[List[int]] = None,
         out_range: list = [-0.5, 0.5],
         bit_depth: Optional[int] = None,
+        src_channel_order="HWC",  # or "CHW"
+        src_reverse_color_order=False,  # BGR2RGB or RGB2BGR
+        out_reverse_color_order=False,
         suppress_warning=False,
     ) -> None:
         """
@@ -41,25 +44,36 @@ class HandyForImage(PrePostBase):
         self.out_range = tuple(out_range)
         self.to_4dim = To4Dim()
         self.suppress_warning = suppress_warning
+        self.src_channel_order = src_channel_order
+        self.src_reverse_color_order = src_reverse_color_order
+        self.out_reverse_color_order = out_reverse_color_order
 
     def pre(self, img) -> Tensor:
         """
-        Input:  shape=(*, H, W, C) range=[0, 255] (uint8)
-        Output: shape=(*, C, H, W) range=out_range (torch.float32) for CNN input
+        For NN input
+
+        Input: Data
+            shape=(*, src_channel_order) range=[0, 255]  (uint8)
+
+        Output: For CNN input
+            shape=(*, C, H, W)           range=out_range (torch.float32)
 
         uint8にfloat32はinplaceできない
         """
+        if self.src_channel_order == "HWC":
+            img = mv.HWC2CHW(img)
+
         if not self.suppress_warning:
-            if img.shape[-1] >= 32:  # 1 (monochrome) or 3 (RGB) or 4 (RGBA) or some concat
+            C = img.shape[-3]
+            if C >= 32:  # 1 (monochrome) or 3 (RGB) or 4 (RGBA) or some concat
                 Color.print(
-                    f"WARNING: [preprocess] Is the image input size correct? Input channel: {img.shape[-1]}",
+                    f"WARNING: [preprocess] Is the image input size correct? Input channel: {C}",
                     c=Color.coral,
                 )
         if not (img.dtype == np.uint8 or img.dtype == torch.uint8):
             raise TypeError(f"Input type is not uint8: ({img.dtype})")
 
         img = aiu.to_torch(img)
-        img = mv.HWC2CHW(img)
 
         if (self.size is not None) and tuple(
             img.shape[-2:]
@@ -68,6 +82,9 @@ class HandyForImage(PrePostBase):
             img = self.to_4dim.pre(img)
             img = TF.resize(img, self.size, interpolation=TF.InterpolationMode.NEAREST)
             img = self.to_4dim.post(img)
+
+        if self.src_reverse_color_order:
+            img = img[..., [2, 1, 0], :, :]
 
         if self.bit_depth is not None:
             # Quantise to given bit depth and centre
@@ -84,13 +101,19 @@ class HandyForImage(PrePostBase):
 
     def post(self, img) -> np.ndarray:
         """
-        Input:  shape=(*, C, H, W) range=out_range
-        Output: shape=(*, H, W, C) range=[0, 255] (numpy uint8)
+        For visualization
+
+        Input:  NN output
+            shape=(*, C, H, W) range=out_range
+
+        Output: Image for opencv
+            shape=(*, H, W, C) range=[0, 255] (numpy uint8)
         """
         if not self.suppress_warning:
-            if img.shape[-3] >= 32:  # 1 (monochrome) or 3 (RGB) or 4 (RGBA) or some concat
+            C = img.shape[-3]
+            if C >= 32:  # 1 (monochrome) or 3 (RGB) or 4 (RGBA) or some concat
                 Color.print(
-                    f"WARNING: [postprocess] Is the image input size correct? Input channel: {img.shape[-1]}",
+                    f"WARNING: [postprocess] Is the image input size correct? Input channel: {C}",
                     c=Color.coral,
                 )
 
@@ -107,6 +130,9 @@ class HandyForImage(PrePostBase):
 
         else:
             img = mv.convert_range(img, self.out_range, (0, 255))
+
+        if self.out_reverse_color_order:
+            img = img[..., [2, 1, 0]]
 
         return img
 

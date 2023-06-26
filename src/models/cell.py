@@ -143,6 +143,10 @@ class MNVAECell(NewtonianVAECellBase):  # TODO: NewtonianVAECellBase (dim_x=...)
         self.q_encoder = component.MultiEncoder(dim_x=dim_x, **encoder)
         self.p_decoder = component.MultiDecoder(dim_x=dim_x, **decoder)
 
+    @property
+    def decodable(self) -> bool:
+        return not self._decoder_free
+
     def set_decoder_free(self, mode: bool):
         self._decoder_free = mode
         if mode:
