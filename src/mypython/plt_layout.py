@@ -92,11 +92,10 @@ def _compile(fig: Figure, gs: SubplotSpec, container: ContainerBase):
     if not isinstance(container, ContainerBase):
         raise TypeError(f"{container} ({type(container)})")
 
-    type_containter = type(container)
-    if type_containter == Plotter:
+    if type(container) == Plotter:
         container._ax = fig.add_subplot(gs, **container._ax_kwargs)
 
-    elif type_containter == Row:
+    elif type(container) == Row:
         if container.children is not None:
             ratios = [child._flex for child in container.children]
             gs_ = gs.subgridspec(
@@ -105,7 +104,7 @@ def _compile(fig: Figure, gs: SubplotSpec, container: ContainerBase):
             for i, child in enumerate(container.children):
                 _compile(fig, gs_[i], child)
 
-    elif type_containter == Column:
+    elif type(container) == Column:
         if container.children is not None:
             ratios = [child._flex for child in container.children]
             gs_ = gs.subgridspec(
@@ -116,8 +115,7 @@ def _compile(fig: Figure, gs: SubplotSpec, container: ContainerBase):
 
 
 def clear(containers: Union[ContainerBase, List[ContainerBase]]):
-    type_containers = type(containers)
-    if type_containers == list or type_containers == tuple:
+    if type(containers) == list or type(containers) == tuple:
         for container in containers:
             _clear(container)
     else:
@@ -128,9 +126,7 @@ def _clear(container: ContainerBase):
     if not isinstance(container, ContainerBase):
         raise TypeError(f"{container} ({type(container)})")
 
-    type_containter = type(container)
-
-    if type_containter == Plotter:
+    if type(container) == Plotter:
         if container._clearable:
             container.ax.clear()
     elif container.children is not None:

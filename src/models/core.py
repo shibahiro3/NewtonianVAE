@@ -423,6 +423,136 @@ class MNVAE(NewtonianVAEBase):
         return dec
 
 
+class LinearDynamical(NewtonianVAEBase):
+    def __init__(self, camera_names: list, *args, **kwargs) -> None:
+        super().__init__()
+
+        self._camera_names = camera_names
+
+        self.cell: cell.LinearDynamicalCell = cell.LinearDynamicalCell(*args, **kwargs)
+        self.dim_x = self.cell.dim_x
+
+        assert len(camera_names) == len(self.cell.q_encoder.encoders)
+        assert len(camera_names) == len(self.cell.p_decoder.decoders)
+
+    def __call__(self, *args, **kwargs) -> Tuple[Tensor, Dict[str, float]]:
+        return super().__call__(*args, **kwargs)
+
+    def forward(self, batchdata: Dict[str, Tensor]):
+        """"""
+
+        action = batchdata["action"]
+        # delta = batchdata["delta"]
+
+        T = len(action)
+
+        self.init_cache()
+
+        E_sum: Tensor = 0  # = Nagative ELBO
+
+        image_losses = 0
+        KL_loss: Tensor = 0
+        beta_kl: Tensor = 0
+
+        for t in range(T):
+            u_tn1 = action[t]
+            I_t = [batchdata["camera"][name][t] for name in self._camera_names]
+
+            _, B, D = action.shape  # _ : T
+
+            if t == 0:
+                x_q_t = self.cell.q_encoder.given(I_t).rsample()
+                # v_t = torch.zeros(size=(B, D), device=action.device, dtype=action.dtype)
+                if not self.cell._decoder_free:
+                    I_t_recs = self.cell.p_decoder(x_q_t)
+
+                x_q_tn1 = x_q_t
+
+            # elif t == 1:
+            #     x_q_t = self.cell.q_encoder.given(I_t).rsample()
+            #     # v_t = (x_q_t - x_q_tn1) / delta[t]
+            #     if not self.cell._decoder_free:
+            #         I_t_recs = self.cell.p_decoder(x_q_t)
+
+            else:
+                output = self.cell(
+                    I_t=I_t,
+                    x_q_tn1=x_q_tn1,
+                    # x_q_tn2=x_q_tn2,
+                    u_tn1=u_tn1,
+                    # dt=delta[t],
+                )
+
+                # for loss
+                E_sum += output["E"]
+                KL_loss += output["KL_loss"]
+                beta_kl += output["beta_kl"]
+                # for next cell
+                x_q_t = output["x_q_t"]
+                # v_t = output["v_t"]
+                if not self.cell._decoder_free:
+                    # for loss
+                    image_losses += np.array(output["image_losses"])
+                    # for next cell
+                    I_t_recs = output["I_t_recs"]
+
+            # x_q_tn2 = x_q_tn1
+            x_q_tn1 = x_q_t
+
+            # ##### DEBUG:
+            # print(f"time: {t}")
+            # tp_debug.check_dist_model(self.cell)
+
+            if self.is_save:
+                self.cache["x"].append(x_q_t)
+                self.cache["x_mean"].append(self.cell.q_encoder.loc)
+                self.cache["x_std"].append(self.cell.q_encoder.scale)
+                # self.cache["v"].append(v_t)
+                if not self.cell._decoder_free:
+                    for i, name in enumerate(self._camera_names):
+                        self.cache["camera"][name].append(I_t_recs[i])
+
+        E = E_sum / T
+        L = -E
+
+        losses = {}  # for order
+
+        if not self.cell._decoder_free:
+            image_losses /= T
+            for i, k in enumerate(self._camera_names):
+                losses[f"camera {k} Loss"] = image_losses[i]
+
+        losses["KL Loss"] = KL_loss / T
+        losses["Beta KL Loss"] = beta_kl / T
+
+        return L, losses
+
+    def init_cache(self):
+        super().init_cache()
+        self.cache["x"] = []
+        self.cache["x_mean"] = []
+        self.cache["x_std"] = []
+        self.cache["v"] = []
+
+        self.cache["camera"] = {}
+        for name in self._camera_names:
+            self.cache["camera"][name] = []
+
+    @property
+    def camera_names(self):
+        return self._camera_names
+
+    def encode(self, I_t: List[Tensor]) -> Tensor:
+        return self.cell.q_encoder.given(I_t).rsample()
+
+    def decode(self, x_t: Tensor) -> Dict[str, Tensor]:
+        I_t_recs = self.cell.p_decoder(x_t)
+        dec = {}
+        for i, name in enumerate(self._camera_names):
+            dec[name] = I_t_recs[i]
+        return dec
+
+
 # class NewtonianVAEV3(NewtonianVAEBase):
 #     """Execution speed was not faster"""
 

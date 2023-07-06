@@ -201,16 +201,17 @@ def singleton_class(class_):
 
 
 def human_readable_byte(nbytes: int, bin=False) -> str:
+    # numpy.ndarray: b = x.nbytes
     # torch.Tensor: b = x.element_size() * x.numel()
 
     assert type(nbytes) == int
     assert nbytes >= 0
 
-    def _p(nbytes_, unit: str) -> str:
+    def _p(nbytes_, prefix: str) -> str:
         if bin:
-            return f"{nbytes_:.3f} {unit[0]}i{unit[1]}"
+            return f"{nbytes_:.2f} {prefix}iB"
         else:
-            return f"{nbytes_:.3f} {unit}"
+            return f"{nbytes_:.2f} {prefix}B"
 
     if bin:
         U = 1024
@@ -222,12 +223,12 @@ def human_readable_byte(nbytes: int, bin=False) -> str:
 
     nbytes /= U
     if nbytes < U:
-        return _p(nbytes, "KB")
+        return _p(nbytes, "K")
 
     nbytes /= U
     if nbytes < U:
-        return _p(nbytes, "MB")
+        return _p(nbytes, "M")
 
     nbytes /= U
     if nbytes < U:
-        return _p(nbytes, "GB")
+        return _p(nbytes, "G")

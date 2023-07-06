@@ -34,6 +34,7 @@ from .parts_backend import (
     ResnetDecoder,
     VisualDecoder64,
     VisualDecoder224,
+    VisualDecoder224V3,
     VisualDecoder256,
     VisualEncoder64,
     VisualEncoder256,

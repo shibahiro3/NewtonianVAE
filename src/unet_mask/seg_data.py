@@ -196,7 +196,7 @@ class MaskingDataLoader(BatchIndices):
         if type(batch_size) == str:
             assert batch_size in ("same", "all")
             if batch_size == "all":
-                self._B = self.datasize
+                self.set_batchsize(self.datasize)
 
         if debug:
             # for exception check
@@ -219,7 +219,7 @@ class MaskingDataLoader(BatchIndices):
             )
             plt.show()
 
-        self._B = batch_size_prev
+        self.set_batchsize(batch_size_prev)
         return img, mask
 
 

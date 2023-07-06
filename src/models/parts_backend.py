@@ -361,6 +361,44 @@ class VisualDecoder224V2(nn.Module):
         return x
 
 
+class VisualDecoder224V3(nn.Module):
+    """By ChatGPT"""
+
+    def __init__(
+        self,
+        dim_input: int,
+        activation: str = "ReLU",
+        out_channels: int = 3,
+    ):
+        super().__init__()
+
+        self.latent_dim = dim_input
+        Activation = getattr(nn, activation)
+
+        self.fc = nn.Linear(dim_input, 256 * 7 * 7)
+        self.conv_transpose = nn.Sequential(
+            nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.BatchNorm2d(128),
+            Activation(inplace=True),
+            nn.ConvTranspose2d(128, 64, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(64),
+            Activation(inplace=True),
+            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(32),
+            Activation(inplace=True),
+            nn.ConvTranspose2d(
+                32, out_channels, kernel_size=3, stride=2, padding=1, output_padding=1
+            ),
+        )
+
+    def forward(self, x):
+        x = self.fc(x)
+        x = x.reshape(-1, 256, 7, 7)
+        x = self.conv_transpose(x)
+        x = nn.functional.interpolate(x, size=(224, 224), mode="bilinear", align_corners=False)
+        return x
+
+
 # class ResNetDecoder(nn.Module):
 #     def __init__(
 #         self, dim_input: int, img_size: int = 224, Ch: List[int] = [3, 64, 128, 256, 512, 512]

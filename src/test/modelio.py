@@ -9,6 +9,7 @@ from typing import Callable, Optional
 import matplotlib.pyplot as plt
 import torch
 import vit_pytorch
+from torch import nn
 from torchsummary import summary
 
 import models
@@ -61,7 +62,9 @@ def main():
     # infrator_v1()
     # infrator_v2()
     # positional_encoding_item()
-    mlp()
+    # mlp()
+    # linear()
+    visual_decoder_224_v3()
 
 
 def IOprinter(input: torch.Tensor, output: torch.Tensor):
@@ -176,6 +179,22 @@ def simple_decoder(show=False):
     common(model, show=show, C=IC, in2out=lambda In: In * 2)
 
 
+@function_test
+def linear():
+    model = nn.Linear(2, 3)
+    A = model.weight
+    b = model.bias
+    print("A shape:", A.shape, "| B shape:", b.shape)
+    x = torch.randn((7, 2))
+
+    y = model(x)
+    y2 = x @ A.T + b
+    y3 = (A @ x.T).T + b
+    print(y.shape)
+    assert (y == y2).all()
+    assert (y == y3).all()
+
+
 # @function_test
 # def unet_double_conv(show=False):
 #     IC, OC = 7, 11  # prime
@@ -201,6 +220,18 @@ def vanilla_cnn64():
     IOprinter(img, z)
 
     assert z.shape == (B, dim_latent)
+
+
+@function_test
+def visual_decoder_224_v3():
+    B = 5
+    for dim_latent in [2, 3, 4, 5, 6, 7, 8, 9, 10]:
+        x = torch.randn((B, dim_latent)).to(device)
+        model = parts_backend.VisualDecoder224V3(dim_input=dim_latent).to(device)
+        y = model(x)
+        print(dim_latent)
+        IOprinter(x, y)
+        assert y.shape[-2:] == (224, 224)
 
 
 # @function_test

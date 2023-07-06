@@ -74,8 +74,8 @@ def to_numpy(x) -> np.ndarray:
 
 def to_torch(x) -> Tensor:
     def _has_neg(x):
-        for element in x:
-            if element < 0:
+        for e in x:
+            if e < 0:
                 return True
         return False
 
@@ -126,7 +126,7 @@ class BatchIndices:
             raise ValueError(f"Must: stop ({stop}) - start ({start}) >= batch_size ({batch_size})")
 
         self._N = stop - start
-        self._B = batch_size
+        self._B = batch_size  # 外部で ._B = は宣言になってしまって面倒
         self._indices = np.arange(start=start, stop=stop)
         self.shuffle = shuffle
         self.reset_indices()
@@ -138,6 +138,13 @@ class BatchIndices:
     @property
     def batchsize(self):
         return self._B
+
+    def set_batchsize(self, batch_size):
+        # setter
+        if not (self.datasize >= batch_size):
+            raise ValueError(f"Must: datasize ({self.datasize}) >= batch_size ({batch_size})")
+        assert type(batch_size) == int and batch_size >= 0
+        self._B = batch_size
 
     def __len__(self):
         return int(np.ceil(self._N / self._B))
@@ -234,7 +241,10 @@ class SequenceDataLoader(BatchIndices):
         self.all_data = None
         if load_all:
             try:
-                self.all_data = self._load(self._filelist)
+                self.all_data = self._load(
+                    self._filelist
+                )  # FIXME: 時系列をここでclipするのはおかしい batchでclipすべき
+
                 nbytes = rdict.show(self.all_data, only_info=True)["nbytes"]
                 Color.print(
                     f"Loaded all data size: {human_readable_byte(nbytes, bin=True)}",
@@ -251,7 +261,7 @@ class SequenceDataLoader(BatchIndices):
         if type(batch_size) == str:
             assert batch_size in ("same", "all")
             if batch_size == "all":
-                self._B = self.datasize
+                self.set_batchsize(self.datasize)
 
         batchdata = next(self)
         self.reset_indices()
@@ -264,7 +274,7 @@ class SequenceDataLoader(BatchIndices):
             print(f"Iterations of per epoch: {len(self)}")
             print("-" * 35)
 
-        self._B = batch_size_prev
+        self.set_batchsize(batch_size_prev)
         return batchdata
 
     def __next__(self) -> BatchDataType:

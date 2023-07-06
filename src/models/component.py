@@ -18,6 +18,7 @@ import torch.nn.functional as F
 from torch import NumberType, Tensor, nn
 
 import mypython.ai.torchprob as tp
+from models import parts_backend
 from mypython.ai.util import find_function, swap01
 from mypython.terminal import Color
 
@@ -82,39 +83,15 @@ class ABCf(nn.Module):
 
         self.ignore_u = ignore_u
         self.independent = independent
-
-        Activation = getattr(nn, activation)
-
         n = 3 if not ignore_u else 2
 
         if not independent:
             d = dim_x if dim_middle is None else dim_middle
-            self.func = nn.Sequential(
-                nn.Linear(dim_x * n, d),
-                Activation(),
-                # === 2 hidden layer
-                nn.Linear(d, d),
-                Activation(),
-                nn.Linear(d, d),
-                Activation(),
-                # ===
-                nn.Linear(d, dim_x * 3),
-            )
+            self.func = parts_backend.MLP(dim_x * n, [d, d, d, dim_x * 3], activation=activation)
         else:
             d = n if dim_middle is None else dim_middle
             self.funcs = nn.ModuleList(
-                [
-                    nn.Sequential(
-                        nn.Linear(n, d),
-                        Activation(),
-                        nn.Linear(d, d),
-                        Activation(),
-                        nn.Linear(d, d),
-                        Activation(),
-                        nn.Linear(d, 3),
-                    )
-                    for _ in range(dim_x)
-                ]
+                [parts_backend.MLP(n, [d, d, d, 3], activation=activation) for _ in range(dim_x)]
             )
 
     def forward(self, x_tn1: Tensor, v_tn1: Tensor, u_tn1: Tensor):
@@ -132,7 +109,7 @@ class ABCf(nn.Module):
         # diagA, ... : (B, dim_x)
         if not self.independent:
             abc = self.func(cat)
-            diagA, n_log_diagB, log_diagC = torch.chunk(abc, 3, dim=-1)
+            diagA, n_log_diagB, log_diagC = abc.chunk(3, dim=-1)
         else:
             dim_x = x_tn1.shape[-1]
             abc = []
@@ -221,23 +198,50 @@ class Transition(tp.Normal):
     def __init__(self, std: Union[Real, List[Real], None]) -> None:
         super().__init__()
 
-        if std is not None:
-            self.std: Tensor
-            self.register_buffer("std", torch.tensor(std))
-            self.std_function = lambda x: x
-        else:
-            # あまりにも少しずつしか更新されない　意味なし
-            # 初期値依存性が高すぎる
-            # σ is not σ_t, so σ should not depend on x_t.
-            # self.std = nn.Parameter(torch.randn(1))
-            self.std = nn.Parameter(torch.randn(1) - 5)  # なるべく最初のsigmaは小さめになるようにする
-            self.std_function = F.softplus
+        # if std is not None:
+        self.std = torch.tensor(std)
+        # self.std_function = lambda x: x
+        # else:
+        #     # あまりにも少しずつしか更新されない　意味なし
+        #     # 初期値依存性が高すぎる
+        #     # σ is not σ_t, so σ should not depend on x_t.
+        #     # self.std = nn.Parameter(torch.randn(1))
+        #     # self.std = nn.Parameter(torch.randn(1) - 5)  # なるべく最初のsigmaは小さめになるようにする
+        #     self.std_function = F.softplus
+        #     dim_x = 3
+        #     self.std_f = parts_backend.MLP(
+        #         2 * dim_x, [dim_x, dim_x, dim_x, dim_x], activation=nn.Mish
+        #     )
 
     def forward(self, x_tn1: Tensor, v_t: Tensor, dt: Tensor):
         x_t = x_tn1 + dt * v_t
         mu = x_t
-        sigma = self.std_function(self.std)
+        sigma = self.std
+        # sigma = self.std_function(self.std_f(torch.cat([x_t, v_t], dim=-1)))
         # print(sigma.item())
+        return mu, sigma
+
+
+class Transition5(tp.Normal):
+    r"""Transition prior. Based on Eq (5)."""
+
+    def __init__(self, dim_x: int, std) -> None:
+        super().__init__()
+
+        self.dim_x = dim_x
+        self.std = torch.tensor(std)
+        self.ab = parts_backend.MLP(
+            dim_x, [dim_x, dim_x, dim_x, 2 * dim_x * dim_x], activation=nn.Mish
+        )
+        self.c = parts_backend.MLP(dim_x, [dim_x, dim_x, dim_x, dim_x], activation=nn.Mish)
+
+    def forward(self, x_tn1: Tensor, u_tn1: Tensor):
+        A, B = self.ab(x_tn1).reshape(-1, self.dim_x, self.dim_x, 2).chunk(2, dim=-1)
+        A = A.squeeze(-1)
+        B = B.squeeze(-1)
+        mu = A @ x_tn1.unsqueeze(-1) + B @ u_tn1.unsqueeze(-1) + self.c(x_tn1).unsqueeze(-1)
+        mu = mu.squeeze(-1)
+        sigma = self.std
         return mu, sigma
 
 

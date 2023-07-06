@@ -1,15 +1,15 @@
 {
-  model: "MNVAE",
+  model: "MNVAE", // LinearDynamical
 
   MNVAE: {
     dim_x: 3,
 
     // regularization: true,
-    // decoder_free: true,
+    decoder_free: true,
 
     // camera_names: ["top", "ee1", "ee2"],
-    // camera_names: ["ee1", "ee2"],
-    camera_names: ["ee1"],
+    camera_names: ["ee1", "ee2"],
+    // camera_names: ["ee1"],
     // camera_names: ["ee2"],
     // camera_names: ["top", "ee1"],
 
@@ -31,8 +31,6 @@
 
       std: 0.0005,
       // std: [0.0005, 0.0001, 0.0001],
-      // std: 0.05,
-      // std: null, // 初期値依存性が大きすぎ　学習安定性0 -> 廃止
     },
 
     encoder: {
@@ -62,12 +60,12 @@
           //   img_size: 256
           // },
         },
-        // {
-        //   model: "ResNet",
-        //   model_kwargs: {
-        //     dim_output: 128,
-        //   },
-        // },
+        {
+          model: "ResNet",
+          model_kwargs: {
+            dim_output: 128,
+          },
+        },
       ],
     },
 
@@ -75,55 +73,29 @@
       split_version: "v1",
       modellist: [
         {
-          // model: "SpatialBroadcastDecoder64", // ダメダメ
-          // model_kwargs: {
-          //   dim_input: 64,
-          // },
-
           model: "VisualDecoder224V3",
           model_kwargs: {
             dim_input: 64,
             activation: "Mish",
           },
-
-          // model: "DecoderV2",
-          // model_kwargs: {
-          //   dim_input: 3,
-          // },
-
-          // model: "IRBDecoderWrap",
-          // model_kwargs: {
-          //   dim_input: 128,
-          //   img_size: 224,
-          // },
-
-          // model: "DecoderV3",
-          // model_kwargs: {
-          //   dim_input: 64,
-          //   img_size: 224,
-          // },
-
-          // model: "DecoderCWrap",
-          // model_kwargs: {
-          //   dim_input: 64,
-          //   img_size: 64,
-          //   last_fn: "range05_tanh",
-          // },
         },
-        // {
-        //   model: "DecoderCWrap",
-        //   model_kwargs: {
-        //     dim_input: 64,
-        //     img_size: 64,
-        //     last_fn: "range05_tanh",
-        //   },
-        // },
+        {
+          model: "VisualDecoder224V3",
+          model_kwargs: {
+            dim_input: 64,
+            activation: "Mish",
+          },
+        },
       ],
     },
   },
 
   train: {
-    path: ["data/orange/*/224/P3/{0..99}_*"],
+    path: [
+      "data/suturing_auto/0630_4cams_RandomWalk/{0..199}_*.pickle", //
+      // "data/suturing_auto/0630_4cams_LinearMove/{0..99}_*.pickle",
+      // "data/suturing_auto/0623_5cams_277items/{0..99}_*.pickle",
+    ],
     batch_size: 5, // 1 is not good
     epochs: 100,
     learning_rate: 3e-4,
@@ -139,25 +111,33 @@
   },
 
   valid: {
-    path: ["data/orange/*/224/P3/{100..300}_*"],
+    path: [
+      "data/suturing_auto/0630_4cams_RandomWalk/{200..300}_*.pickle", //
+      // "data/suturing_auto/0630_4cams_LinearMove/{0..99}_*.pickle",
+      // "data/suturing_auto/0623_5cams_277items/{100..149}_*.pickle",
+      //   "data/suturing_auto/0703_LinearMove/{0..99}_*.pickle",
+      //   "data/suturing_auto/0703_LinearMove/ZigZag_NonLinear/{0..99}_*.pickle",
+    ],
   },
 
   test: {
-    path: ["data/orange/*/224/P3/{100..300}_*"],
+    path: [
+      "data/suturing_auto/0703_LinearMove/{0..99}_*.pickle",
+    ],
     device: "cuda",
     dtype: "float32",
   },
 
   path: {
-    saves_dir: "save/orange/P3/saves",
-    results_dir: "save/orange/P3/results",
+    saves_dir: "save/suturing_auto/saves",
+    results_dir: "save/suturing_auto/results",
     hidden_conf: "config/_hidden_conf.json5",
   },
 
-  reconstruction: {
-    episodes: 3,
-    format: "mp4",
-  },
+  // reconstruction: {
+  //   episodes: 3,
+  //   format: "mp4",
+  // },
 
   others: {
     // preprocess: "one_tenth_action",
@@ -181,11 +161,11 @@
     // unet_mask: "save/unet/unet_weight.pth",
 
     keypaths: [
-      "action",
+      "action", //
       "delta",
       "position",
       ["camera", "ee1"],
-      ["camera", "ee2"], //
+      ["camera", "ee2"],
     ],
 
     HandyForImage: {
@@ -195,5 +175,8 @@
       // src_reverse_color_order: true,
       out_reverse_color_order: true,
     },
+
+    // no_correlation_each_epoch: true,
+    post_valid_sample_batch_size: "all",
   },
 }

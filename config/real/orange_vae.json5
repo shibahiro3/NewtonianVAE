@@ -1,11 +1,11 @@
 {
-  model: "MNVAE",
+  model: "LinearDynamical",
 
-  MNVAE: {
+  LinearDynamical: {
     dim_x: 3,
 
     // regularization: true,
-    // decoder_free: true,
+    decoder_free: true,
 
     // camera_names: ["top", "ee1", "ee2"],
     // camera_names: ["ee1", "ee2"],
@@ -32,7 +32,7 @@
       std: 0.0005,
       // std: [0.0005, 0.0001, 0.0001],
       // std: 0.05,
-      // std: null, // 初期値依存性が大きすぎ　学習安定性0 -> 廃止
+      // std: null, 初期値依存性が大きすぎ
     },
 
     encoder: {
@@ -80,10 +80,9 @@
           //   dim_input: 64,
           // },
 
-          model: "VisualDecoder224V3",
+          model: "VanillaDecoder",
           model_kwargs: {
             dim_input: 64,
-            activation: "Mish",
           },
 
           // model: "DecoderV2",
@@ -125,7 +124,7 @@
   train: {
     path: ["data/orange/*/224/P3/{0..99}_*"],
     batch_size: 5, // 1 is not good
-    epochs: 100,
+    epochs: 200,
     learning_rate: 3e-4,
     max_time_length: "clip_min",
     device: "cuda",
@@ -193,7 +192,9 @@
       out_range: [0, 1],
       // src_channel_order: "CHW",
       // src_reverse_color_order: true,
-      out_reverse_color_order: true,
+      // out_reverse_color_order: true,
     },
+
+    // no_correlation_each_epoch: true,
   },
 }

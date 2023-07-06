@@ -12,6 +12,7 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from matplotlib import ticker
 from torch import Tensor
 
 import models.core
@@ -25,6 +26,7 @@ from models.core import NewtonianVAEBase
 from mypython import rdict
 from mypython.ai.train import save_pathname
 from mypython.ai.util import SequenceDataLoader
+from mypython.pyutil import add_version
 from mypython.terminal import Color, Prompt
 from tool import checker, paramsmanager
 
@@ -40,7 +42,7 @@ Examples:
 """
     parser = argparse.ArgumentParser(allow_abbrev=False, formatter_class=RawTextHelpFormatter, description=description)
     parser.add_argument("-c", "--config", type=str, required=True, **common.config)
-    parser.add_argument("--episodes", type=int, default=10)  # If too large, get torch.cuda.OutOfMemoryError
+    parser.add_argument("--episodes", type=int, required=True)
     parser.add_argument("--save-anim", action="store_true")
     parser.add_argument("--shuffle", action="store_true")
     parser.add_argument("--format", type=str, default="mp4", **common.format_video)
@@ -72,6 +74,7 @@ def reconstruction_(
         model(batchdata)
         model.convert_cache(type_to="numpy")
         rdict.to_numpy(batchdata)
+        # batchdata, cache : (T, B, D)
 
         # ============================================================
         plt.rcParams.update({"axes.titlesize": 13})
@@ -94,8 +97,8 @@ def reconstruction_(
                 self.x_mean_bar = pltl.Plotter()
                 self.x_std = pltl.Plotter(flex=4)
                 self.x_std_bar = pltl.Plotter()
-
                 self.latent_space = pltl.Plotter(projection="3d")
+                self.position = pltl.Plotter(projection="3d")
 
                 visions = [pltl.Row(self.observations, space=0.2)]
                 if model.cell.decodable:
@@ -105,15 +108,19 @@ def reconstruction_(
                     [
                         pltl.Row(
                             [
-                                # self.action,
-                                pltl.Column([self.action, pltl.Space(flex=0.2), self.latent_space]),
+                                self.action,
                                 pltl.Column(
-                                    visions,
-                                    space=0.5,
-                                    flex=n_img,
+                                    [
+                                        # self.action,
+                                        # pltl.Space(flex=0.2),
+                                        self.latent_space,
+                                        pltl.Space(flex=0.2),
+                                        self.position,
+                                    ]
                                 ),
+                                pltl.Column(visions, space=0.5, flex=n_img),
                             ],
-                            flex=1.5,
+                            flex=2,
                         ),
                         pltl.Column(
                             [
@@ -145,18 +152,21 @@ def reconstruction_(
                 self.model.is_save = True
 
             def init(self):
-
-                # self.one_batchdata: Dict[str, Tensor] = {}
-                # for k, v in batchdata.items():
-                #     self.one_batchdata[k] = v[:, [self.episode_cnt]]
-                # self.one_batchdata["delta"].unsqueeze_(-1)
-
-                # self.model.init_cache()
-                # self.model(self.one_batchdata)
-                # self.model.convert_cache(type_to="numpy", treat_batch="squeeze")
+                self.action_min = batchdata["action"][:, self.ep].min()
+                self.action_max = batchdata["action"][:, self.ep].max()
 
                 self.min_x_mean, self.max_x_mean = _min_max(self.model.cache["x_mean"])
                 self.min_x_std, self.max_x_std = _min_max(self.model.cache["x_std"])
+
+                # self.latent_min = model.cache["x"][:, self.ep].min(0)
+                # self.latent_max = model.cache["x"][:, self.ep].max(0)
+                # print(model.cache["x"].shape)
+                # Color.print(model.cache["x"][:, self.ep].shape)
+                self.latent_min = model.cache["x"].min((0, 1))
+                self.latent_max = model.cache["x"].max((0, 1))
+
+                self.position_min = batchdata["position"].min((0, 1))
+                self.position_max = batchdata["position"].max((0, 1))
 
             def anim_func(self, frame_cnt):
                 axes.clear()
@@ -167,26 +177,13 @@ def reconstruction_(
 
                 mod = frame_cnt % T
                 if mod == 0:
-                    self.t = -1
+                    self.t = 0
                     self.ep = frame_cnt // T + mod  # episode count
-
-                    self.action_min = batchdata["action"][:, self.ep].min()
-                    self.action_max = batchdata["action"][:, self.ep].max()
-
-                    self.latent_min = model.cache["x"][:, self.ep].min(0)
-                    self.latent_max = model.cache["x"][:, self.ep].max(0)
-
-                # ============================================================
-                self.t += 1
-
-                if frame_cnt == -1:
-                    self.t = T - 1
                     self.init()
+                else:
+                    self.t += 1
 
-                if self.t == 0:
-                    self.init()
-
-                # print(self.ep, self.t)
+                # print(self.ep, self.t)  # zero start
 
                 fig.suptitle(
                     f"Test episode: {self.ep+1}, t = {self.t:3d}",
@@ -195,38 +192,63 @@ def reconstruction_(
 
                 # ============================================================
                 ax = axes.action.ax
-                N = dim_x
-                R = range(1, N + 1)
-                ax.set_title(r"$\mathbf{u}_{t-1}$ (Original)")
-                # ax.set_xlabel("$u_x$")
-                # ax.set_ylabel("$u_y$")
-                # ax.set_xlim(-1, 1)
-                pad = (self.action_max - self.action_min) * 0.1
-                ax.set_ylim(self.action_min - pad, self.action_max + pad)
-                # ax.arrow(0, 0, action[t, 0], action[t, 1], head_width=0.05)
-                ax.bar(
-                    R,
-                    batchdata["action"][self.t, self.ep],
-                    color=colors_action,
-                    width=0.5,
-                )
-                ax.set_xticks(R)
-                ax.set_xticklabels([str(s) for s in R])
-                # ax.tick_params(bottom=False, labelbottom=False)
-                mpu.Axis_aspect_2d(ax, 1)
+                if ax is not None:
+                    N = dim_x
+                    R = range(1, N + 1)
+                    ax.set_title(r"$\mathbf{u}_{t-1}$ (Original)")
+                    # ax.set_xlabel("$u_x$")
+                    # ax.set_ylabel("$u_y$")
+                    # ax.set_xlim(-1, 1)
+                    pad = (self.action_max - self.action_min) * 0.1
+                    ax.set_ylim(self.action_min - pad, self.action_max + pad)
+                    # ax.arrow(0, 0, action[t, 0], action[t, 1], head_width=0.05)
+                    ax.bar(
+                        R,
+                        batchdata["action"][self.t, self.ep],
+                        color=colors_action,
+                        width=0.5,
+                    )
+                    ax.set_xticks(R)
+                    ax.set_xticklabels([str(s) for s in R])
+                    # ax.tick_params(bottom=False, labelbottom=False)
+                    mpu.Axis_aspect_2d(ax, 1)
 
                 # ============================================================
+                FS = 10
                 ax = axes.latent_space.ax
-                ax.set_title("Latent Space")
-                x = model.cache["x"][: self.t, self.ep]
-                ax.set_xlim(self.latent_min[0], self.latent_max[0])
-                ax.set_ylim(self.latent_min[1], self.latent_max[1])
-                ax.set_zlim(self.latent_min[2], self.latent_max[2])
-                ax.set_xlabel("x")
-                ax.set_ylabel("y")
-                ax.set_zlabel("z")
-                ax.plot(x[:, 0], x[:, 1], x[:, 2], lw=2)
-                ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+                if ax is not None:
+                    ax.set_title("Latent Space")
+                    x = model.cache["x"][: self.t + 1, self.ep]
+                    ax.set_xlim(self.latent_min[0], self.latent_max[0])
+                    ax.set_ylim(self.latent_min[1], self.latent_max[1])
+                    ax.set_zlim(self.latent_min[2], self.latent_max[2])
+                    ax.set_xlabel("x")
+                    ax.set_ylabel("y")
+                    ax.set_zlabel("z")
+                    ax.plot(x[:, 0], x[:, 1], x[:, 2], lw=0.5, marker="o", ms=3)
+                    ax.tick_params(axis="x", labelsize=FS)
+                    ax.tick_params(axis="y", labelsize=FS)
+                    ax.tick_params(axis="z", labelsize=FS)
+                    # ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+
+                # ============================================================
+                ax = axes.position.ax
+                if ax is not None:
+                    ax.set_title("Physical Position")
+                    x = batchdata["position"][: self.t + 1, self.ep]
+                    ax.set_xlim(self.position_min[0], self.position_max[0])
+                    ax.set_ylim(self.position_min[1], self.position_max[1])
+                    ax.set_zlim(self.position_min[2], self.position_max[2])
+                    ax.set_xlabel("x")
+                    ax.set_ylabel("y")
+                    ax.set_zlabel("z")
+                    ax.plot(x[:, 0], x[:, 1], x[:, 2], lw=0.5, marker="o", ms=3)
+                    ax.tick_params(axis="x", labelsize=FS)
+                    ax.tick_params(axis="y", labelsize=FS)
+                    ax.tick_params(axis="z", labelsize=FS)
+                    # print(self.t, x[-1, :])
+                    # print(x.shape)
+                    # ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
                 # ============================================================
                 for i, k in enumerate(camera_names):
@@ -247,69 +269,75 @@ def reconstruction_(
 
                 # ============================================================
                 ax = axes.x_mean.ax
-                N = dim_x
-                ax.set_title(r"$\mathbf{x}_{1:t}$ (mean)")
-                ax.set_xlim(0, T)
-                ax.set_ylim(self.min_x_mean, self.max_x_mean)
-                # ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
-                for i in range(N):
-                    ax.plot(
-                        range(self.t),
-                        model.cache["x_mean"][: self.t, self.ep, i],
-                        color=colors_latent[i],
-                        lw=1,
-                    )
+                if ax is not None:
+                    N = dim_x
+                    R = range(self.t + 1)
+                    ax.set_title(r"$\mathbf{x}_{1:t}$ (mean)")
+                    ax.set_xlim(R.start, T)
+                    ax.set_ylim(self.min_x_mean, self.max_x_mean)
+                    ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+                    for i in range(N):
+                        ax.plot(
+                            R,
+                            model.cache["x_mean"][: self.t + 1, self.ep, i],
+                            color=colors_latent[i],
+                            lw=1,
+                        )
 
                 # ============================================================
                 ax = axes.x_mean_bar.ax
-                N = dim_x
-                R = range(1, N + 1)
-                ax.set_title(r"$\mathbf{x}_t$ " f"(mean, dim: {N})")
-                ax.set_ylim(self.min_x_mean, self.max_x_mean)
-                # ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
-                ax.bar(
-                    R,
-                    self.model.cache["x_mean"][self.t, self.ep],
-                    color=colors_latent,
-                )
-                ax.set_xticks(R)
-                ax.set_xticklabels([str(s) for s in R])
-                ax.tick_params(left=False, labelleft=False)
-                # ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
-                mpu.Axis_aspect_2d(ax, 1)
+                if ax is not None:
+                    N = dim_x
+                    R = range(1, N + 1)
+                    ax.set_title(r"$\mathbf{x}_t$ " f"(mean, dim: {N})")
+                    ax.set_ylim(self.min_x_mean, self.max_x_mean)
+                    # ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
+                    ax.bar(
+                        R,
+                        self.model.cache["x_mean"][self.t, self.ep],
+                        color=colors_latent,
+                    )
+                    ax.set_xticks(R)
+                    ax.set_xticklabels([str(s) for s in R])
+                    ax.tick_params(left=False, labelleft=False)
+                    # ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+                    mpu.Axis_aspect_2d(ax, 1)
 
                 # ============================================================
                 ax = axes.x_std.ax
-                N = dim_x
-                ax.set_title(r"$\mathbf{x}_{1:t}$ (std)")
-                ax.set_xlim(0, T)
-                ax.set_ylim(self.min_x_std, self.max_x_std)
-                # ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
-                for i in range(N):
-                    ax.plot(
-                        range(self.t),
-                        self.model.cache["x_std"][: self.t, self.ep, i],
-                        color=colors_latent[i],
-                        lw=1,
-                    )
+                if ax is not None:
+                    N = dim_x
+                    R = range(self.t + 1)
+                    ax.set_title(r"$\mathbf{x}_{1:t}$ (std)")
+                    ax.set_xlim(R.start, T)
+                    ax.set_ylim(self.min_x_std, self.max_x_std)
+                    ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+                    for i in range(N):
+                        ax.plot(
+                            R,
+                            self.model.cache["x_std"][: self.t + 1, self.ep, i],
+                            color=colors_latent[i],
+                            lw=1,
+                        )
 
                 # ============================================================
                 ax = axes.x_std_bar.ax
-                N = dim_x
-                R = range(1, N + 1)
-                ax.set_title(r"$\mathbf{x}_t$ " f"(std, dim: {N})")
-                ax.set_ylim(self.min_x_std, self.max_x_std)
-                # ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
-                ax.bar(
-                    R,
-                    self.model.cache["x_std"][self.t, self.ep],
-                    color=colors_latent,
-                )
-                ax.set_xticks(R)
-                ax.set_xticklabels([str(s) for s in R])
-                ax.tick_params(left=False, labelleft=False)
-                # ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
-                mpu.Axis_aspect_2d(ax, 1)
+                if ax is not None:
+                    N = dim_x
+                    R = range(1, N + 1)
+                    ax.set_title(r"$\mathbf{x}_t$ " f"(std, dim: {N})")
+                    ax.set_ylim(self.min_x_std, self.max_x_std)
+                    # ax.yaxis.set_major_formatter(FormatStrFormatter("%2.2f"))
+                    ax.bar(
+                        R,
+                        self.model.cache["x_std"][self.t, self.ep],
+                        color=colors_latent,
+                    )
+                    ax.set_xticks(R)
+                    ax.set_xticklabels([str(s) for s in R])
+                    ax.tick_params(left=False, labelleft=False)
+                    # ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+                    mpu.Axis_aspect_2d(ax, 1)
 
         p = AnimPack()
 
@@ -376,6 +404,7 @@ def reconstruction(
             epoch=weight_path.stem,
             descr="reconstructed",
         ).with_suffix(f".{format}")
+        save_path = add_version(save_path)  # test dataが異なるなら名前変えるべき
     else:
         save_path = None
 

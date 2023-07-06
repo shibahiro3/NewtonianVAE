@@ -30,7 +30,7 @@ class HandyForImage(PrePostBase):
         out_range: list = [-0.5, 0.5],
         bit_depth: Optional[int] = None,
         src_channel_order="HWC",  # or "CHW"
-        src_reverse_color_order=False,  # BGR2RGB or RGB2BGR
+        src_reverse_color_order=False,  # BGR2RGB (RGB2BGR) to RGB2BGR (BGR2RGB)
         out_reverse_color_order=False,
         suppress_warning=False,
     ) -> None:
@@ -48,7 +48,7 @@ class HandyForImage(PrePostBase):
         self.src_reverse_color_order = src_reverse_color_order
         self.out_reverse_color_order = out_reverse_color_order
 
-    def pre(self, img) -> Tensor:
+    def pre(self, img: Union[np.ndarray, torch.Tensor]) -> Tensor:
         """
         For NN input
 
@@ -75,10 +75,7 @@ class HandyForImage(PrePostBase):
 
         img = aiu.to_torch(img)
 
-        if (self.size is not None) and tuple(
-            img.shape[-2:]
-        ) != self.size:  # torch.Sizeはtupleしか値の判定してくれない listダメ
-            # サイズが元と同じでも若干時間かかる　大きいサイズほど。
+        if (self.size is not None) and (img.shape[-2:] != self.size):
             img = self.to_4dim.pre(img)
             img = TF.resize(img, self.size, interpolation=TF.InterpolationMode.NEAREST)
             img = self.to_4dim.post(img)

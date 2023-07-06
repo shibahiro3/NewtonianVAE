@@ -305,24 +305,23 @@ def train(
 
         # bd = validloader.sample_batch(batch_size="all")
         bd = validloader.sample_batch(
-            batch_size=30
+            batch_size=params.others.get("post_valid_sample_batch_size", "all")
         )  # for u-net (avoid OutOfMemoryError), and just time saving
-
         bd["delta"].unsqueeze_(-1)
-        corr, _, _ = correlation_cal(model=model, batchdata=bd, all=False)
-        corr_writer.write("corr", corr)
-        print_corr(corr)
-        if (np.abs(corr).sum() > np.abs(best["corr"]).sum()).all():
-            best["corr"] = corr
-            p = Path(managed_dir, "weight", best["weight_name"])
-            if p.exists():
-                os.remove(p)  # remove before
-            best["weight_name"] = f"{epoch}_best_corr.pth"
-            p = Path(managed_dir, "weight", best["weight_name"])
-            torch.save(model.state_dict(), p)
-            Color.print("Best:", p, c=Color.red)
 
-        # keyinput.reset_cache()
+        if not params.others.get("no_correlation_each_epoch"):
+            corr, _, _ = correlation_cal(model=model, batchdata=bd, all=False)
+            corr_writer.write("corr", corr)
+            print_corr(corr)
+            if (np.abs(corr).sum() > np.abs(best["corr"]).sum()).all():
+                best["corr"] = corr
+                p = Path(managed_dir, "weight", best["weight_name"])
+                if p.exists():
+                    os.remove(p)  # remove before
+                best["weight_name"] = f"{epoch}_best_corr.pth"
+                p = Path(managed_dir, "weight", best["weight_name"])
+                torch.save(model.state_dict(), p)
+                Color.print("Best:", p, c=Color.red)
 
     mp_train.train(
         model=model,
