@@ -1,6 +1,5 @@
-import common
+#!/usr/bin/env python3
 
-common.set_path(__file__)
 
 import argparse
 import pickle
@@ -13,11 +12,13 @@ from numbers import Number
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Type, Union
 
+import common
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import torch
 from matplotlib.gridspec import GridSpec
+from show_data import ShowData
 from torch import Tensor
 
 import mypython.plotutil as mpu
@@ -26,7 +27,6 @@ import tool.util
 import view.plot_config
 from mypython import rdict
 from mypython.terminal import Color, Prompt
-from show_data import ShowData
 from simulation.env import ControlSuite
 from third import json5
 from tool import checker, prepost

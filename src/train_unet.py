@@ -1,6 +1,5 @@
-import common
+#!/usr/bin/env python3
 
-common.set_path(__file__)
 
 import os
 import random
@@ -10,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import common
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -23,7 +23,7 @@ from models.mobile_unet import Masker, MobileUNet
 from mypython.ai.train import train as mp_train
 from mypython.ai.util import random_sample
 from mypython.vision import convert_range
-from seg_data import MaskingDataLoader
+from unet_mask.seg_data import MaskingDataLoader
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

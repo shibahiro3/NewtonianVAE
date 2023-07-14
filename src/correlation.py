@@ -1,6 +1,5 @@
-import common
+#!/usr/bin/env python3
 
-common.set_path(__file__)
 
 import argparse
 import io
@@ -10,6 +9,7 @@ from pathlib import Path
 from pprint import pprint
 from typing import Dict, List, Optional, Union
 
+import common
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np

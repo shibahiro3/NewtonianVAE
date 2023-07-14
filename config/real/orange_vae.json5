@@ -122,7 +122,7 @@
   },
 
   train: {
-    path: ["data/orange/*/224/P3/{0..99}_*"],
+    path: ["../data/orange/*/224/P3/{0..99}_*"],
     batch_size: 5, // 1 is not good
     epochs: 200,
     learning_rate: 3e-4,
@@ -138,18 +138,18 @@
   },
 
   valid: {
-    path: ["data/orange/*/224/P3/{100..300}_*"],
+    path: ["../data/orange/*/224/P3/{100..300}_*"],
   },
 
   test: {
-    path: ["data/orange/*/224/P3/{100..300}_*"],
+    path: ["../data/orange/*/224/P3/{100..300}_*"],
     device: "cuda",
     dtype: "float32",
   },
 
   path: {
-    saves_dir: "save/orange/P3/saves",
-    results_dir: "save/orange/P3/results",
+    saves_dir: "../save/orange/P3/saves",
+    results_dir: "../save/orange/P3/results",
     hidden_conf: "config/_hidden_conf.json5",
   },
 

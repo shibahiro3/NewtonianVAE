@@ -74,7 +74,7 @@
 
     // Support: https://facelessuser.github.io/wcmatch/glob/
     // Multiple paths can also be written using arrays
-    path: "data/reacher2d/episodes/{0..999}.*",
+    path: "../data/reacher2d/episodes/{0..999}.*",
 
     batch_size: 20, // 1 is slow
     epochs: 300,
@@ -83,7 +83,8 @@
     // Max time length
     // "clip_min" : Truncate from batch data according to minimum time length
     // max_time_length: 100,
-    max_time_length: "clip_min",
+    // max_time_length: "clip_min",
+    max_time_length: 70,
 
     device: "cuda",
     dtype: "float32", // float16 is not good (easy get nan) -> Use AMP
@@ -113,11 +114,11 @@
   },
 
   valid: {
-    path: "data/reacher2d/episodes/{1000..1199}.*",
+    path: "../data/reacher2d/episodes/{1000..1199}.*",
   },
 
   test: {
-    path: "data/reacher2d/episodes/{1200..1399}.*",
+    path: "../data/reacher2d/episodes/{1200..1399}.*",
     device: "cuda",
     dtype: "float32", // Probably float16 is OK
   },
@@ -136,8 +137,8 @@
   },
 
   path: {
-    saves_dir: "save/reacher2d/saves", // For model weight & this file (hyperparameter)
-    results_dir: "save/reacher2d/results", // For visualization results using model
+    saves_dir: "../save/reacher2d/saves", // For model weight & this file (hyperparameter)
+    results_dir: "../save/reacher2d/results", // For visualization results using model
     hidden_conf: "config/_hidden_conf.json5", // See config/hidden_conf.json5
   },
 

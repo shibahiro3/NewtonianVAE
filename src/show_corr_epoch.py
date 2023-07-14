@@ -1,6 +1,5 @@
-import common
+#!/usr/bin/env python3
 
-common.set_path(__file__)
 
 import argparse
 import os
@@ -10,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
+import common
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 

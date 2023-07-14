@@ -1,24 +1,22 @@
-import common
+#!/usr/bin/env python3
 
-common.set_path(__file__)
 
 import argparse
 import gc
 import os
 from argparse import RawTextHelpFormatter
-from datetime import datetime, timedelta
 from pathlib import Path
 from pprint import pprint
-from typing import Any, Dict, Optional, Union
+from typing import Dict
 
+import common
 import numpy as np
 import torch
-from torch import Tensor, nn, optim
+from correlation import correlation_cal, print_corr
+from torch import Tensor, optim
 
 import models.core
 import mypython.ai.torchprob as tp
-import tool.util
-from correlation import correlation_cal, print_corr
 from models import core, parts
 from models.core import NewtonianVAEBase
 from mypython import rdict
@@ -45,7 +43,7 @@ def main():
 Train
 
 if you use "--visual tensorboard":
-  1. Another terminal: $ tensorboard --logdir="../log_tb"  # In exec/
+  1. Another terminal: $ tensorboard --logdir="../log_tb"
   2. Open the output URL (http://localhost:6006/) in a browser
   3. $ python train.py -c ... --visual tensorboard
   Tips: Tensorboard Window > Gear icon (upper right on top bar) > [✔] Reload data
@@ -114,7 +112,8 @@ def train(
 
     validloader = SequenceDataLoader(
         patterns=params.valid.path,
-        batch_size=params.train.batch_size,
+        batch_size=params.valid.batch_size,
+        max_time=params.train.max_time_length,
         dtype=dtype,
         device=device,
         preprocess=preprocess,

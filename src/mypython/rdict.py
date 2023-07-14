@@ -16,7 +16,6 @@ import numpy as np
 import torch
 from torch import Tensor
 
-import mypython.ai.util as aiu
 from mypython.pyutil import human_readable_byte
 
 from .terminal import Color

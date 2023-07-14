@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.append((os.pardir + os.sep))
+sys.path.append(os.pardir)
 
 
 from typing import Callable, Optional
@@ -12,13 +12,12 @@ import vit_pytorch
 from torch import nn
 from torchsummary import summary
 
-import models
 from models import from_stable_diffusion, mobile_unet, parts, parts_backend
 from mypython.ai.util import show_model_info
-from mypython.pyutil import function_test, human_readable_byte
-from mypython.terminal import Color
+from mypython.pyutil import function_test
 
 torch.set_grad_enabled(False)
+
 
 # torch.set_default_dtype(torch.float32)
 # torch.set_default_dtype(torch.float16)

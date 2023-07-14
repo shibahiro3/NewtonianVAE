@@ -1,11 +1,11 @@
+#!/usr/bin/env python3
+
+
 """
 find [PATH] -type d -empty
 find [PATH] -type d -empty -delete
 """
 
-import common
-
-common.set_path(__file__)
 
 import os
 import shutil

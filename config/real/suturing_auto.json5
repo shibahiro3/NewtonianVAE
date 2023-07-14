@@ -92,9 +92,10 @@
 
   train: {
     path: [
-      "data/suturing_auto/0630_4cams_RandomWalk/{0..199}_*.pickle", //
-      // "data/suturing_auto/0630_4cams_LinearMove/{0..99}_*.pickle",
-      // "data/suturing_auto/0623_5cams_277items/{0..99}_*.pickle",
+      // "../data/suturing_auto/0630_4cams_RandomWalk/{0..199}_*.pickle", //
+      // "../data/suturing_auto/0630_4cams_LinearMove/{0..99}_*.pickle",
+      // "../data/suturing_auto/0623_5cams_277items/{0..99}_*.pickle",
+      "../data/suturing_auto/0706_4Cams_Tattoo_RandomWalk/{0..99}_*.pickle",
     ],
     batch_size: 5, // 1 is not good
     epochs: 100,
@@ -112,25 +113,27 @@
 
   valid: {
     path: [
-      "data/suturing_auto/0630_4cams_RandomWalk/{200..300}_*.pickle", //
-      // "data/suturing_auto/0630_4cams_LinearMove/{0..99}_*.pickle",
-      // "data/suturing_auto/0623_5cams_277items/{100..149}_*.pickle",
-      //   "data/suturing_auto/0703_LinearMove/{0..99}_*.pickle",
-      //   "data/suturing_auto/0703_LinearMove/ZigZag_NonLinear/{0..99}_*.pickle",
+      // "../data/suturing_auto/0630_4cams_RandomWalk/{200..300}_*.pickle", //
+      // "../data/suturing_auto/0630_4cams_LinearMove/{0..99}_*.pickle",
+      // "../data/suturing_auto/0623_5cams_277items/{100..149}_*.pickle",
+      // "../data/suturing_auto/0703_LinearMove/{0..99}_*.pickle",
+      // "../data/suturing_auto/0703_LinearMove/ZigZag_NonLinear/{0..99}_*.pickle",
+      "../data/suturing_auto/0706_4Cams_Tattoo_RandomWalk/{0..99}_*.pickle",
     ],
   },
 
   test: {
     path: [
-      "data/suturing_auto/0703_LinearMove/{0..99}_*.pickle",
+      // "../data/suturing_auto/0703_LinearMove/{0..99}_*.pickle", //
+      "../data/suturing_auto/0706_4Cams_Tattoo_RandomWalk/{0..99}_*.pickle",
     ],
     device: "cuda",
     dtype: "float32",
   },
 
   path: {
-    saves_dir: "save/suturing_auto/saves",
-    results_dir: "save/suturing_auto/results",
+    saves_dir: "../save/suturing_auto/saves",
+    results_dir: "../save/suturing_auto/results",
     hidden_conf: "config/_hidden_conf.json5",
   },
 

@@ -299,16 +299,19 @@ def create_board(
     images: Union[np.ndarray, List[np.ndarray]],
     rows=None,
     cols=None,
-    image_order="HWC",  # origin (images)
-    color_order="BGR",  # origin (images)
-    background_color=[255, 255, 255],  # RGB
+    image_order="HWC",
+    color_order="BGR",
+    background_color=[255, 255, 255],
     space=None,
     lim=60,
 ):
-    """create one image
+    """
+    create one image
     画像サイズがバラバラでもOK
     inputが (H, W, 1) でもOK
     cv2.imshow : (H, W, BGR)
+
+    Defalt image format: OpenCV (HWBGR)
 
     Return:
         (H, W, BGR)
@@ -426,15 +429,23 @@ def show_imgs_cv(
     winname: str,
     rows=None,
     cols=None,
-    image_order="HWC",  # origin (images)
-    color_order="BGR",  # origin (images)
-    background_color=[255, 255, 255],  # RGB
+    image_order="HWC",
+    color_order="BGR",
+    background_color=[255, 255, 255],
     space=None,
     lim=60,
     block=True,
     delay=100,  # for your PC env.
 ):
-    """Faster"""
+    """
+    Image show with OpenCV
+    Defalt image format: OpenCV (HWBGR)
+
+    Args:
+        image_order: origin (images)
+        color_order: origin (images)
+        background_color: RGB
+    """
 
     board = create_board(
         images=images,

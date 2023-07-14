@@ -1,20 +1,16 @@
-import common
+#!/usr/bin/env python3
 
-common.set_path(__file__)
 
 import argparse
 from argparse import RawTextHelpFormatter
 from typing import Callable, Dict, List, Optional, Sequence, Type, Union
 
+import common
 import matplotlib.pyplot as plt
-import numpy as np
-import torch
-from torch import Tensor
-from typing_extensions import Self
-
 import mypython.plotutil as mpu
 import mypython.plt_layout as pltl
-import tool.preprocess
+import numpy as np
+import torch
 import view.plot_config
 from models.mobile_unet import Masker
 from mypython import rdict
@@ -22,6 +18,8 @@ from mypython.ai.util import SequenceDataLoader, to_numpy
 from mypython.terminal import Color, Prompt
 from tool import paramsmanager, prepost
 from tool.util import create_prepostprocess
+from torch import Tensor
+from typing_extensions import Self
 from unet_mask.seg_data import mask_unet
 
 
@@ -240,11 +238,14 @@ def show_data(
     batchdata = SequenceDataLoader(
         patterns=getattr(params, data_type).path,
         batch_size=episodes,
+        max_time=params.train.max_time_length,
         dtype=torch.float32,
         device=device,
         shuffle=shuffle,
         preprocess=preprocess,
         keypaths=keypaths,
+        random_start=False
+        # load_all=True,
     ).sample_batch(verbose=True)
 
     rdict.to_numpy(batchdata)
@@ -293,14 +294,17 @@ def show_data(
             else:
                 self.t += 1
 
+            def cam_process(cam):
+                # めっちゃ速なった
+                cam_ = cam[self.t, self.episode_cnt]
+                cam_ = postprocesses.image(cam_)
+                return cam_
+
             plt_render.frame(
                 t=self.t + 1,
                 episode_cnt=self.episode_cnt + 1,
                 action=action[self.t, self.episode_cnt],
-                Ist={
-                    k: v[self.t, self.episode_cnt]
-                    for k, v in rdict.apply(batchdata["camera"], postprocesses.image).items()
-                },
+                Ist=rdict.apply(batchdata["camera"], cam_process),
                 position=position[self.t, self.episode_cnt],
                 set_lim_fn=lambda p: (
                     p.ax_action.ax.set_ylim(action.min() - 0.1, action.max() + 0.1),

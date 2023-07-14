@@ -1,6 +1,5 @@
-import common
+#!/usr/bin/env python3
 
-common.set_path(__file__)
 
 import argparse
 import sys
@@ -8,6 +7,7 @@ from argparse import RawTextHelpFormatter
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
+import common
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np

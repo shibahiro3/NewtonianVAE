@@ -1,16 +1,17 @@
-import common
+#!/usr/bin/env python3
 
-common.set_path(__file__)
 
 """
 References:
     https://www.tensorflow.org/tensorboard/dataframe_api?hl=ja
 """
 
+
 import argparse
 from argparse import RawTextHelpFormatter
 from typing import Dict, List, Optional, Union
 
+import common
 import matplotlib.pyplot as plt
 
 import tool.util

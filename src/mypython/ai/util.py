@@ -202,6 +202,7 @@ class SequenceDataLoader(BatchIndices):
         shuffle=True,
         batch_first=False,
         preprocess: Optional[Callable[[BatchDataType], BatchDataType]] = None,
+        random_start=True,
         keypaths=None,
         load_all=False,
     ):
@@ -237,19 +238,23 @@ class SequenceDataLoader(BatchIndices):
         self.batch_first = batch_first
         self.preprocess = preprocess
         self.keypaths = keypaths
+        self.random_start = random_start
+
+        # print(max_time)
+        # assert type(max_time) == int
+
+        self.T = max_time if type(max_time) == int else None
 
         self.all_data = None
         if load_all:
             try:
-                self.all_data = self._load(
-                    self._filelist
-                )  # FIXME: 時系列をここでclipするのはおかしい batchでclipすべき
+                self.all_data = self._load_from_files(self._filelist, self.keypaths)
 
-                nbytes = rdict.show(self.all_data, only_info=True)["nbytes"]
-                Color.print(
-                    f"Loaded all data size: {human_readable_byte(nbytes, bin=True)}",
-                    c=Color.green,
-                )
+                # nbytes = rdict.show(self.all_data, only_info=True)["nbytes"]
+                # Color.print(
+                #     f"Loaded all data size: {human_readable_byte(nbytes, bin=True)}",
+                #     c=Color.green,
+                # )
             except:
                 gc.collect()
                 Color.print("WARNING: Failed load all", c=Color.coral)
@@ -291,9 +296,24 @@ class SequenceDataLoader(BatchIndices):
             print("=" * len(msg))
 
         if self.all_data is None:
-            batch_data = self._load((self._filelist[i] for i in indices))
+            data, Ts = self._load_from_files((self._filelist[i] for i in indices), self.keypaths)
+            batch_data = self._make_batch(
+                data=data, Ts=Ts, T=self.T, random_start=self.random_start
+            )
         else:
-            batch_data = rdict.apply(self.all_data, lambda x: x[indices])
+            # T = None
+            # if type(self.max_time) == int:
+            #     T = self.max_time
+            # else:
+            #     print(type(self.max_time), self.max_time)
+            # print("T", T)
+            # self.OO = 79
+            batch_data = self._make_batch(
+                data=self.all_data[0][indices],
+                Ts=self.all_data[1][indices],
+                T=self.T,
+                random_start=self.random_start,
+            )
 
         batch_data = self._preprocess(batch_data)
         return batch_data
@@ -310,31 +330,89 @@ class SequenceDataLoader(BatchIndices):
         rdict.to_torch(batch_data, dtype=self.dtype, device=self.device)  # for dtype
         return batch_data
 
-    def _load(self, filenames):
-        # Only on CPU
+    # def _load(self, filenames):
+    #     # Only on CPU
+
+    #     batch_data = {}
+
+    #     min_t = None
+    #     for fname in filenames:
+    #         one_seq_data = _pickle_load(fname)  # (T, *)
+
+    #         if self.keypaths is not None:  # save memory ... ?  nvidia-smi result is same
+    #             one_seq_data = rdict.extract_from_keypaths(one_seq_data, self.keypaths)
+
+    #         ### for "clip_min" ###
+    #         leaf, kc = rdict.either_leaf(one_seq_data)
+    #         if min_t is None:
+    #             min_t = len(leaf)
+    #         else:
+    #             min_t = min(min_t, len(leaf))
+    #         ###
+
+    #         # rdict.show(one_seq_data, "one seq data")
+
+    #         # if type(self.max_time) == int:
+    #         #     rdict.apply_(one_seq_data, lambda x: self._random_cut(x, 50)) # [: self.max_time]
+
+    #         rdict.append_a_to_b(one_seq_data, batch_data)  # to (B, [T, *])
+
+    #     # if self.max_time == "clip_min":
+    #     #     rdict.apply_(batch_data, lambda x: [one_seq[:min_t] for one_seq in x])
+
+    #     # rdict.to_torch(batch_data)  # to (B, T, *), UNCHANGED dtype (for uint8)
+    #     return batch_data
+
+    @staticmethod
+    def _load_one(fname, keypaths):
+        one_seq_data = _pickle_load(fname)  # (T, *)
+        if keypaths is not None:  # save memory ... ?  nvidia-smi result is same
+            one_seq_data = rdict.extract_from_keypaths(one_seq_data, keypaths)
+        leaf, kc = rdict.either_leaf(one_seq_data)
+        return one_seq_data, len(leaf)
+
+    @staticmethod
+    def _load_from_files(filenames, keypaths):
+        data = []
+        Ts = []
+        for f in filenames:
+            data_, t_ = SequenceDataLoader._load_one(f, keypaths)
+            data.append(data_)
+            Ts.append(t_)
+        return np.asarray(data), np.asarray(Ts)
+
+    @staticmethod
+    def _make_batch(data, Ts, T=None, random_start=True):
+        # data = data[indices]
+        # Ts = Ts[indices]
+
+        Ts_min = Ts.min()
+        if type(T) != int:
+            T = Ts_min  # clip_min
+
+        elif Ts_min < T:
+            T = Ts_min
 
         batch_data = {}
-        min_t = None
-        for fname in filenames:
-            one_seq_data = _pickle_load(fname)  # (T, *)
-            if self.keypaths is not None:  # save memory ... ?  nvidia-smi result is same
-                one_seq_data = rdict.extract_from_keypaths(one_seq_data, self.keypaths)
+        for one_ep, T_ in zip(data, Ts):
 
-            ### for "clip_min" ###
-            leaf, kc = rdict.either_leaf(one_seq_data)
-            if min_t is None:
-                min_t = len(leaf)
+            if random_start:
+                max_start = T_ - T
+                if not (0 <= max_start):
+                    raise ValueError(f"{T_}, {T}")
+                start = random.randint(0, max_start)
             else:
-                min_t = min(min_t, len(leaf))
-            ###
+                start = 0
 
-            if type(self.max_time) == int:
-                rdict.apply_(one_seq_data, lambda x: x[: self.max_time])
-            rdict.append_a_to_b(one_seq_data, batch_data)  # to (B, [T, *])
+            # 1エピソードで同じclip時刻領域
+            # apply_だと元データが書き換わってしまう
+            # 今まではapply_した後にgatherしてdataにしていた
+            one_ep = rdict.apply(one_ep, lambda x: x[start : start + T])
 
-        if self.max_time == "clip_min":
-            rdict.apply_(batch_data, lambda x: [one_seq[:min_t] for one_seq in x])
-        rdict.to_torch(batch_data)  # to (B, T, *), UNCHANGED dtype (for uint8)
+            rdict.append_a_to_b(one_ep, batch_data)
+
+        rdict.to_torch(batch_data)
+        # rdict.show(batch_data, "make batch")
         return batch_data
 
 

@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.append((os.pardir + os.sep))
+sys.path.append(os.pardir)
 
 import sys
 from copy import copy

@@ -7,12 +7,11 @@ from pathlib import Path
 from pprint import pprint
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
-from typing_extensions import final
-
 from mypython import rdict
 from mypython.pyutil import check_args_type
 from mypython.terminal import Color
 from third import json5
+from typing_extensions import final
 
 
 def _remove_private(d: Dict[str, Any]):
@@ -198,14 +197,20 @@ class Paths(_Converter):
     _path_root: Union[List[str], str] = ""
 
     def __post_init__(self):
+        self._saves_dir = self.saves_dir
+        self._results_dir = self.results_dir
+        self._resume_weight = self.resume_weight
         check_args_type(self, self.__dict__)
 
     @property
     def _contents(self):
         contents = self.__dict__.copy()
-        contents["saves_dir"] = _remove_root(self._path_root, contents["saves_dir"])
-        contents["results_dir"] = _remove_root(self._path_root, contents["results_dir"])
-        contents["resume_weight"] = _remove_root(self._path_root, contents["resume_weight"])
+        # contents["saves_dir"] = _remove_root(self._path_root, contents["saves_dir"])
+        # contents["results_dir"] = _remove_root(self._path_root, contents["results_dir"])
+        # contents["resume_weight"] = _remove_root(self._path_root, contents["resume_weight"])
+        contents["saves_dir"] = self._saves_dir
+        contents["results_dir"] = self._results_dir
+        contents["resume_weight"] = self._resume_weight
         contents = {k: str(v) for k, v in contents.items() if v is not None}
         return contents
 
@@ -286,8 +291,15 @@ class Params(_Converter):
             self.test.path = _add_root(self.hidden_conf.data_root, self.test.path)
             self.test._path_root = self.hidden_conf.data_root
         if self.path is not None:
-            self.path.saves_dir = os.path.join(self.hidden_conf.save_root, self.path.saves_dir)
-            self.path.results_dir = os.path.join(self.hidden_conf.save_root, self.path.results_dir)
+            # _remove_rootで does not start with
+            self.path.saves_dir = os.path.normpath(
+                os.path.join(self.hidden_conf.save_root, self.path.saves_dir)
+            )
+            self.path.saves_dir = os.path.normpath(
+                os.path.join(self.hidden_conf.save_root, self.path.saves_dir)
+            )
+            # self.path.results_dir = os.path.join(self.hidden_conf.save_root, self.path.results_dir)
+            # self.path.results_dir = os.path.join(self.hidden_conf.save_root, self.path.results_dir)
             self.path._path_root = self.hidden_conf.save_root
 
     @property
