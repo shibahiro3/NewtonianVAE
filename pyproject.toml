@@ -1,12 +1,12 @@
 [tool.isort]
 profile = "black"
 src_paths = [
-    "workspace/*",
+    "src/*",
 ]
 skip_glob = [
-    "workspace/third"
+    "src/third",
 ]
 
 [tool.black]
-line-length = 100
-extend_exclude = "workspace/third"
+line_length = 100
+extend_exclude = "src/third"

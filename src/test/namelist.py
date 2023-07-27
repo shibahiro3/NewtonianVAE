@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.append(os.pardir)
+sys.path.append("src")
 
 # from dm_control import suite
 from third.dm_control import suite

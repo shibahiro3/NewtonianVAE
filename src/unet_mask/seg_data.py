@@ -219,9 +219,14 @@ class MaskingDataLoader(BatchIndices):
         return img, mask
 
 
+# from pprint import pprint
+
+
 def mask_unet(pth):
     masker = Masker(out_channels=1)
-    masker.load_state_dict(torch.load(pth))
+    # pprint(list(torch.load(pth).keys()))
+    # masker.load_state_dict(torch.load(pth))
+    masker.unet.load_state_dict(torch.load(pth))
     print("unet loaded")
 
     def preprocess_(batchdata):

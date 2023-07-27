@@ -151,7 +151,6 @@
   path: {
     saves_dir: "../save/orange/P3/saves",
     results_dir: "../save/orange/P3/results",
-    hidden_conf: "config/_hidden_conf.json5",
   },
 
   reconstruction: {

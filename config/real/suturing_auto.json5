@@ -134,7 +134,6 @@
   path: {
     saves_dir: "../save/suturing_auto/saves",
     results_dir: "../save/suturing_auto/results",
-    hidden_conf: "config/_hidden_conf.json5",
   },
 
   // reconstruction: {

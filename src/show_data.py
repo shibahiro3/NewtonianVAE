@@ -7,10 +7,13 @@ from typing import Callable, Dict, List, Optional, Sequence, Type, Union
 
 import common
 import matplotlib.pyplot as plt
-import mypython.plotutil as mpu
-import mypython.plt_layout as pltl
 import numpy as np
 import torch
+from torch import Tensor
+from typing_extensions import Self
+
+import mypython.plotutil as mpu
+import mypython.plt_layout as pltl
 import view.plot_config
 from models.mobile_unet import Masker
 from mypython import rdict
@@ -18,8 +21,6 @@ from mypython.ai.util import SequenceDataLoader, to_numpy
 from mypython.terminal import Color, Prompt
 from tool import paramsmanager, prepost
 from tool.util import create_prepostprocess
-from torch import Tensor
-from typing_extensions import Self
 from unet_mask.seg_data import mask_unet
 
 

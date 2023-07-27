@@ -313,6 +313,11 @@ def create_board(
 
     Defalt image format: OpenCV (HWBGR)
 
+    Args:
+        image_order: origin (images)
+        color_order: origin (images)
+        background_color: RGB
+
     Return:
         (H, W, BGR)
         input C=1 でも強制的に3チャンネルになる

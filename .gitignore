@@ -21,12 +21,11 @@ venv/
 
 # Binary data #
 ###############
-environments/
-data*/
-save*/
-result*/
-log*/
-generated*/
+data*
+save*
+result*
+log*
+generated*
 
 # Docs #
 ########

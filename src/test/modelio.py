@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.append(os.pardir)
+sys.path.append("src")
 
 
 from typing import Callable, Optional

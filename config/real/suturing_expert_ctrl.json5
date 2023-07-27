@@ -38,7 +38,6 @@
   path: {
     saves_dir: "../save/suturing_expert_ctrl/saves",
     results_dir: "../save/suturing_expert_ctrl/results",
-    hidden_conf: "config/_hidden_conf.json5",
   },
 
   others: {

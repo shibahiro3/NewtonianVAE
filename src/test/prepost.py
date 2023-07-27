@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.append(os.pardir)
+sys.path.append("src")
 
 import sys
 from copy import copy

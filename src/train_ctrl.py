@@ -10,12 +10,14 @@ from datetime import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from torch import nn, optim
+
 import models.controller
 import models.core
 import mypython.ai.torchprob as tp
-import numpy as np
 import tool.util
-import torch
 from models import controller
 from models.controller import PControl
 from models.core import NewtonianVAEBase
@@ -25,7 +27,6 @@ from mypython.pyutil import s2dhms_str
 from mypython.terminal import Color, Prompt
 from tool import paramsmanager
 from tool.util import Preferences, create_prepostprocess, creator, dtype_device
-from torch import nn, optim
 
 
 def main():

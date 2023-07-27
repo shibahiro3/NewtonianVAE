@@ -1,25 +1,24 @@
 {
-  // Class name of the model to use for training
-  // Search in core.py
+  /*Class name of the model to use for training
+    Search in core.py */
   model: "NewtonianVAE",
 
   NewtonianVAE: {
     dim_x: 2,
 
-    // Use KL(q(x|I)‖N (0, 1))
-    // undefined == false
-    // Paper: Secondly, we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1))
+    /*Use KL(q(x|I)‖N (0, 1))
+      undefined == false
+      Paper: Secondly, we added an additional regularization term to the latent space, KL(q(x|I)‖N (0, 1)) */
     // regularization: false,
 
     camera_name: "top",
 
     // You can try it!
-    // undefined == false
-    // decoder_free: true,
+    // decoder_free: true, // undefined == false
 
     velocity: {
-      // Fix values for A, B, C
-      // Paper: Firstly, the transition matrices were set to A = 0, B = 0, C = 1.
+      /*Fix values for A, B, C
+        Paper: Firstly, the transition matrices were set to A = 0, B = 0, C = 1. */
       fix_abc: [0, 0, 1],
       // fix_abc: null,  // train ABC
     },
@@ -59,7 +58,7 @@
 
   train: {
     /*
-      === Paper ===
+      Paper:
 
       To train the models, we generate 1000 random se-
       quences with 100 time-steps for the point mass and
@@ -72,16 +71,17 @@
       batch) for 300 epochs.
     */
 
-    // Support: https://facelessuser.github.io/wcmatch/glob/
-    // Multiple paths can also be written using arrays
-    path: "../data/reacher2d/episodes/{0..999}.*",
+    /*Support: https://facelessuser.github.io/wcmatch/glob/
+      Multiple paths can also be written using arrays
+      You can use symbolic link for second disk */
+    path: "data/reacher2d/episodes/{0..999}.*",
 
     batch_size: 20, // 1 is slow
     epochs: 300,
     learning_rate: 3e-4,
 
-    // Max time length
-    // "clip_min" : Truncate from batch data according to minimum time length
+    /*Max time length
+      "clip_min" : Truncate from batch data according to minimum time length */
     // max_time_length: 100,
     // max_time_length: "clip_min",
     max_time_length: 70,
@@ -93,32 +93,31 @@
     // Per epoch to save the weights
     save_per_epoch: 50,
 
-    // Random seed  (Optional)
-    // int or null
-    // undefined == null
-    // If null, the seed is determined automatically.
+    /*Random seed  (Optional)
+      int or null
+      undefined == null
+      If null, the seed is determined automatically. */
     // seed: null,
 
-    // https://pytorch.org/docs/stable/generated/torch.nn.utils.clip_grad_norm_.html
-    // Number type or null
-    // undefined == null
+    /*https://pytorch.org/docs/stable/generated/torch.nn.utils.clip_grad_norm_.html
+      Number type or null
+      undefined == null */
     // grad_clip_norm: null,
 
     // You can try AMP!
-    gradscaler_args: {}, // undefined == null
-    use_autocast: true, // undefined == false
+    // gradscaler_args: {}, // torch.cuda.amp.GradScaler, undefined == null
+    // use_autocast: true, // torch.cuda.amp.autocast, undefined == false
 
     // Whether to load all data first
-    // undefined == false
-    load_all: true,
+    load_all: true, // undefined == false
   },
 
   valid: {
-    path: "../data/reacher2d/episodes/{1000..1199}.*",
+    path: "data/reacher2d/episodes/{1000..1199}.*",
   },
 
   test: {
-    path: "../data/reacher2d/episodes/{1200..1399}.*",
+    path: "data/reacher2d/episodes/{1200..1399}.*",
     device: "cuda",
     dtype: "float32", // Probably float16 is OK
   },
@@ -137,9 +136,8 @@
   },
 
   path: {
-    saves_dir: "../save/reacher2d/saves", // For model weight & this file (hyperparameter)
-    results_dir: "../save/reacher2d/results", // For visualization results using model
-    hidden_conf: "config/_hidden_conf.json5", // See config/hidden_conf.json5
+    saves_dir: "save/reacher2d/saves", // For model weight & this file (hyperparameter)
+    results_dir: "save/reacher2d/results", // For visualization results using model
   },
 
   others: {
@@ -151,8 +149,8 @@
       ["camera", "top"],
     ],
 
-    // PrePostPrpcess
-    // Ignored on create_data.py for data saving
+    /*PrePostPrpcess
+      Ignored on create_data.py for data saving */
     HandyForImage: {
       size: [64, 64], // for training
       bit_depth: 5,

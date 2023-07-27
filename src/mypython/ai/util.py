@@ -219,6 +219,8 @@ class SequenceDataLoader(BatchIndices):
 
         if len(self._filelist) == 0:
             raise Exception("Data file doesn't exist")
+        else:
+            print("Files:", len(self._filelist))
 
         stop = len(self._filelist)
         if batch_size is None:

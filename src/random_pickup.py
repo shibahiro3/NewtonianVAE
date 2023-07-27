@@ -6,14 +6,15 @@ import random
 from pathlib import Path
 
 import cv2
-import mypython.vision as mv
 import numpy as np
 import torch
 import torchvision.transforms.functional as TF
+from torchvision import transforms
+
+import mypython.vision as mv
 from mypython import rdict
 from mypython.ai.util import SequenceDataLoader
 from tool import paramsmanager
-from torchvision import transforms
 
 
 def main():
