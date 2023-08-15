@@ -25,8 +25,9 @@ from torchvision.io import read_image
 
 from mypython.ai.util import to_numpy
 
-# _NT = Union[np.ndarray, Tensor]
-_NT = TypeVar("_NT")
+_NT = Union[np.ndarray, Tensor]
+# _NT = TypeVar("_NT")
+
 
 # Color order
 def reverseRGB(imgs: _NT) -> _NT:
@@ -40,66 +41,6 @@ RGB2BGR = reverseRGB
 BGR2RGB = reverseRGB
 cv2plt = BGR2RGB
 plt2cv = RGB2BGR
-
-
-def plt2cnn(imgs: _NT, in_size=None, out_size=None) -> Tensor:
-    """
-    [Deprecated]
-
-    in  (N, H, W, RGB) (0 to 255)
-    out (N, RGB, H, W) (0 to 1)
-    """
-    if in_size is not None:
-        assert imgs.shape[1] >= in_size
-
-    if type(imgs) == np.ndarray:
-        imgs = torch.from_numpy(imgs)  # imgs.copy() が要る場合がある
-
-    imgs = HWC2CHW(imgs)
-    if in_size is not None:
-        imgs = TF.center_crop(imgs, (in_size, in_size))
-    if out_size is not None:
-        imgs = TF.resize(imgs, (out_size, out_size))
-    imgs = imgs / 255.0
-    return imgs.float()
-
-
-def cv2cnn(imgs: np.ndarray) -> Tensor:
-    """[Deprecated]"""
-    return plt2cnn(cv2plt(imgs))
-
-
-def cnn2plt(imgs: _NT) -> np.ndarray:
-    """
-    [Deprecated]
-
-    in  (N, RGB, H, W) (0 to 1)
-    out (N, H, W, RGB) (0 to 255)
-    """
-    imgs = imgs * 255
-    imgs = CHW2HWC(imgs)
-    if type(imgs) == Tensor:
-        imgs = imgs.detach().cpu().type(torch.uint8).numpy()
-    elif type(imgs) == np.ndarray:
-        imgs = imgs.astype(np.uint8)
-    else:
-        assert False
-
-    return imgs
-
-
-def cnn2cv(imgs: _NT) -> np.ndarray:
-    """
-    [Deprecated]
-
-    in  (N, RGB, H, W) (0 to 1)
-    out (N, H, W, BGR) (0 to 255)
-    """
-    imgs = imgs * 255
-    imgs = CHW2HWC(imgs)
-    imgs = BGR2RGB(imgs)
-    imgs = imgs.cpu().type(torch.uint8).numpy()
-    return imgs
 
 
 def CHW2HWC(x: _NT) -> _NT:
@@ -175,6 +116,25 @@ def to_uint8(x: _NT) -> _NT:
     else:
         assert False
     return x
+
+
+def _gradient_2d(start, stop, width, height, is_horizontal):
+    if is_horizontal:
+        return np.tile(np.linspace(start, stop, width, dtype=np.uint8), (height, 1))
+    else:
+        return np.tile(np.linspace(start, stop, height, dtype=np.uint8), (width, 1)).T
+
+
+def sample_gradient_color(width, height, start_list, stop_list, is_horizontal_list):
+    # Return: H, W, RGB
+    # https://note.nkmk.me/python-numpy-generate-gradation-image/
+    # https://yyhhyy.hatenablog.com/entry/2021/11/27/183000
+    result = np.zeros((height, width, len(start_list)), dtype=np.uint8)
+    for i, (start, stop, is_horizontal) in enumerate(
+        zip(start_list, stop_list, is_horizontal_list)
+    ):
+        result[:, :, i] = _gradient_2d(start, stop, width, height, is_horizontal)
+    return result
 
 
 # def _check_range(x: _NT, min, max):
@@ -509,3 +469,63 @@ if __name__ == "__main__":
 
     test1()
     test_board()
+
+
+# def plt2cnn(imgs: _NT, in_size=None, out_size=None) -> Tensor:
+#     """
+#     [Deprecated]
+
+#     in  (N, H, W, RGB) (0 to 255)
+#     out (N, RGB, H, W) (0 to 1)
+#     """
+#     if in_size is not None:
+#         assert imgs.shape[1] >= in_size
+
+#     if type(imgs) == np.ndarray:
+#         imgs = torch.from_numpy(imgs)  # imgs.copy() が要る場合がある
+
+#     imgs = HWC2CHW(imgs)
+#     if in_size is not None:
+#         imgs = TF.center_crop(imgs, (in_size, in_size))
+#     if out_size is not None:
+#         imgs = TF.resize(imgs, (out_size, out_size))
+#     imgs = imgs / 255.0
+#     return imgs.float()
+
+
+# def cv2cnn(imgs: np.ndarray) -> Tensor:
+#     """[Deprecated]"""
+#     return plt2cnn(cv2plt(imgs))
+
+
+# def cnn2plt(imgs: _NT) -> np.ndarray:
+#     """
+#     [Deprecated]
+
+#     in  (N, RGB, H, W) (0 to 1)
+#     out (N, H, W, RGB) (0 to 255)
+#     """
+#     imgs = imgs * 255
+#     imgs = CHW2HWC(imgs)
+#     if type(imgs) == Tensor:
+#         imgs = imgs.detach().cpu().type(torch.uint8).numpy()
+#     elif type(imgs) == np.ndarray:
+#         imgs = imgs.astype(np.uint8)
+#     else:
+#         assert False
+
+#     return imgs
+
+
+# def cnn2cv(imgs: _NT) -> np.ndarray:
+#     """
+#     [Deprecated]
+
+#     in  (N, RGB, H, W) (0 to 1)
+#     out (N, H, W, BGR) (0 to 255)
+#     """
+#     imgs = imgs * 255
+#     imgs = CHW2HWC(imgs)
+#     imgs = BGR2RGB(imgs)
+#     imgs = imgs.cpu().type(torch.uint8).numpy()
+#     return imgs

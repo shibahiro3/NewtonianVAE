@@ -4,7 +4,6 @@ from typing import Callable, Iterator, List, Optional, Union
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 from matplotlib.animation import FuncAnimation
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import KeyEvent

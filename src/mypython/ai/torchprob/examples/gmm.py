@@ -67,7 +67,6 @@ class SimpleBatchData(BatchIndices):
 
 
 def main():
-
     N, K, D = 2000, 3, 2
     batch_size = 200
     epochs = 2000
@@ -106,7 +105,6 @@ def main():
     remaining = RemainingTime(max=epochs * len(dataloader), size=50)
     for epoch in range(1, epochs + 1):
         for x in dataloader:
-
             # Objective function: -log p(x | Θ) = -SUM_k π_k log p(x | μ_k, Σ_k)  (Negative log-likelihood)
             # Since π_k, μ_k, Σ_k in π_k log p(x | μ_k, Σ_k) is inferred from x,
             # it is an implementation of p(x | x).

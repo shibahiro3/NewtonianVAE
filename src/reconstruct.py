@@ -60,7 +60,6 @@ def reconstruction_(
     save_path: Optional[str] = None,
 ):
     with torch.no_grad():
-
         T = batchdata["action"].shape[0]
         dim_x = batchdata["action"].shape[-1]
         episodes = batchdata["action"].shape[1]
@@ -145,7 +144,6 @@ def reconstruction_(
 
         class AnimPack:
             def __init__(self) -> None:
-
                 self.t = -1
 
                 self.model = model

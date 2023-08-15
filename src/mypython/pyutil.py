@@ -232,3 +232,35 @@ def human_readable_byte(nbytes: int, bin=False) -> str:
     nbytes /= U
     if nbytes < U:
         return _p(nbytes, "G")
+
+
+class NSeq:
+    # 自然数のカウンタ buttonを押すときなどに使う
+    def __init__(self, min: int, max: int, init: int = None) -> None:
+        self._min = min
+        self._max = max
+        self._init = init if init is not None else min
+        assert self._min <= self._init < self._max
+        self._i = self._init - 1
+
+    @property
+    def now(self):
+        return self._i
+
+    def next(self):
+        if self._i == self._max - 1:
+            self._i = self._min
+        else:
+            self._i += 1
+        return self._i
+
+    def prev(self):
+        if self._i == self._min:
+            self._i = self._max - 1
+        else:
+            self._i -= 1
+        return self._i
+
+    def reset(self):
+        self._i = self._init
+        return self._i

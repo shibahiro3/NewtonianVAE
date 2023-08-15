@@ -83,7 +83,6 @@ class SimpleBatchData(BatchIndices):
 
 
 def main():
-
     N, K, D = 2000, 5, 2
     batch_size = 200
     epochs = 2000
@@ -130,7 +129,6 @@ def main():
     remaining = RemainingTime(max=epochs * len(dataloader), size=50)
     for epoch in range(1, epochs + 1):
         for y, x in dataloader:
-
             # -log p(y|x)
             L = -tp.log(prob, y).given(x).mean()
 

@@ -128,7 +128,6 @@ def _get_idx(text, n_max):
             print("Bye!")
             return None
         else:
-
             try:
                 idx = int(idx) - 1
                 if 0 <= idx and idx < n_max:
@@ -292,7 +291,6 @@ class RecoderBase:
 
 
 def create_prepostprocess(params: paramsmanager.Params, device):
-
     preprocess_list = []
 
     pp_simple = getattr(tool.preprocess, params.others.get("preprocess", ""), lambda x: x)

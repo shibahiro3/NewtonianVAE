@@ -60,8 +60,7 @@ class ValueWriter:
     order = "order"
 
     def __init__(self, root) -> None:
-        # https://qiita.com/halhorn/items/178ed670f05e9bbe6d0a
-        # 外部でも共通インスタンスのdictだと共有されてしまう
+        # TODO: Add schema like polars
 
         self.root_core = Path(root, self.core)
         self.name2type = {}

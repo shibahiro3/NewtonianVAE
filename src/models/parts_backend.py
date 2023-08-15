@@ -238,13 +238,14 @@ class ResNet(nn.Module):
 
         self.m: torchvision.models.ResNet = getattr(torchvision.models, version)(weights=weights)
         if in_channels != 3:
+            c = self.m.conv1
             self.m.conv1 = nn.Conv2d(
-                in_channels,
-                out_channels=self.m.conv1.out_channels,
-                kernel_size=self.m.conv1.kernel_size,  # 7
-                stride=self.m.conv1.stride,  # 2
-                padding=self.m.conv1.padding,  # 3
-                bias=False,
+                in_channels=in_channels,
+                out_channels=c.out_channels,
+                kernel_size=c.kernel_size,  # 7
+                stride=c.stride,  # 2
+                padding=c.padding,  # 3
+                bias=c.bias,  # False
             )
         self.m.fc = torch.nn.Linear(self.m.fc.in_features, dim_output)
 
@@ -450,7 +451,6 @@ class DoubleConv(nn.Module):
         last: str = "ReLU",  # Identity, Sigmoid, ...
         bias: bool = True,
     ):
-
         if last == "ReLU":
             last_module = nn.ReLU(inplace=True)
         else:

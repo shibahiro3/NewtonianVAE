@@ -129,7 +129,7 @@ class BatchIndices:
         self._B = batch_size  # 外部で ._B = は宣言になってしまって面倒
         self._indices = np.arange(start=start, stop=stop)
         self.shuffle = shuffle
-        self.reset_indices()
+        self._reset_indices()
 
     @property
     def datasize(self):
@@ -143,7 +143,7 @@ class BatchIndices:
         # setter
         if not (self.datasize >= batch_size):
             raise ValueError(f"Must: datasize ({self.datasize}) >= batch_size ({batch_size})")
-        assert type(batch_size) == int and batch_size >= 0
+        assert type(batch_size) == int and 0 <= batch_size
         self._B = batch_size
 
     def __len__(self):
@@ -154,23 +154,33 @@ class BatchIndices:
 
     def __next__(self):
         self._i += 1
-
         if self._i == self.__len__():
-            self.reset_indices()
+            self._reset_indices()
             raise StopIteration()
-
         indices = self._indices[self._i * self._B : (self._i + 1) * self._B]
         return indices
 
-    def reset_indices(self) -> None:
+    def _sample_batch(self, batch_size: Union[int, str] = "same"):
+        batch_size_prev = self.batchsize
+        if type(batch_size) == str:
+            assert batch_size in ("same", "all")
+            if batch_size == "all":
+                self.set_batchsize(self.datasize)
+            # same -> pass
+        elif type(batch_size) == int:
+            self.set_batchsize(batch_size)
+        else:
+            assert False
+
+        batchdata = next(self)  # Do override
+        self._reset_indices()
+        self.set_batchsize(batch_size_prev)
+        return batchdata
+
+    def _reset_indices(self) -> None:
         if self.shuffle:
             np.random.shuffle(self._indices)
         self._i = -1
-
-
-# BatchDataType = Dict[str, Any]
-# BatchDataType = Any
-BatchDataType = Dict[str, Union[Tensor, Dict[str, Tensor]]]
 
 
 def file_collector(patterns: Union[Union[str, Path], List[Union[str, Path]]]):
@@ -190,6 +200,10 @@ class SequenceDataLoader(BatchIndices):
     https://pytorch.org/docs/stable/data.html#torch.utils.data.IterableDataset
     https://pytorch.org/tutorials/beginner/basics/data_tutorial.html
     """
+
+    # BatchDataType = Dict[str, Any]
+    # BatchDataType = Any
+    BatchDataType = Dict[str, Union[Tensor, Dict[str, Tensor]]]
 
     def __init__(
         self,
@@ -261,17 +275,13 @@ class SequenceDataLoader(BatchIndices):
                 gc.collect()
                 Color.print("WARNING: Failed load all", c=Color.coral)
 
-    def sample_batch(self, batch_size: Union[int, str] = "same", verbose=False, print_name=None):
+    def sample_batch(
+        self, batch_size: Union[int, str] = "same", verbose=False, print_name=None
+    ) -> BatchDataType:
         # TODO: each sequence List[dict]  for large batch_size for correlation  (torch.cuda.OutOfMemoryError)
 
-        batch_size_prev = self.batchsize
-        if type(batch_size) == str:
-            assert batch_size in ("same", "all")
-            if batch_size == "all":
-                self.set_batchsize(self.datasize)
+        batchdata = self._sample_batch(batch_size)
 
-        batchdata = next(self)
-        self.reset_indices()
         if verbose:
             if print_name is None:
                 print_name = "sample batch data"
@@ -281,7 +291,6 @@ class SequenceDataLoader(BatchIndices):
             print(f"Iterations of per epoch: {len(self)}")
             print("-" * 35)
 
-        self.set_batchsize(batch_size_prev)
         return batchdata
 
     def __next__(self) -> BatchDataType:
@@ -320,7 +329,7 @@ class SequenceDataLoader(BatchIndices):
         batch_data = self._preprocess(batch_data)
         return batch_data
 
-    def _preprocess(self, batch_data):
+    def _preprocess(self, batch_data) -> BatchDataType:
         # CPU -> GPU -> preprocess -> for training data
 
         rdict.to_torch(batch_data, device=self.device)
@@ -384,7 +393,7 @@ class SequenceDataLoader(BatchIndices):
         return np.asarray(data), np.asarray(Ts)
 
     @staticmethod
-    def _make_batch(data, Ts, T=None, random_start=True):
+    def _make_batch(data, Ts: np.ndarray, T=None, random_start=True):
         # data = data[indices]
         # Ts = Ts[indices]
 
@@ -397,7 +406,6 @@ class SequenceDataLoader(BatchIndices):
 
         batch_data = {}
         for one_ep, T_ in zip(data, Ts):
-
             if random_start:
                 max_start = T_ - T
                 if not (0 <= max_start):
@@ -410,11 +418,9 @@ class SequenceDataLoader(BatchIndices):
             # apply_だと元データが書き換わってしまう
             # 今まではapply_した後にgatherしてdataにしていた
             one_ep = rdict.apply(one_ep, lambda x: x[start : start + T])
-
             rdict.append_a_to_b(one_ep, batch_data)
 
         rdict.to_torch(batch_data)
-        # rdict.show(batch_data, "make batch")
         return batch_data
 
 
@@ -428,6 +434,7 @@ _T = TypeVar("_T")
 
 
 def random_sample(x: _T, k: int) -> _T:
+    assert 0 <= k and k <= len(x)
     indices = np.arange(len(x))
     np.random.shuffle(indices)
     return x[indices[:k]]

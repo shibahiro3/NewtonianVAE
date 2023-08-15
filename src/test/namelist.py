@@ -8,7 +8,6 @@ from third.dm_control import suite
 
 
 def main():
-
     # Iterate over a task set:
     for domain_name, task_name in suite.BENCHMARKING:
         print(f'domain_name="{domain_name}", task_name="{task_name}"')

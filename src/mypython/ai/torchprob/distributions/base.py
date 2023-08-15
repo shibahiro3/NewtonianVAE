@@ -10,7 +10,6 @@ from mypython.terminal import Color
 
 
 class Distribution(nn.Module):
-
     ParamsReturnType = Union[Tensor, List[Tensor]]
 
     def __init__(self) -> None:

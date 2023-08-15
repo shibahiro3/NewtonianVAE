@@ -19,7 +19,7 @@ References:
 # getattr(parts, classname)
 
 
-from .movilevit import MobileViTWrap
+from .mobilevit import MobileViTWrap
 from .newtonianvae_rep import SpatialBroadcastDecoder, VanillaDecoder, VanillaEncoder
 from .parts_backend import (
     DecoderC,

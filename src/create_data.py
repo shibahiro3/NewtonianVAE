@@ -121,7 +121,6 @@ def core(
 
     class AnimPack:
         def __init__(self) -> None:
-
             self.t = 0
             self.episode_cnt = 0
 
@@ -176,7 +175,6 @@ def core(
                 )
 
             if done:
-
                 rdict.to_numpy(self.episode_data)
                 # self.episode_data = rdict.extract_from_keypaths(self.episode_data, keypaths)
 

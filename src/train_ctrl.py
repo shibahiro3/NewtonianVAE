@@ -115,7 +115,6 @@ def train(
         remaining = RemainingTime(max=params.train.epochs * len(trainloader), size=50)
         for epoch in range(1, params.train.epochs + 1):
             for batchdata in trainloader:
-
                 action = batchdata["action"]
                 cameras = list(batchdata["camera"].values())
 

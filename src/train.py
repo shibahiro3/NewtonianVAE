@@ -182,7 +182,6 @@ def train(
     corr_writer = ValueWriter(Path(managed_dir, "corr"))
 
     def pre_epoch_fn(epoch: int):
-
         decoder_free = params.others.get("decoder_free", None)
         if decoder_free is not None:
             if epoch > decoder_free:

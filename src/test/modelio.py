@@ -111,7 +111,6 @@ def common(
 
     for h in range(HL, HH + 1):
         for w in range(WL, WH + 1):
-
             input = torch.randn(B, C, h, w).to(device)
             output = model(input)
 

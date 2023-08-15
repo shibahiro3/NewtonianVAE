@@ -2,6 +2,7 @@
 
 
 import os
+import pickle
 import random
 import sys
 import time
@@ -12,9 +13,11 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import common
 import matplotlib.pyplot as plt
 import numpy as np
+import requests
 import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
+from einops import rearrange
 from torch import Tensor, nn, optim
 from torchvision.io import read_image
 
@@ -25,65 +28,93 @@ from mypython.ai.util import random_sample
 from mypython.vision import convert_range
 from unet_mask.seg_data import MaskingDataLoader
 
+
+def sender(data: bytes, url):
+    try:
+        resp = requests.post(
+            url=url,
+            data=data,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+        # resp.raise_for_status()
+    except:
+        pass
+
+
+def default_converter(x: Tensor, reverse_color=True):
+    x = rearrange(x, "N C H W -> H (N W) C")
+    x = convert_range(x, (0, 1), (0, 255))
+    x = x.detach_().cpu().numpy().squeeze()  # for one channel
+    if reverse_color:
+        x = mv.reverseRGB(x)
+    return x
+
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def main():
-    # python train.py data_imgs/ee data_imgs/orange_complete.json
-    train(sys.argv[1], sys.argv[2])
+    # ./src/train_unet.py data_imgs/ee/imgs data_imgs/ee/orange_complete.json data_imgs/ee_valid
+    train(sys.argv[1], sys.argv[2], sys.argv[3])
 
 
-def for_show(imgs):
-    imgs = convert_range(imgs, (0, 1), (0, 255)).detach_().cpu().numpy()
-    return imgs
-
-
-def train(imgs_dir, coco_file):
+def train(imgs_dir, coco_file, valid_dir):
     batch_size = 5
+
+    cat_names = ["orange"]
 
     trainloader = MaskingDataLoader(
         imgs_dir,
         coco_file,
         batch_size=batch_size,
         device=device,
-        cutout_and_random=None,
+        cutout_and_random="mix",
+        cat_names=cat_names,
+        verbose=True,
     )
+    trainloader.sample_batch(show=False, verbose=True)
 
     valid_imgs = []
-    for i, fname in enumerate(Path(str(imgs_dir) + "_valid").glob("*")):
+    for i, fname in enumerate(Path(valid_dir).glob("*")):
         valid_imgs.append(read_image(str(fname)))
         # if i == batch_size - 1:
         #     break
     valid_imgs = torch.stack(valid_imgs).to(device) / 255
-    # print(valid_imgs.shape)
-    # print(valid_imgs.min(), valid_imgs.max())
 
-    model = Masker(out_channels=1).to(device)
+    model = Masker(out_channels=len(cat_names)).to(device)
     optimizer = optim.Adam(model.parameters(), 2e-4)
 
     def post_epoch_fn(epoch, status):
         if epoch % 20 == 0:
             # trainloader.cutout_and_random = True
-            img, mask = trainloader.sample_batch()
+            train_input, train_mask = trainloader.sample_batch()
+            train_mask_out = model.mask(train_input)
+            train_masked = train_input * train_mask_out
 
-            input = random_sample(valid_imgs, batch_size)
-            # input = img
+            valid_input = random_sample(valid_imgs, batch_size)
+            valid_mask_out = model.mask(valid_input)
+            valid_masked = valid_input * valid_mask_out
 
-            out = model.masked(input)
-            mv.show_imgs_cv(
-                for_show(torch.cat([input, out])),
-                "masked",
-                image_order="CHW",
-                color_order="RGB",
-                cols=len(input),
-                block=False,
+            sender(
+                data=pickle.dumps(
+                    {
+                        "train input": default_converter(train_input),
+                        "train mask": default_converter(train_mask, reverse_color=False),
+                        "train mask out": default_converter(train_mask_out, reverse_color=False),
+                        "train masked": default_converter(train_masked),
+                        "valid input": default_converter(valid_input),
+                        "valid mask out": default_converter(valid_mask_out, reverse_color=False),
+                        "valid masked": default_converter(valid_masked),
+                    }
+                ),
+                url="http://localhost:12345",
             )
 
     mp_train(
         model=model,
         optimizer=optimizer,
         trainloader=trainloader,
-        epochs=1000,
+        epochs=2000,
         post_epoch_fn=post_epoch_fn,
         managed_dir="_unet_save/" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
     )
@@ -92,4 +123,6 @@ def train(imgs_dir, coco_file):
 
 
 if __name__ == "__main__":
+    # t = ['c', 'a', 'a', 'b', 'c']
+    # print(t.index('a'))
     main()

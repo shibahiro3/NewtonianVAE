@@ -1,29 +1,4 @@
-##############################
-matplotlib==3.6.2
-opencv-python==4.6.0.66
-PyQt6==6.4.0
-PyQt6-Qt6==6.4.1
-PyQt6-sip==13.4.0
-
-# If you get the following error ...
-#   qt.qpa.plugin: Could not load the Qt platform plugin
-#   UserWarning: Animation was deleted without rendering anything.
-# https://github.com/NVlabs/instant-ngp/discussions/300
-# Try any or all of these.
-# opencv-python==4.3.0.36
-# PyQt5==5.15.2
-# PyQt5-sip==12.8.1
-
-# sudo apt install python3-tk
-# sudo apt install ffmpeg  # for saving movie
-##############################
-
-PySide6==6.5.1
-PySide6-Addons==6.5.1
-PySide6-Essentials==6.5.1
-
-##############################
-
+### math, env ###
 numpy
 dm-control
 torch
@@ -32,13 +7,18 @@ pycocotools
 vit-pytorch
 einops
 
-# for util
+### util ###
 typing_extensions
 json5==0.9.10
 natsort
 wcmatch
+polars
 
-# for vis
+# google-api-python-client
+# google-auth-httplib2
+# google-auth-oauthlib
+
+### vis ###
 tensorboard
 # torch-tb-profiler
 visdom
@@ -46,3 +26,26 @@ torchviz
 seaborn
 pandas
 torch-summary
+
+## These are good combinations I have found in Ubuntu. I don't know why.
+matplotlib==3.6.2
+opencv-python==4.6.0.66
+PyQt6==6.4.0
+PyQt6-Qt6==6.4.1
+PyQt6-sip==13.4.0
+
+PySide6 # ==6.5.2
+PySide6-Addons # ==6.5.2
+PySide6-Essentials # ==6.5.2
+
+pyqtgraph
+PyOpenGL
+
+### project management ###
+pylint==2.17.5
+black==23.7.0
+isort==5.12.0
+autoflake8==0.4.1
+pyproject-flake8==6.0.0.post1
+Sphinx==6.2.1
+sphinx-rtd-theme==1.2.2

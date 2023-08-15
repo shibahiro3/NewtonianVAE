@@ -5,7 +5,8 @@
 import random
 import sys
 from pathlib import Path
-from typing import Optional, Union
+from pprint import pprint
+from typing import List, Optional, Tuple, Union
 
 import cv2
 import matplotlib.pyplot as plt
@@ -18,6 +19,7 @@ import torch.nn.functional as F
 import torchvision
 import torchvision.transforms.functional as TF
 from pycocotools.coco import COCO
+from torch import Tensor
 from torchvision.io import read_image
 
 import mypython.vision as mv
@@ -33,6 +35,8 @@ class MaskingDataLoader(BatchIndices):
     torchvision.datasets.CocoCaptions
     """
 
+    BatchDataType = Tuple[Tensor, Tensor]
+
     def __init__(
         self,
         images_dir: str,
@@ -42,6 +46,8 @@ class MaskingDataLoader(BatchIndices):
         load_all: bool = False,
         cutout_and_random: str = "none",
         device=torch.device("cpu"),
+        cat_names: List[str] = None,
+        verbose=False,
     ):
         assert cutout_and_random in ("none", "only", "mix")
 
@@ -52,12 +58,28 @@ class MaskingDataLoader(BatchIndices):
 
         self.coco = COCO(coco_file)
         self._image_ids = np.array(self.coco.getImgIds())  # use slice
-        self._cat_ids = self.coco.getCatIds()
         self._filenames = np.array([ii["file_name"] for ii in self.coco.loadImgs(self._image_ids)])
 
-        print("ImgIds:", self._image_ids)
-        print("CatIds:", self._cat_ids)
-        print("finenames:", self._filenames)
+        self._cat_ids = self.coco.getCatIds()
+        cat_names_all = [e["name"] for e in self.coco.loadCats(self._cat_ids)]
+
+        if verbose:
+            print("images len:          ", len(self._image_ids))
+            print("categories len (raw):", len(self._cat_ids))
+            print("categories (raw):")
+            pprint(cat_names_all)
+
+        if cat_names is not None:
+            cats_i = []
+            for cat in cat_names:
+                cats_i.append(cat_names_all.index(cat))
+            self._cat_ids = np.asarray(self._cat_ids)[cats_i]
+
+        # print(self._cat_ids)
+
+        # print("ImgIds:", self._image_ids)
+        # print("CatIds:", self._cat_ids)
+        # print("finenames:", self._filenames)
 
         super().__init__(0, len(self._filenames), batch_size, shuffle)
 
@@ -82,7 +104,7 @@ class MaskingDataLoader(BatchIndices):
         # print(imgs.min(), imgs.max())
         return imgs
 
-    def __next__(self):
+    def __next__(self) -> BatchDataType:
         """
         Returns
             images:  N C H W   [0, 1]
@@ -119,7 +141,6 @@ class MaskingDataLoader(BatchIndices):
 
         # TODO: parallel.. but training time is already few minitus.
         for ii, img_id in enumerate(self._image_ids[indices]):
-
             for ci, cat_id in enumerate(self._cat_ids):
                 anns_ids = self.coco.getAnnIds(imgIds=img_id, catIds=cat_id)
                 anns = self.coco.loadAnns(anns_ids)
@@ -179,21 +200,14 @@ class MaskingDataLoader(BatchIndices):
 
     def sample_batch(
         self, batch_size: Union[int, str] = "same", verbose=False, show=False, debug=False
-    ):
-        batch_size_prev = self.batchsize
-        if type(batch_size) == str:
-            assert batch_size in ("same", "all")
-            if batch_size == "all":
-                self.set_batchsize(self.datasize)
-
+    ) -> BatchDataType:
         if debug:
             # for exception check
             for iter_ in range(20):
                 for img_, mask_ in self:
                     pass
 
-        img, mask = next(self)
-        self.reset_indices()
+        img, mask = self._sample_batch(batch_size)
 
         if verbose:
             rdict.show(dict(img=img, mask=mask), "batch data")
@@ -215,11 +229,7 @@ class MaskingDataLoader(BatchIndices):
             )
             plt.show()
 
-        self.set_batchsize(batch_size_prev)
         return img, mask
-
-
-# from pprint import pprint
 
 
 def mask_unet(pth):
@@ -240,19 +250,3 @@ def mask_unet(pth):
         return batchdata
 
     return masker, preprocess_
-
-
-if __name__ == "__main__":
-    # python seg_data.py data_imgs/ee data_imgs/orange_complete.json
-
-    imgs_dir = sys.argv[1]
-    coco_file = sys.argv[2]
-
-    trainloader = MaskingDataLoader(
-        imgs_dir,
-        coco_file,
-        batch_size=5,
-        cutout_and_random="none",
-        device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-    )
-    trainloader.sample_batch(verbose=True, show=True, debug=False)

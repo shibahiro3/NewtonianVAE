@@ -8,7 +8,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
-import torchvision.transforms.functional as TF
+import torchvision.transforms.v2.functional as TF
 from torchvision import transforms
 
 import mypython.vision as mv

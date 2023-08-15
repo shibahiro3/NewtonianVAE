@@ -50,7 +50,6 @@ def show_loss(
     mode: str,
     no_window: bool = False,
 ):
-
     assert start_iter > 0
 
     view.plot_config.apply()

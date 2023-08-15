@@ -35,7 +35,6 @@ def clean(root):
 
     print("Directories with no weight files...")
     for f in Path(root).glob("**/weight/"):
-
         if len(os.listdir(f)) == 0:
             print(f.resolve())
             deletable.append(f.parent)

@@ -58,10 +58,10 @@ def train(
     save_per_epoch: Optional[int] = None,
     managed_dir: Union[str, Path, None] = None,
     grad_clip_norm: Optional[float] = None,
-    pre_epoch_fn: Optional[Callable[[int], None]] = None,
+    pre_epoch_fn: Optional[Callable[[int], None]] = None,  # no_grad
     pre_batch_fn: Optional[Callable[[float, Any], Any]] = None,
-    post_batch_fn: Optional[Callable[[float, dict], None]] = None,
-    post_epoch_fn: Optional[Callable[[int, dict], None]] = None,
+    post_batch_fn: Optional[Callable[[float, dict], None]] = None,  # no_grad
+    post_epoch_fn: Optional[Callable[[int, dict], None]] = None,  # no_grad
     print_precision: int = 4,
     gradscaler_args: Optional[dict] = None,
     use_autocast: bool = False,
@@ -126,7 +126,8 @@ def train(
             time_start_epoch = time.perf_counter()
 
             if pre_epoch_fn is not None:
-                pre_epoch_fn(epoch)
+                with torch.no_grad():
+                    pre_epoch_fn(epoch)
 
             epoch_losses_all = {"train": {}, "valid": {}}
             for phase in phases:
@@ -144,7 +145,6 @@ def train(
 
                 ##### core #####
                 for batch_i, batchdata in enumerate(dataloader, 1):
-
                     if pre_batch_fn is not None:
                         if unpack:
                             batchdata = pre_batch_fn(epoch_f, *batchdata)
@@ -232,8 +232,14 @@ def train(
 
                     Prompt.print_one_line(bt_msg)
                     if post_batch_fn is not None:
-                        status = dict(mode="now", ephoch=epoch, losses=now_losses, phase=phase)
-                        post_batch_fn(epoch_f, status)
+                        status = {
+                            "mode": "now",
+                            "epoch": epoch,
+                            "losses": now_losses,
+                            "phase": phase,
+                        }
+                        with torch.no_grad():
+                            post_batch_fn(epoch_f, status)
 
                 ### end of one epoch ###
 
@@ -271,8 +277,7 @@ def train(
 
                 epoch_losses_all[phase] = epoch_losses
 
-                # dict(mode="average", epoch=epoch, losses=epoch_losses, phase=phase)
-                print(ep_msg)
+                print(ep_msg)  # average
 
             for k, v in epoch_losses_all["train"].items():
                 epoch_train_writer.write(k, v)
@@ -281,8 +286,13 @@ def train(
                 epoch_valid_writer.write(k, v)
 
             if post_epoch_fn is not None:
-                status = dict(mode="all", epoch=epoch, losses=epoch_losses_all)
-                post_epoch_fn(epoch, status)
+                status = {
+                    "mode": "all",
+                    "epoch": epoch,
+                    "losses": epoch_losses_all,
+                }
+                with torch.no_grad():
+                    post_epoch_fn(epoch, status)
 
             time_epoch_training.update()
 

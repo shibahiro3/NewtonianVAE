@@ -83,7 +83,6 @@ def correlation_cal(
     position_name: str = "position",
 ):
     with torch.no_grad():
-
         T, B, dim = batchdata["action"].shape
         # dim = model.dim_x
 

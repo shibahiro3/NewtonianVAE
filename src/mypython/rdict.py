@@ -59,7 +59,6 @@ def apply_(d: dict, func: Callable):
 
 
 def _apply(d: dict, d_: dict, func: Callable):
-
     for k, v in d.items():
         if type(v) == dict:
             d_[k] = {}

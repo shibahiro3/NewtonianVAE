@@ -13,7 +13,6 @@ class TensorBoardVisualHandler(VisualHandlerBase):
         self.writer = SummaryWriter(*args, **kwargs)
 
     def plot(self, d: Dict[str, Any]):
-
         if d["mode"] == "all":
             losses = d["losses"]
 
@@ -35,7 +34,6 @@ class VisdomVisualHandler(VisualHandlerBase):
         self.vis = visdom.Visdom(*args, **kwargs)
 
     def plot(self, d: Dict[str, Any]):
-
         if d["mode"] == "all":
             losses = d["losses"]
 
