@@ -249,7 +249,7 @@ def show_data(
         # load_all=True,
     ).sample_batch(verbose=True)
 
-    rdict.to_numpy(batchdata)
+    rdict.to_numpy_(batchdata)
 
     action = batchdata["action"]
     position = batchdata[position_name]

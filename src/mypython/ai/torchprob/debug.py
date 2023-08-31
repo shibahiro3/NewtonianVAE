@@ -18,7 +18,7 @@ def check_dist_model(model: nn.Module):
             if submodel._cnt_given == 0:
                 color = Color.blue
             elif submodel._cnt_given > 1:
-                color = Color.coral
+                color = Color.code.coral
             else:
                 color = ""
 

@@ -37,7 +37,7 @@ def is_same_data(data, trained_time_dir):
         if data_p != trained_data_p:
             Color.print(
                 "warning: The path of the specified data does not match the path of the data used for training",
-                c=Color.coral,
+                c=Color.code.coral,
             )
-            Color.print(f"  specified data        : {data_p}", c=Color.coral)
-            Color.print(f"  data used for training: {trained_data_p}", c=Color.coral)
+            Color.print(f"  specified data        : {data_p}", c=Color.code.coral)
+            Color.print(f"  data used for training: {trained_data_p}", c=Color.code.coral)

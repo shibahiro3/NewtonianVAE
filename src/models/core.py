@@ -57,13 +57,13 @@ class BaseWithCache(nn.Module):
 
         if type_to == "list":
             if verbose:
-                rdict.show(self._cache, "cache")
+                rdict.pprint(self._cache, "cache")
             return self._cache
 
         if type_to == "torch":
-            rdict.to_torch(self._cache)
+            rdict.to_torch_(self._cache)
         elif type_to == "numpy":
-            rdict.to_numpy(self._cache)
+            rdict.to_numpy_(self._cache)
         else:
             assert False
 
@@ -77,7 +77,7 @@ class BaseWithCache(nn.Module):
             assert False
 
         if verbose:
-            rdict.show(self._cache, "cache")
+            rdict.pprint(self._cache, "cache")
         return self._cache
 
 

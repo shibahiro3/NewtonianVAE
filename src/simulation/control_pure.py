@@ -156,7 +156,7 @@ def calculate(
         I_goal = o_target["camera"]
         position = o_target["position"]
         I_goal = {name: I_goal[name] for name in model.camera_names}
-        rdict.to_torch(I_goal, dtype=dtype, device=device)
+        rdict.to_torch_(I_goal, dtype=dtype, device=device)
         # rdict.show(I_goal, "I_goal")
 
         x_goal = model.encode([e.unsqueeze(0) for e in I_goal.values()])
@@ -180,7 +180,7 @@ def calculate(
             I_t = o_t["camera"]
             position = o_t["position"]
             I_t = {name: I_t[name] for name in model.camera_names}
-            rdict.to_torch(I_t, dtype=dtype, device=device)
+            rdict.to_torch_(I_t, dtype=dtype, device=device)
 
             x_t = model.encode([e.unsqueeze(0) for e in I_t.values()])
             I_rec_t = model.decode(x_t)
@@ -201,7 +201,7 @@ def calculate(
 
             Prompt.print_one_line(f"Trial: {episode+1:2d}/{episodes} | Step: {t+1:4d}/{T} ")
 
-        rdict.to_numpy(record_one)
+        rdict.to_numpy_(record_one)
         record.append(record_one)
 
     print("\nDone")

@@ -44,14 +44,14 @@ pp = prepost.HandyForImage()
 def check_prepost(pre, post):
     assert type(pre) == torch.Tensor
     assert type(post) == np.ndarray
-    rdict.show(dict(pre=pre, post=post))
+    rdict.pprint(dict(pre=pre, post=post))
 
 
 @function_test
 def test_with_env(env_):
     env = ControlSuite(env=env_, seed=1, max_episode_length=100, imgsize=[480, 480])
     obs = env.reset()
-    rdict.show(obs)
+    rdict.pprint(obs)
     # env.render()
 
     img = next(iter(obs["camera"].values()))

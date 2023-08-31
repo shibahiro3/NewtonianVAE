@@ -210,7 +210,7 @@ class MaskingDataLoader(BatchIndices):
         img, mask = self._sample_batch(batch_size)
 
         if verbose:
-            rdict.show(dict(img=img, mask=mask), "batch data")
+            rdict.pprint(dict(img=img, mask=mask), "batch data")
 
         if show:
             m = []

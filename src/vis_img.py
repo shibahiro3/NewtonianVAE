@@ -7,7 +7,6 @@ from typing import Dict
 
 import numpy as np
 
-import mypython.qt.thread as qth
 import mypython.qt.util as qut
 from mypython import rdict
 from mypython.qt.imports import *
@@ -22,8 +21,9 @@ class Images(QWidget):
 
         layout = QVBoxLayout()
 
-        print("===", datetime.now().strftime("%Y/%m/%d %H:%M:%S"), "===")
-        rdict.show(d)
+        # print("===", datetime.now().strftime("%Y/%m/%d %H:%M:%S"), "===")
+        # rdict.pprint(d)
+
         for k, v in d.items():
             layout.addWidget(QLabel(k))
             qi = qut.QtImage()
@@ -37,7 +37,7 @@ class Images(QWidget):
 def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     app = QtWidgets.QApplication([])
-    win = qt_http_vis.Window(this_addr=("localhost", 12345), WidgetClass=Images)
+    win = qt_http_vis.SimpleWindow(this_addr=("localhost", 12345), WidgetClass=Images)
     win.setWindowTitle("Dict[str, ndarray] Vis")
     geometry = QApplication.primaryScreen().availableGeometry()
     win.resize(int(geometry.width() // 3), int(geometry.height() // 1.5))

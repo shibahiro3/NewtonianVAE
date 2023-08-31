@@ -68,7 +68,7 @@ class HandyForImage(PrePostBase):
             if C >= 32:  # 1 (monochrome) or 3 (RGB) or 4 (RGBA) or some concat
                 Color.print(
                     f"WARNING: [preprocess] Is the image input size correct? Input channel: {C}",
-                    c=Color.coral,
+                    c=Color.code.coral,
                 )
         if not (img.dtype == np.uint8 or img.dtype == torch.uint8):
             raise TypeError(f"Input type is not uint8: ({img.dtype})")
@@ -111,7 +111,7 @@ class HandyForImage(PrePostBase):
             if C >= 32:  # 1 (monochrome) or 3 (RGB) or 4 (RGBA) or some concat
                 Color.print(
                     f"WARNING: [postprocess] Is the image input size correct? Input channel: {C}",
-                    c=Color.coral,
+                    c=Color.code.coral,
                 )
 
         img = aiu.to_numpy(img)

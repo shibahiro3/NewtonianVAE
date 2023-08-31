@@ -27,6 +27,16 @@ result*
 log*
 generated*
 
+# Binary file #
+###############
+*.npy
+*.npz
+*.pickle
+*.pkl
+*.h5
+*.hdf5
+*.he5
+
 # Docs #
 ########
 docs

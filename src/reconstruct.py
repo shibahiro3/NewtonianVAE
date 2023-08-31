@@ -72,7 +72,7 @@ def reconstruction_(
         model.is_save = True
         model(batchdata)
         model.convert_cache(type_to="numpy")
-        rdict.to_numpy(batchdata)
+        rdict.to_numpy_(batchdata)
         # batchdata, cache : (T, B, D)
 
         # ============================================================

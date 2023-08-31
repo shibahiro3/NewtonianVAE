@@ -61,7 +61,7 @@ Examples:
     parser = argparse.ArgumentParser(allow_abbrev=False, formatter_class=RawTextHelpFormatter, description=description)
     parser.add_argument("-c", "--config", type=str, required=True, **common.config)
     parser.add_argument("--resume", action="store_true", help="Load the model and resume learning")
-    parser.add_argument("--visual", type=str, choices=["tensorboard", "visdom"])
+    parser.add_argument("--visual", type=str, choices=["tensorboard", "visdom", "requests"])
     args = parser.parse_args()
     # fmt: on
 
@@ -73,6 +73,8 @@ Examples:
         )  # flush_secs is not working on my PC
     elif args.visual == "visdom":
         vh = visualhandler.VisdomVisualHandler(port=8097)
+    elif args.visual == "requests":
+        vh = visualhandler.RequestsVisualHandler(port=50000)
 
     argdict = vars(args)
     argdict.pop("visual")
@@ -129,7 +131,6 @@ def train(
         model_params=params.model_params,
         resume=resume,
     )
-    model: NewtonianVAEBase
     model.type(dtype)
     model.to(device)
     model.train()
@@ -238,7 +239,7 @@ def train(
             print("[Pause]")
             print("Press 'r' to resume")
 
-            rdict.to_torch(batchdata, device=torch.device("cpu"))
+            rdict.to_torch_(batchdata, device=torch.device("cpu"))
             model.cpu()
             gc.collect()
             torch.cuda.empty_cache()
@@ -269,7 +270,7 @@ def train(
         #             pre_unet, batchdata["camera"]["self"].reshape(-1, C, H, W)
         #         ).reshape(T, B, C, H, W)
 
-        rdict.to_torch(batchdata, device=device)
+        rdict.to_torch_(batchdata, device=device)
         return batchdata
 
     def post_batch_fn(epoch: float, status: dict) -> None:

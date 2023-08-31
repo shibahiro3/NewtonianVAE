@@ -1,4 +1,5 @@
 import gc
+import os
 import pickle
 import random
 import sys
@@ -95,7 +96,7 @@ def show_model_info(model: nn.Module, verbose: bool = False):
 
     _param = list(model.parameters())
     if len(_param) == 0:
-        Color.print("  This model has no parameters.", c=Color.coral)
+        Color.print("  This model has no parameters.", c=Color.code.coral)
         return
 
     print("  dtype:", _param[0].dtype)
@@ -118,8 +119,7 @@ def show_model_info(model: nn.Module, verbose: bool = False):
 class BatchIndices:
     def __init__(self, start: int, stop: int, batch_size: int, shuffle=True):
         """
-        no include stop index
-        same: file[start:stop]
+        from <start> to <stop - 1>
         """
 
         if not (stop - start >= batch_size):
@@ -139,15 +139,15 @@ class BatchIndices:
     def batchsize(self):
         return self._B
 
-    def set_batchsize(self, batch_size):
-        # setter
+    # @batchsize.setter # この書き方、やっぱり検索が面倒。
+    def set_batchsize(self, batch_size: int):
         if not (self.datasize >= batch_size):
             raise ValueError(f"Must: datasize ({self.datasize}) >= batch_size ({batch_size})")
         assert type(batch_size) == int and 0 <= batch_size
         self._B = batch_size
 
     def __len__(self):
-        return int(np.ceil(self._N / self._B))
+        return int(np.ceil(self.datasize / self.batchsize))
 
     def __iter__(self):
         return self
@@ -161,6 +161,9 @@ class BatchIndices:
         return indices
 
     def _sample_batch(self, batch_size: Union[int, str] = "same"):
+        if self._i != -1:
+            raise Exception("Do not call in the middle of iteration")
+
         batch_size_prev = self.batchsize
         if type(batch_size) == str:
             assert batch_size in ("same", "all")
@@ -170,7 +173,7 @@ class BatchIndices:
         elif type(batch_size) == int:
             self.set_batchsize(batch_size)
         else:
-            assert False
+            raise TypeError(f"Type of batch_size must be str or int. (type: {type(batch_size)})")
 
         batchdata = next(self)  # Do override
         self._reset_indices()
@@ -234,7 +237,8 @@ class SequenceDataLoader(BatchIndices):
         if len(self._filelist) == 0:
             raise Exception("Data file doesn't exist")
         else:
-            print("Files:", len(self._filelist))
+            fullsize = np.sum([os.stat(f).st_size for f in self._filelist])
+            print(f"Files: n={len(self._filelist)} total_byte={human_readable_byte(fullsize)}")
 
         stop = len(self._filelist)
         if batch_size is None:
@@ -265,15 +269,9 @@ class SequenceDataLoader(BatchIndices):
         if load_all:
             try:
                 self.all_data = self._load_from_files(self._filelist, self.keypaths)
-
-                # nbytes = rdict.show(self.all_data, only_info=True)["nbytes"]
-                # Color.print(
-                #     f"Loaded all data size: {human_readable_byte(nbytes, bin=True)}",
-                #     c=Color.green,
-                # )
             except:
                 gc.collect()
-                Color.print("WARNING: Failed load all", c=Color.coral)
+                Color.print("WARNING: Failed load all", c=Color.code.coral)
 
     def sample_batch(
         self, batch_size: Union[int, str] = "same", verbose=False, print_name=None
@@ -285,9 +283,11 @@ class SequenceDataLoader(BatchIndices):
         if verbose:
             if print_name is None:
                 print_name = "sample batch data"
-            rdict.show(batchdata, print_name)
+            info = rdict.pprint(batchdata, print_name, align=True)
+            nbytes = human_readable_byte(info["nbytes"], bin=True)
             print(f"Data size: {self.datasize}")
             print(f"Batch size: {self.batchsize}")
+            print(f"Batch size (byte): {nbytes}")
             print(f"Iterations of per epoch: {len(self)}")
             print("-" * 35)
 
@@ -332,13 +332,13 @@ class SequenceDataLoader(BatchIndices):
     def _preprocess(self, batch_data) -> BatchDataType:
         # CPU -> GPU -> preprocess -> for training data
 
-        rdict.to_torch(batch_data, device=self.device)
+        rdict.to_torch_(batch_data, device=self.device)
         # TODO: rdict.pad_time(...
         if not self.batch_first:
             rdict.apply_(batch_data, swap01)  # to (T, B, *)
         if self.preprocess is not None:
             batch_data = self.preprocess(batch_data)
-        rdict.to_torch(batch_data, dtype=self.dtype, device=self.device)  # for dtype
+        rdict.to_torch_(batch_data, dtype=self.dtype, device=self.device)  # for dtype
         return batch_data
 
     # def _load(self, filenames):
@@ -420,7 +420,7 @@ class SequenceDataLoader(BatchIndices):
             one_ep = rdict.apply(one_ep, lambda x: x[start : start + T])
             rdict.append_a_to_b(one_ep, batch_data)
 
-        rdict.to_torch(batch_data)
+        rdict.to_torch_(batch_data)
         return batch_data
 
 

@@ -71,7 +71,7 @@ class BasicBlock(nn.Module):
         self.stride = stride
 
     def forward(self, x: Tensor) -> Tensor:
-        Color.print("BasicBlock x  ", x.shape, c=Color.purple)
+        Color.print("BasicBlock x  ", x.shape, c=Color.code.purple)
         identity = x
 
         out = self.conv1(x)
@@ -81,14 +81,14 @@ class BasicBlock(nn.Module):
         out = self.conv2(out)
         out = self.bn2(out)
 
-        Color.print("BasicBlock downsample", self.downsample, c=Color.purple)
+        Color.print("BasicBlock downsample", self.downsample, c=Color.code.purple)
         if self.downsample is not None:
             identity = self.downsample(x)  # これが肝心
 
         out += identity
         out = self.relu(out)
 
-        Color.print("BasicBlock out", out.shape, c=Color.purple)
+        Color.print("BasicBlock out", out.shape, c=Color.code.purple)
         return out
 
 

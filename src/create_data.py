@@ -175,11 +175,11 @@ def core(
                 )
 
             if done:
-                rdict.to_numpy(self.episode_data)
+                rdict.to_numpy_(self.episode_data)
                 # self.episode_data = rdict.extract_from_keypaths(self.episode_data, keypaths)
 
                 if self.episode_cnt == 0 and mode.startswith("show"):
-                    rdict.show(self.episode_data, "one episode data")
+                    rdict.pprint(self.episode_data, "one episode data")
 
                 if mode != "save-anim":
                     if mode == "save-data":
@@ -192,7 +192,7 @@ def core(
 
                         info = Color.green + "saved" + Color.reset
                     else:
-                        info = Color.coral + "not saved" + Color.reset
+                        info = Color.code.coral + "not saved" + Color.reset
 
                     Prompt.print_one_line(f"[{info}] Episode: {self.episode_cnt+1}, T = {self.t+1}")
 

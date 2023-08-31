@@ -22,7 +22,7 @@ class ValueWriter:
     """
     ・Write immediately
     ・Small volume
-    ・Fixed length
+    ・Fixed byte length
 
     Data specification
         'info' byte length (4 byte)
@@ -86,6 +86,7 @@ class ValueWriter:
         if type_v == int:
             typ = "int32"
             info = {"typ": typ, "endian": sys.byteorder}
+            # assert -2147483648 <= value and value <= 2147483647
         elif type_v == float:
             typ = "float32"
             info = {"typ": typ, "endian": sys.byteorder}

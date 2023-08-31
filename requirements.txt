@@ -9,10 +9,12 @@ einops
 
 ### util ###
 typing_extensions
+pyyaml
 json5==0.9.10
 natsort
 wcmatch
 polars
+h5py
 
 # google-api-python-client
 # google-auth-httplib2

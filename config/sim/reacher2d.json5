@@ -87,7 +87,7 @@
     max_time_length: 70,
 
     device: "cuda",
-    dtype: "float32", // float16 is not good (easy get nan) -> Use AMP
+    dtype: "float32",
     check_value: false, // if false, a little faster
 
     // Per epoch to save the weights

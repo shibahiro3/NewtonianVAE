@@ -100,7 +100,7 @@ def select_weight(root: Path) -> Optional[Path]:
     weight_paths = list(root.glob(_weight))
     weight_paths = natsorted(weight_paths)
     if len(weight_paths) == 0:
-        Color.print("Weight doesn't exist.", c=Color.orange)
+        Color.print("Weight doesn't exist.", c=Color.code.orange)
         return None
 
     for i, weight_p in enumerate(weight_paths, 1):

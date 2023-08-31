@@ -1,7 +1,9 @@
+import pickle
 from pprint import pprint
 from typing import Any, Dict, List
 
 import numpy as np
+import requests
 import visdom
 from torch.utils.tensorboard import SummaryWriter
 
@@ -54,3 +56,20 @@ class VisdomVisualHandler(VisualHandlerBase):
                     name="valid",
                     opts=dict(title=loss_name),
                 )
+
+
+class RequestsVisualHandler(VisualHandlerBase):
+    def __init__(self, port):
+        self._port = port
+
+    def plot(self, d: Dict[str, Any]):
+        if d["mode"] == "all":
+            losses = d["losses"]
+            try:
+                requests.post(
+                    url=f"http://localhost:{self._port}",
+                    headers={"Content-Type": "application/octet-stream"},
+                    data=pickle.dumps(losses),
+                )
+            except:
+                pass

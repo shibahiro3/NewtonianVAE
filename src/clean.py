@@ -46,9 +46,9 @@ def clean(root):
                 # continue
 
     if len(warning) > 0:
-        Color.print("Warnings", c=Color.orange)
+        Color.print("Warnings", c=Color.code.orange)
         for f in warning:
-            Color.print(f, c=Color.orange)
+            Color.print(f, c=Color.code.orange)
 
     delete(deletable)
 

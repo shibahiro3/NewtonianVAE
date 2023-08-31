@@ -1,6 +1,3 @@
-import os
-import shutil
-import sys
 import time
 import traceback
 from datetime import datetime, timedelta
@@ -66,15 +63,28 @@ def train(
     gradscaler_args: Optional[dict] = None,
     use_autocast: bool = False,
 ) -> None:
-    """
+    r"""
 
     all index start from 1
 
     pre_epoch_fn(epoch: int) -> None
     pre_batch_fn(epoch: float, *args) -> batchdata
     post_batch_fn(epoch: float, status: dict) -> None
+        status: {
+            "epoch": <int>,
+            "losses": {"<loss name>": <float>, ...},
+            "mode": "now",
+            "phase": <"train" or "valid">
+        }
     post_epoch_fn(epoch: int, status: dict) -> None
-
+        status: {
+            "epoch": <int>,
+            "losses": { // Average per epoch
+                "train": {"<loss name>": <float>, ...},
+                "valid": {"<loss name>": <float>, ...}, // same names if validloader is not None
+            },
+            "mode": "all"
+        }
 
     {managed_dir}
     ├── weight
@@ -105,7 +115,7 @@ def train(
     epoch_valid_writer = ValueWriter(Path(managed_dir, "epoch valid"))
 
     if next(model.parameters()).device == torch.device("cpu"):
-        Color.print("Warning: model is on cpu", c=Color.coral)
+        Color.print("Warning: model is on cpu", c=Color.code.coral)
 
     if validloader is None:
         phases = ["train"]
@@ -135,11 +145,13 @@ def train(
 
                 if phase == "train":
                     torch.set_grad_enabled(True)
+                    # torch.inference_mode(False)
                     # torch.autograd.detect_anomaly()
                     dataloader = trainloader
                     model.train()
                 else:
                     torch.set_grad_enabled(False)
+                    # torch.inference_mode(True)
                     dataloader = validloader
                     model.eval()
 
@@ -261,7 +273,7 @@ def train(
                         ep_msg += Color.green + " saved" + Color.reset
                 else:
                     ep_msg = (
-                        Color.coral
+                        Color.code.coral
                         + ep_msg
                         + Color.reset
                         + f" | Duration: {s2dhms_str(time.perf_counter() - time_start_epoch)}"

@@ -140,7 +140,7 @@ def function_test(func):
     """
 
     def wrapper(*args, **kwargs):
-        Color.print(f"\n=== [Start] {func.__name__} ===", c=Color.orange)
+        Color.print(f"\n=== [Start] {func.__name__} ===", c=Color.code.orange)
         start = time.perf_counter()
         result = func(*args, **kwargs)
         elapsed_time = time.perf_counter() - start
@@ -204,7 +204,7 @@ def human_readable_byte(nbytes: int, bin=False) -> str:
     # numpy.ndarray: b = x.nbytes
     # torch.Tensor: b = x.element_size() * x.numel()
 
-    assert type(nbytes) == int
+    # assert type(nbytes) == int  numpy.int64 とかめんどくせぇ Number Real
     assert nbytes >= 0
 
     def _p(nbytes_, prefix: str) -> str:
